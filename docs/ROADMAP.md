@@ -1,7 +1,12 @@
 # 🗺️ GLICO DEVELOPMENT ROADMAP & TO-DO
 
 Pendekatan pengembangan menggunakan metode **Horizontal (Per Aplikasi)**.
-Aturan untuk AI: Saat mengerjakan suatu fase, pastikan kontrak API dan struktur data merujuk pada `DATABASE_SCHEMA.md` dan `API_CONTRACTS.md`.
+
+> ⚠️ **ATURAN MUTLAK UNTUK AI:**
+> Saat kamu membaca tugas dari `docs/TODO.md` dan diarahkan ke Roadmap ini, kamu **WAJIB** membuka `.roo/rules/rules.md` terlebih dahulu.
+> Gunakan dokumen indeks di sana (seperti `DATABASE_SCHEMA.md` atau `API_CONTRACTS.md`) sebagai panduan spesifikasi teknis agar kodemu tidak melanggar kontrak arsitektur yang sudah disepakati.
+
+---
 
 ---
 
