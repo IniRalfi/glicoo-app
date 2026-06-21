@@ -1,5 +1,37 @@
 @import "tailwindcss";
 
+@theme {
+  /* ─── Brand scale — orange (1) → yellow (10) ─── */
+  /* Mirrors AppColors.dart brand1–brand10 */
+  --color-brand-1: #ff7b00;
+  --color-brand-2: #ff8800;
+  --color-brand-3: #ff9500;
+  --color-brand-4: #ffa200;
+  --color-brand-5: #ffaa00;
+  --color-brand-6: #ffb700; /* primary */
+  --color-brand-7: #ffc300;
+  --color-brand-8: #ffd000;
+  --color-brand-9: #ffdd00;
+  --color-brand-10: #ffea00;
+
+  /* ─── Semantic aliases ─── */
+  /* Named after intent, not implementation, so renaming a hex doesn't cascade everywhere */
+  --color-primary: #ffb700;
+  --color-background: #fffbf5;
+  --color-surface: #ffffff;
+  --color-surface-muted: #fff5e6;
+  --color-border-brand: #ffe8b3;
+  --color-foreground: #1a1a1a;
+  --color-muted-foreground: #666666;
+  --color-error: #e53935;
+  --color-success: #43a047;
+
+  /* ─── Typography ─── */
+  /* Mirrors AppTypography.dart: Rammetto One (display) + Inter (body) */
+  --font-display: var(--font-rammetto-one), serif;
+  --font-body: var(--font-inter), sans-serif;
+}
+
 /* ─── Custom dot pattern — lebih rapat & jelas ─── */
 .bg-dot-pattern {
   background-image: radial-gradient(rgba(0, 0, 0, 0.12) 1.2px, transparent 1.2px);

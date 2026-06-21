@@ -2,7 +2,16 @@
 
 > ⚠️ **Aturan AI:** Task di bawah ini merujuk langsung ke `docs/ROADMAP.md`. Sebelum mengeksekusi, buka `docs/ROADMAP.md` untuk melihat fase besarnya, lalu ikuti instruksi arsitektur yang diarahkan di sana.
 
-## 🎯 Fokus Hari Ini
+## 🎯 Fokus Hari Ini — Mobile First
+
+> Detail task mobile: **`docs/MOBILE_TODO.md`**
+
+- [x] **Mobile Phase 0:** Global theme (AppColors, AppTypography, AppTheme)
+- [ ] **Mobile Phase 0:** Shared widgets (BentoCard, PrimaryButton)
+- [ ] **Mobile Phase 1:** Setup `hooks_riverpod` + struktur folder feature-based
+- [ ] **Mobile Phase 2:** Splash + Onboarding shell
+
+## 📦 Foundation (Selesai)
 
 - [x] **Task 1.1:** Inisialisasi Bun Workspaces _(Ref: docs/ROADMAP.md -> Fase 1 -> Task 1.1)_
   - [x] Buat folder `apps/web`, `apps/backend`, `apps/mobile`.
