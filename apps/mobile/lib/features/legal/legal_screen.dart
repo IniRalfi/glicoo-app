@@ -52,14 +52,10 @@ class _LegalScreenState extends State<LegalScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
-              Text(
-                'Sebelum Mulai',
-                style: AppTypography.textTheme.headlineMedium,
-              ),
+              Text('Halo!', style: AppTypography.textTheme.headlineMedium),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Harap baca dan setujui Syarat & Ketentuan serta '
-                'Kebijakan Privasi kami sebelum menggunakan Glico.',
+                'Sebelum membuat akun, silakan baca dan setujui Syarat dan Ketentuan kami.',
                 style: AppTypography.textTheme.bodyMedium?.copyWith(
                   color: AppColors.textSecondary,
                 ),

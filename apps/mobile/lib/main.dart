@@ -1,25 +1,66 @@
 // main.dart
 //
-// Entry point Glico — meng-orchestrate app-level navigation flow awal:
-//   Splash → Onboarding (first-time) → Legal → Auth
+// Entry point Glico — initialize Supabase, then orchestrate navigation flow:
+//   Splash → Onboarding (first-time) → Legal → Auth → Home
+//
+// Purpose:
+// App bootstrap: load .env, init Supabase, wrap with ProviderScope.
+//
+// Used By:
+// —
+//
+// Depends On:
+// supabase_flutter, flutter_dotenv, hooks_riverpod
+//
+// Impact:
+// Every screen in the app
 
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
+import 'core/env_config.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
-import 'features/splash/splash_screen.dart';
-import 'features/onboarding/onboarding_screen.dart';
+import 'features/auth/data/supabase_auth_repository.dart';
+import 'features/auth/presentation/auth_provider.dart';
+import 'features/auth/presentation/forgot_password_screen.dart';
+import 'features/auth/presentation/login_screen.dart';
+import 'features/auth/presentation/register_screen.dart';
 import 'features/legal/legal_screen.dart';
+import 'features/onboarding/onboarding_screen.dart';
+import 'features/splash/splash_screen.dart';
 
-void main() {
-  runApp(const GlicoApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 1. Load .env
+  await EnvConfig.load();
+
+  // 2. Init Supabase
+  await Supabase.initialize(
+    url: EnvConfig.supabaseUrl,
+    publishableKey: EnvConfig.supabaseAnonKey,
+  );
+
+  // 3. Build AuthRepository after Supabase is ready
+  final authRepository = SupabaseAuthRepository(
+    supabase: Supabase.instance.client,
+  );
+
+  runApp(
+    ProviderScope(
+      overrides: [authRepositoryProvider.overrideWithValue(authRepository)],
+      child: const GlicoApp(),
+    ),
+  );
 }
 
-class GlicoApp extends StatelessWidget {
+class GlicoApp extends ConsumerWidget {
   const GlicoApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: 'Glico',
       debugShowCheckedModeBanner: false,
@@ -30,18 +71,39 @@ class GlicoApp extends StatelessWidget {
 }
 
 /// Flow state untuk navigasi awal aplikasi.
-enum _FlowState { splash, onboarding, legal, auth }
+enum _FlowState { splash, onboarding, legal, auth, home }
 
-/// Entry point yang handle flow: Splash → Onboarding → Legal → Auth.
-class _AppEntryPoint extends StatefulWidget {
+/// Entry point yang handle flow: Splash → Onboarding → Legal → Auth → Home.
+class _AppEntryPoint extends ConsumerStatefulWidget {
   const _AppEntryPoint();
 
   @override
-  State<_AppEntryPoint> createState() => _AppEntryPointState();
+  ConsumerState<_AppEntryPoint> createState() => _AppEntryPointState();
 }
 
-class _AppEntryPointState extends State<_AppEntryPoint> {
+class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
   _FlowState _state = _FlowState.splash;
+
+  // Sub-flow dalam auth: login / register / forgot-password
+  _AuthFlow _authFlow = _AuthFlow.login;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check if user is already signed in on startup
+    ref.read(authProvider.notifier).checkAuthStatus();
+
+    // Listen for auth state changes — auto-navigate to home when authenticated
+    ref.listen(authProvider, (prev, next) {
+      final isAuthenticated = next.maybeWhen(
+        authenticated: (_) => true,
+        orElse: () => false,
+      );
+      if (isAuthenticated && _state == _FlowState.auth) {
+        setState(() => _state = _FlowState.home);
+      }
+    });
+  }
 
   void _onSplashComplete() => setState(() => _state = _FlowState.onboarding);
   void _onOnboardingComplete() => setState(() => _state = _FlowState.legal);
@@ -57,14 +119,38 @@ class _AppEntryPointState extends State<_AppEntryPoint> {
       case _FlowState.legal:
         return LegalScreen(onAccepted: _onLegalAccepted);
       case _FlowState.auth:
-        return const _AuthPlaceholder();
+        return _buildAuthScreen();
+      case _FlowState.home:
+        return const _HomePlaceholder();
+    }
+  }
+
+  Widget _buildAuthScreen() {
+    switch (_authFlow) {
+      case _AuthFlow.login:
+        return LoginScreen(
+          onNavigateToRegister: () =>
+              setState(() => _authFlow = _AuthFlow.register),
+          onNavigateToForgotPassword: () =>
+              setState(() => _authFlow = _AuthFlow.forgotPassword),
+        );
+      case _AuthFlow.register:
+        return RegisterScreen(
+          onNavigateToLogin: () => setState(() => _authFlow = _AuthFlow.login),
+        );
+      case _AuthFlow.forgotPassword:
+        return ForgotPasswordScreen(
+          onBack: () => setState(() => _authFlow = _AuthFlow.login),
+        );
     }
   }
 }
 
-/// Placeholder untuk halaman auth (login/register) — akan diganti nanti.
-class _AuthPlaceholder extends StatelessWidget {
-  const _AuthPlaceholder();
+enum _AuthFlow { login, register, forgotPassword }
+
+/// Placeholder for home screen — will be replaced by bottom navigation shell.
+class _HomePlaceholder extends StatelessWidget {
+  const _HomePlaceholder();
 
   @override
   Widget build(BuildContext context) {
@@ -74,14 +160,18 @@ class _AuthPlaceholder extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const Icon(Icons.check_circle, size: 64, color: AppColors.success),
+            const SizedBox(height: 16),
             Text(
-              'Auth Screen',
+              'Berhasil Masuk!',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 16),
             Text(
-              'Login / Register akan diimplementasikan di sini',
-              style: Theme.of(context).textTheme.bodyMedium,
+              'Home screen akan diimplementasikan',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
             ),
           ],
         ),

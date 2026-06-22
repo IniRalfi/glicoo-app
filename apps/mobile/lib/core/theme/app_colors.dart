@@ -26,6 +26,13 @@ abstract final class AppColors {
   static const Color textPrimary = Color(0xFF1A1A1A);
   static const Color textSecondary = Color(0xFF666666);
   static const Color textOnPrimary = Color(0xFF1A1A1A);
+
+  // Auth-specific neutrals (from Figma)
+  static const Color subtitleGray = Color(0xFF9EA2AE);
+  static const Color placeholderGray = Color(0xFF6D717F);
+  static const Color linkGray = Color(0xFF8F8F8F);
+  static const Color linkBlue = Color(0xFF0095FF);
+
   static const Color error = Color(0xFFE53935);
   static const Color success = Color(0xFF43A047);
 }
