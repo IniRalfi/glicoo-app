@@ -1,0 +1,124 @@
+// findrisc_intro_screen.dart
+//
+// FINDRISC Intro page — ditampilkan setelah login (first-time only).
+//
+// Purpose:
+// Memperkenalkan user tentang kuesioner FINDRISC sebelum memulai pertanyaan.
+// Halaman ini hanya muncul sekali (disimpan di SharedPreferences).
+//
+// Used By:
+// main.dart (auth flow: login → findrisc_intro → home)
+//
+// Depends On:
+// flutter/material, flutter_svg, google_fonts, app_colors, app_spacing
+//
+// Impact:
+// First-time post-login experience
+
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
+
+/// FINDRISC intro screen — memperkenalkan kuesioner FINDRISC.
+class FindriscIntroScreen extends StatelessWidget {
+  const FindriscIntroScreen({super.key, this.onComplete});
+
+  /// Callback ketika user tap "Yuk, mulai sekarang!"
+  final VoidCallback? onComplete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Spacer atas
+            const Spacer(flex: 2),
+
+            // Glico FINDRISC illustration — center
+            SvgPicture.asset(
+              'assets/images/findrisc/glicoo_findrisc.svg',
+              width: 200,
+              height: 147,
+              fit: BoxFit.contain,
+            ),
+
+            const SizedBox(height: 32),
+
+            // Title: "Bentar..." — Rammetto One
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              child: Text(
+                'Bentar...',
+                style: GoogleFonts.rammettoOne(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Body text
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              child: Text(
+                'Berikut akan ada beberapa pertanyaan yang akan membantuku memahami kondisi kesehatan dan tingkat risiko diabetesmu saat ini. Tenang saja, prosesnya hanya membutuhkan waktu sekitar 2 menit.',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textSecondary,
+                  height: 1.6,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
+            // Spacer tengah
+            const Spacer(flex: 3),
+
+            // Button: "Yuk, mulai sekarang!" — kuning background, teks putih
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              child: SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: onComplete,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    disabledBackgroundColor: AppColors.subtitleGray,
+                    foregroundColor: Colors.white,
+                    disabledForegroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.buttonRadius,
+                      ),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    'Yuk, mulai sekarang!',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
+}

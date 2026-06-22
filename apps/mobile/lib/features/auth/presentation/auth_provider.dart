@@ -14,6 +14,7 @@
 // Any screen that reads auth state
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/auth_repository.dart';
 import '../domain/auth_state.dart';
@@ -88,11 +89,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Logout.
+  /// Logout — juga clear flag findrisc_done agar user baru/berikutnya
+  /// tidak langsung skip FINDRISC questionnaire.
   Future<void> signOut() async {
     state = const AuthState.loading();
     try {
       await _repository.signOut();
+      // Clear FINDRISC flag on logout so next login shows intro again
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('findrisc_done');
       state = const AuthState.unauthenticated();
     } catch (e) {
       state = AuthState.error(message: _humanReadableError(e));

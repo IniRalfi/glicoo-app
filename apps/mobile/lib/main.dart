@@ -32,6 +32,9 @@ import 'features/auth/presentation/login_screen.dart';
 import 'features/auth/presentation/register_screen.dart';
 import 'features/legal/legal_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
+import 'features/findrisc/findrisc_intro_screen.dart';
+import 'features/findrisc/findrisc_step1_screen.dart';
+import 'features/findrisc/findrisc_step2_screen.dart';
 import 'features/navigation/bottom_nav_shell.dart';
 import 'features/splash/splash_screen.dart';
 
@@ -75,7 +78,16 @@ class GlicoApp extends ConsumerWidget {
 }
 
 /// Flow state untuk navigasi awal aplikasi.
-enum _FlowState { splash, onboarding, legal, auth, home }
+enum _FlowState {
+  splash,
+  onboarding,
+  legal,
+  auth,
+  findriscIntro,
+  findriscStep1,
+  findriscStep2,
+  home,
+}
 
 /// Entry point yang handle flow: Splash → Onboarding → Legal → Auth → Home.
 class _AppEntryPoint extends ConsumerStatefulWidget {
@@ -103,13 +115,33 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
   }
 
   /// Setelah splash selesai, cek apakah user sudah pernah onboarding.
+  /// Jika sudah onboarding DAN sudah authenticated, langsung cek findrisc.
   Future<void> _onSplashComplete() async {
     final prefs = await SharedPreferences.getInstance();
     final onboardingDone = prefs.getBool('onboarding_done') ?? false;
     if (!mounted) return;
-    setState(() {
-      _state = onboardingDone ? _FlowState.auth : _FlowState.onboarding;
-    });
+
+    if (onboardingDone) {
+      // Cek apakah user sudah authenticated (session aktif)
+      final authState = ref.read(authProvider);
+      final isAuthenticated = authState.maybeWhen(
+        authenticated: (_) => true,
+        orElse: () => false,
+      );
+
+      if (isAuthenticated) {
+        // Sudah login, cek findrisc langsung
+        final findriscDone = prefs.getBool('findrisc_done') ?? false;
+        _authHandled = true;
+        setState(() {
+          _state = findriscDone ? _FlowState.home : _FlowState.findriscIntro;
+        });
+      } else {
+        setState(() => _state = _FlowState.auth);
+      }
+    } else {
+      setState(() => _state = _FlowState.onboarding);
+    }
   }
 
   Future<void> _onOnboardingComplete() async {
@@ -120,6 +152,35 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
   }
 
   void _onLegalAccepted() => setState(() => _state = _FlowState.auth);
+
+  /// Cek apakah user sudah pernah mengisi FINDRISC questionnaire.
+  Future<bool> _checkFindriscDone() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('findrisc_done') ?? false;
+  }
+
+  /// Setelah user menekan tombol "Yuk, mulai sekarang!" di intro FINDRISC,
+  /// lanjut ke step 1 (questionnaire data fisik).
+  void _onFindriscIntroComplete() {
+    if (!mounted) return;
+    setState(() => _state = _FlowState.findriscStep1);
+  }
+
+  /// Setelah user menyelesaikan FINDRISC step 1 (data fisik),
+  /// lanjut ke step 2 (gaya hidup & riwayat kesehatan).
+  void _onFindriscStep1Complete() {
+    if (!mounted) return;
+    setState(() => _state = _FlowState.findriscStep2);
+  }
+
+  /// Setelah user menyelesaikan FINDRISC step 2 (gaya hidup & riwayat),
+  /// simpan flag findrisc_done, lalu lanjut ke home.
+  Future<void> _onFindriscStep2Complete() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('findrisc_done', true);
+    if (!mounted) return;
+    setState(() => _state = _FlowState.home);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -135,6 +196,15 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
           ),
           _FlowState.legal => LegalScreen(onAccepted: _onLegalAccepted),
           _FlowState.auth => _buildAuthScreen(),
+          _FlowState.findriscIntro => FindriscIntroScreen(
+            onComplete: _onFindriscIntroComplete,
+          ),
+          _FlowState.findriscStep1 => FindriscStep1Screen(
+            onComplete: _onFindriscStep1Complete,
+          ),
+          _FlowState.findriscStep2 => FindriscStep2Screen(
+            onComplete: _onFindriscStep2Complete,
+          ),
           _FlowState.home => const BottomNavShell(),
         },
         // Loading overlay — auto-show dari authProvider (loading) + manual loadingProvider
@@ -167,12 +237,22 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
                 authenticated: (_) => true,
                 orElse: () => false,
               );
+              // Handle login success: dari auth screen ATAU dari splash (race condition)
               if (isAuthenticated &&
-                  _state == _FlowState.auth &&
-                  !_authHandled) {
+                  !_authHandled &&
+                  (_state == _FlowState.auth || _state == _FlowState.splash)) {
                 _authHandled = true;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) setState(() => _state = _FlowState.home);
+                _checkFindriscDone().then((done) {
+                  if (!mounted) return;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      setState(() {
+                        _state = done
+                            ? _FlowState.home
+                            : _FlowState.findriscIntro;
+                      });
+                    }
+                  });
                 });
               }
               // Pas logout, balik ke login screen
