@@ -2,17 +2,19 @@
 //
 // Purpose:
 // Concrete implementation of AuthRepository using Supabase Auth.
-// Handles email/password login, Google OAuth, password reset, and sign out.
+// Google OAuth uses native google_sign_in plugin (opens account picker, not browser)
+// + Supabase signInWithIdToken for the server-side session.
 //
 // Used By:
 // auth_provider.dart (injected via ProviderScope)
 //
 // Depends On:
-// supabase_flutter, AuthRepository, AuthState
+// supabase_flutter, google_sign_in, AuthRepository, AuthState
 //
 // Impact:
 // main.dart — initialization order
 
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
 import '../domain/auth_repository.dart';
@@ -20,9 +22,13 @@ import '../domain/auth_state.dart';
 
 /// Implementasi AuthRepository menggunakan Supabase Auth.
 final class SupabaseAuthRepository implements AuthRepository {
-  SupabaseAuthRepository({required this.supabase});
+  SupabaseAuthRepository({required this.supabase})
+    : _googleSignIn = GoogleSignIn(
+        scopes: <String>['email', 'profile', 'openid'],
+      );
 
   final SupabaseClient supabase;
+  final GoogleSignIn _googleSignIn;
 
   @override
   Future<void> signInWithEmail(String email, String password) async {
@@ -58,15 +64,28 @@ final class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> signInWithGoogle() async {
-    await supabase.auth.signInWithOAuth(
-      OAuthProvider.google,
-      redirectTo: 'io.glicoo.glicoo_mobile://callback',
+    // Trigger native Google Account picker — no browser redirect
+    final googleUser = await _googleSignIn.signIn();
+    if (googleUser == null) {
+      throw Exception('Pengguna membatalkan login Google');
+    }
+
+    // Get authentication tokens
+    final googleAuth = await googleUser.authentication;
+    if (googleAuth.idToken == null) {
+      throw Exception('Gagal mendapatkan token Google');
+    }
+
+    // Exchange Google ID token for Supabase session
+    await supabase.auth.signInWithIdToken(
+      provider: OAuthProvider.google,
+      idToken: googleAuth.idToken!,
     );
   }
 
   @override
   Future<void> signOut() async {
-    await supabase.auth.signOut();
+    await Future.wait([supabase.auth.signOut(), _googleSignIn.signOut()]);
   }
 
   @override

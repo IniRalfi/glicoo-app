@@ -1,8 +1,8 @@
 // register_screen.dart
 //
 // Purpose:
-// Register screen — name + email + password fields, Google OAuth,
-// and navigation back to Login.
+// Register screen — email + name + password + confirm password fields,
+// Google OAuth, and navigation back to Login.
 //
 // Used By:
 // auth_entry_screen.dart (or main.dart)
@@ -15,6 +15,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -22,7 +23,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import 'auth_provider.dart';
 
-/// Screen register dengan form nama/email/password + Google OAuth.
+/// Screen register dengan form email/nama/password/konfirmasi + Google OAuth.
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key, this.onNavigateToLogin});
 
@@ -35,23 +36,27 @@ class RegisterScreen extends ConsumerStatefulWidget {
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _nameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
-    _nameController.dispose();
     _emailController.dispose();
+    _nameController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   bool get _isFormValid =>
-      _nameController.text.isNotEmpty &&
       _emailController.text.isNotEmpty &&
-      _passwordController.text.isNotEmpty;
+      _nameController.text.isNotEmpty &&
+      _passwordController.text.isNotEmpty &&
+      _confirmPasswordController.text.isNotEmpty;
 
   Future<void> _onRegister() async {
     if (!_formKey.currentState!.validate()) return;
@@ -99,10 +104,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 const SizedBox(height: 40),
 
-                // --- "Daftar" title ---
+                // --- "Daftar" title (Inter) ---
                 Text(
                   'Daftar',
-                  style: AppTypography.textTheme.displayMedium?.copyWith(
+                  style: GoogleFonts.inter(
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
                   ),
@@ -112,39 +118,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 // --- subtitle ---
                 Text(
-                  'Buat akun untuk memulai!',
+                  'Silakan isi data diri kamu!',
                   style: AppTypography.textTheme.bodyLarge?.copyWith(
                     color: AppColors.subtitleGray,
                   ),
                 ),
 
                 const SizedBox(height: 28),
-
-                // --- Nama field ---
-                Text(
-                  'Nama',
-                  style: AppTypography.textTheme.titleSmall?.copyWith(
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _nameController,
-                  textCapitalization: TextCapitalization.words,
-                  onChanged: (_) => setState(() {}),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Nama tidak boleh kosong';
-                    }
-                    return null;
-                  },
-                  decoration: const InputDecoration(
-                    hintText: 'Masukkan nama',
-                    hintStyle: TextStyle(color: AppColors.placeholderGray),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
 
                 // --- Email field ---
                 Text(
@@ -175,7 +155,33 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 const SizedBox(height: 16),
 
-                // --- Password field ---
+                // --- Nama field ---
+                Text(
+                  'Nama',
+                  style: AppTypography.textTheme.titleSmall?.copyWith(
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _nameController,
+                  textCapitalization: TextCapitalization.words,
+                  onChanged: (_) => setState(() {}),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Nama tidak boleh kosong';
+                    }
+                    return null;
+                  },
+                  decoration: const InputDecoration(
+                    hintText: 'Masukkan nama',
+                    hintStyle: TextStyle(color: AppColors.placeholderGray),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // --- Kata Sandi field ---
                 Text(
                   'Kata Sandi',
                   style: AppTypography.textTheme.titleSmall?.copyWith(
@@ -210,6 +216,49 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
                       onPressed: () =>
                           setState(() => _obscurePassword = !_obscurePassword),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // --- Konfirmasi Kata Sandi field ---
+                Text(
+                  'Konfirmasi Kata Sandi',
+                  style: AppTypography.textTheme.titleSmall?.copyWith(
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  obscureText: _obscureConfirmPassword,
+                  onChanged: (_) => setState(() {}),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Konfirmasi kata sandi tidak boleh kosong';
+                    }
+                    if (value != _passwordController.text) {
+                      return 'Kata sandi tidak cocok';
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Masukkan ulang kata sandi',
+                    hintStyle: const TextStyle(
+                      color: AppColors.placeholderGray,
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: AppColors.placeholderGray,
+                      ),
+                      onPressed: () => setState(
+                        () =>
+                            _obscureConfirmPassword = !_obscureConfirmPassword,
+                      ),
                     ),
                   ),
                 ),

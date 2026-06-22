@@ -17,6 +17,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -103,10 +104,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 const SizedBox(height: 40),
 
-                // --- "Masuk" title ---
+                // --- "Masuk" title (Inter) ---
                 Text(
                   'Masuk',
-                  style: AppTypography.textTheme.displayMedium?.copyWith(
+                  style: GoogleFonts.inter(
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
                   ),

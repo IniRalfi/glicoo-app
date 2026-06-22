@@ -23,6 +23,7 @@ import 'core/env_config.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/data/supabase_auth_repository.dart';
+import 'features/auth/domain/auth_state.dart';
 import 'features/auth/presentation/auth_provider.dart';
 import 'features/auth/presentation/forgot_password_screen.dart';
 import 'features/auth/presentation/login_screen.dart';
@@ -87,21 +88,15 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
   // Sub-flow dalam auth: login / register / forgot-password
   _AuthFlow _authFlow = _AuthFlow.login;
 
+  /// Flag to prevent multiple navigations from same auth event
+  bool _authHandled = false;
+
   @override
   void initState() {
     super.initState();
-    // Check if user is already signed in on startup
-    ref.read(authProvider.notifier).checkAuthStatus();
-
-    // Listen for auth state changes — auto-navigate to home when authenticated
-    ref.listen(authProvider, (prev, next) {
-      final isAuthenticated = next.maybeWhen(
-        authenticated: (_) => true,
-        orElse: () => false,
-      );
-      if (isAuthenticated && _state == _FlowState.auth) {
-        setState(() => _state = _FlowState.home);
-      }
+    // Check auth status after first frame (ref.listen only valid in build)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authProvider.notifier).checkAuthStatus();
     });
   }
 
@@ -111,18 +106,54 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
 
   @override
   Widget build(BuildContext context) {
-    switch (_state) {
-      case _FlowState.splash:
-        return SplashScreen(onInitializationComplete: _onSplashComplete);
-      case _FlowState.onboarding:
-        return OnboardingScreen(onComplete: _onOnboardingComplete);
-      case _FlowState.legal:
-        return LegalScreen(onAccepted: _onLegalAccepted);
-      case _FlowState.auth:
-        return _buildAuthScreen();
-      case _FlowState.home:
-        return const _HomePlaceholder();
-    }
+    // Gunakan Stack + Consumer untuk ref.listen — lebih aman dari lifecycle issue
+    return Stack(
+      children: [
+        switch (_state) {
+          _FlowState.splash => SplashScreen(
+            onInitializationComplete: _onSplashComplete,
+          ),
+          _FlowState.onboarding => OnboardingScreen(
+            onComplete: _onOnboardingComplete,
+          ),
+          _FlowState.legal => LegalScreen(onAccepted: _onLegalAccepted),
+          _FlowState.auth => _buildAuthScreen(),
+          _FlowState.home => const _HomePlaceholder(),
+        },
+        // Consumer terpisah untuk listen auth state — ref.listen selalu valid di sini
+        Consumer(
+          builder: (context, ref, _) {
+            ref.listen<AuthState>(authProvider, (prev, next) {
+              final isAuthenticated = next.maybeWhen(
+                authenticated: (_) => true,
+                orElse: () => false,
+              );
+              if (isAuthenticated &&
+                  _state == _FlowState.auth &&
+                  !_authHandled) {
+                _authHandled = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) setState(() => _state = _FlowState.home);
+                });
+              }
+              // Pas logout, balik ke login screen
+              if (!isAuthenticated && _state == _FlowState.home) {
+                _authHandled = false;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    setState(() {
+                      _state = _FlowState.auth;
+                      _authFlow = _AuthFlow.login;
+                    });
+                  }
+                });
+              }
+            });
+            return const SizedBox.shrink();
+          },
+        ),
+      ],
+    );
   }
 
   Widget _buildAuthScreen() {
@@ -148,12 +179,12 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
 
 enum _AuthFlow { login, register, forgotPassword }
 
-/// Placeholder for home screen — will be replaced by bottom navigation shell.
-class _HomePlaceholder extends StatelessWidget {
+/// Placeholder for home screen — with logout button.
+class _HomePlaceholder extends ConsumerWidget {
   const _HomePlaceholder();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Center(
@@ -166,12 +197,22 @@ class _HomePlaceholder extends StatelessWidget {
               'Berhasil Masuk!',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Home screen akan diimplementasikan',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            const SizedBox(height: 32),
+            FilledButton.icon(
+              onPressed: () => ref.read(authProvider.notifier).signOut(),
+              icon: const Icon(Icons.logout),
+              label: const Text('Keluar / Ganti Akun'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
+              ),
             ),
           ],
         ),
