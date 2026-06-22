@@ -17,11 +17,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
 import 'core/env_config.dart';
-import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/glico_loading.dart';
+import 'core/widgets/loading_provider.dart';
 import 'features/auth/data/supabase_auth_repository.dart';
 import 'features/auth/domain/auth_state.dart';
 import 'features/auth/presentation/auth_provider.dart';
@@ -30,6 +32,7 @@ import 'features/auth/presentation/login_screen.dart';
 import 'features/auth/presentation/register_screen.dart';
 import 'features/legal/legal_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
+import 'features/navigation/bottom_nav_shell.dart';
 import 'features/splash/splash_screen.dart';
 
 void main() async {
@@ -63,7 +66,7 @@ class GlicoApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
-      title: 'Glico',
+      title: 'Glicoo',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       home: const _AppEntryPoint(),
@@ -94,14 +97,28 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
   @override
   void initState() {
     super.initState();
-    // Check auth status after first frame (ref.listen only valid in build)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(authProvider.notifier).checkAuthStatus();
     });
   }
 
-  void _onSplashComplete() => setState(() => _state = _FlowState.onboarding);
-  void _onOnboardingComplete() => setState(() => _state = _FlowState.legal);
+  /// Setelah splash selesai, cek apakah user sudah pernah onboarding.
+  Future<void> _onSplashComplete() async {
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingDone = prefs.getBool('onboarding_done') ?? false;
+    if (!mounted) return;
+    setState(() {
+      _state = onboardingDone ? _FlowState.auth : _FlowState.onboarding;
+    });
+  }
+
+  Future<void> _onOnboardingComplete() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboarding_done', true);
+    if (!mounted) return;
+    setState(() => _state = _FlowState.legal);
+  }
+
   void _onLegalAccepted() => setState(() => _state = _FlowState.auth);
 
   @override
@@ -118,8 +135,30 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
           ),
           _FlowState.legal => LegalScreen(onAccepted: _onLegalAccepted),
           _FlowState.auth => _buildAuthScreen(),
-          _FlowState.home => const _HomePlaceholder(),
+          _FlowState.home => const BottomNavShell(),
         },
+        // Loading overlay — auto-show dari authProvider (loading) + manual loadingProvider
+        Consumer(
+          builder: (context, ref, _) {
+            final authState = ref.watch(authProvider);
+            final authLoading = authState.maybeWhen(
+              loading: () => true,
+              orElse: () => false,
+            );
+            final loadingState = ref.watch(loadingProvider);
+
+            final showLoading = authLoading || loadingState.isLoading;
+
+            if (!showLoading) {
+              return const SizedBox.shrink();
+            }
+
+            return GlicoLoadingOverlay(
+              title: loadingState.title,
+              subtitle: loadingState.subtitle,
+            );
+          },
+        ),
         // Consumer terpisah untuk listen auth state — ref.listen selalu valid di sini
         Consumer(
           builder: (context, ref, _) {
@@ -178,45 +217,3 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
 }
 
 enum _AuthFlow { login, register, forgotPassword }
-
-/// Placeholder for home screen — with logout button.
-class _HomePlaceholder extends ConsumerWidget {
-  const _HomePlaceholder();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.check_circle, size: 64, color: AppColors.success),
-            const SizedBox(height: 16),
-            Text(
-              'Berhasil Masuk!',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 32),
-            FilledButton.icon(
-              onPressed: () => ref.read(authProvider.notifier).signOut(),
-              icon: const Icon(Icons.logout),
-              label: const Text('Keluar / Ganti Akun'),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.error,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 14,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
