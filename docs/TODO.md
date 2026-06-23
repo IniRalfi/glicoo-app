@@ -12,7 +12,9 @@
 - [x] **Tutorial Karakter Iloo:** Onboarding dialog & guard overlay ✅
 - [~] **Mobile Phase 9:** Profile & Settings — Layout dasar & tombol debug reset
 - [x] **Database & Backend Phase 1-2:** Prisma & Elysia routes (sensors/sync, food/log, bot/link) ✅
-- [ ] **Mobile Phase 6:** Bot Hub & Deep Linking ← **NEXT (Frontend)**
+- [x] **Mobile Phase 6:** Bot Hub & Deep Linking — Status, OTP token, & custom AI persona selection ✅
+- [x] **Pencatat Makanan AI:** Bento Card input makanan & Bottom Sheet terintegrasi ke Elysia /food/log ✅
+- [x] **Mobile Phase 7:** Background Sensor & Sync — Pedometer, Screen Time, Workmanager & Elysia sync ✅
 
 ## 📦 Foundation (Selesai)
 
@@ -61,6 +63,7 @@
 - [x] **Web Phase 3.1 (partial):** Next.js App Router + TailwindCSS v4
   - [x] Font (Inter + Rammetto One) via `next/font`
   - [x] `@theme` block di `globals.css` — brand scale, semantic aliases, typography
+  - [ ] **Task 3.5:** Setup halaman download APK & update API metadata gratis (Supabase Storage)
 
 - [x] **Backend Phase 2.1 (partial):** Elysia.js scaffold + Swagger UI
 

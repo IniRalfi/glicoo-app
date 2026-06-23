@@ -20,7 +20,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
+import 'package:workmanager/workmanager.dart';
 import 'core/env_config.dart';
+import 'core/sensor_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/glico_loading.dart';
 import 'core/widgets/loading_provider.dart';
@@ -54,7 +56,22 @@ void main() async {
     publishableKey: EnvConfig.supabaseAnonKey,
   );
 
-  // 3. Build AuthRepository after Supabase is ready
+  // 3. Init Workmanager background callback & task
+  await Workmanager().initialize(
+    callbackDispatcher,
+  );
+
+  await Workmanager().registerPeriodicTask(
+    '1',
+    kBackgroundSyncTaskName,
+    frequency: const Duration(minutes: 15),
+    existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+    constraints: Constraints(
+      networkType: NetworkType.connected,
+    ),
+  );
+
+  // 4. Build AuthRepository after Supabase is ready
   final authRepository = SupabaseAuthRepository(
     supabase: Supabase.instance.client,
   );
@@ -125,6 +142,11 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(authProvider.notifier).checkAuthStatus();
+
+      // Inisialisasi sensor tracking harian dan background sync
+      final sensorService = ref.read(sensorServiceProvider);
+      sensorService.initPedometer();
+      sensorService.initScreenTimeTracking();
     });
   }
 

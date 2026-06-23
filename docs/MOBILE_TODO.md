@@ -77,26 +77,26 @@
 - [x] **Bento Box — Analytics** — mini chart tren mingguan (MiniBarChart)
 - [x] **Bento Box — AI Insight** — kartu tantangan harian (AI prompt/mock)
 - [x] **Tutorial Karakter Iloo** — onboarding dialog & guard overlay (Iloo dialog flow)
+- [x] **Pencatat Makanan AI** — Bento Card Pencatat Makanan & Bottom Sheet, terintegrasi dengan Elysia `/food/log`
 
 ---
 
-## Phase 6 — Bot Hub & Deep Linking ❌ ← **NEXT (Frontend)**
-
-- [ ] Status koneksi bot (Belum Terhubung / Terhubung)
-- [ ] Tombol "Hubungkan ke Telegram/WhatsApp"
-- [ ] Deep link: `GET /api/v1/bot/link` → buka `t.me/GlicoBot?start=<TOKEN>`
-- [ ] Poll/refresh status setelah user kembali dari chat app
-- [ ] Pengaturan persona AI (Tegas / Santai)
+## Phase 6 — Bot Hub & Deep Linking ✅
+- [x] Status koneksi bot (Belum Terhubung / Terhubung)
+- [x] Tombol "Hubungkan ke Telegram/WhatsApp"
+- [x] Deep link: `GET /api/v1/bot/link` → buka `t.me/GlicoBot?start=<TOKEN>`
+- [x] Poll/refresh status setelah user kembali dari chat app
+- [x] Pengaturan persona AI (Tegas / Santai)
 
 ---
 
-## Phase 7 — Background Sensor & Sync ❌
+## Phase 7 — Background Sensor & Sync ✅
 
-- [ ] Integrasi `pedometer` / `health` package
-- [ ] Integrasi screen time (platform-specific)
-- [ ] Setup `workmanager` untuk background task
-- [ ] Cron lokal sync ke `POST /api/v1/sensors/sync` setiap beberapa jam
-- [ ] Offline queue jika tidak ada koneksi
+- [x] Integrasi `pedometer` package & perizinan (Permission.activityRecognition)
+- [x] Integrasi screen time tracking (lokal timer + lifecycle observer)
+- [x] Setup `workmanager` untuk background task execution
+- [x] Sinkronisasi otomatis ke `POST /api/v1/sensors/sync` setiap 15 menit
+- [x] SharedPreferences offline caching & dynamic UI updates
 
 ---
 

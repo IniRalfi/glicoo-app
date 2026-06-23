@@ -13,14 +13,13 @@ Pendekatan pengembangan menggunakan metode **Horizontal (Per Aplikasi)**.
 Fase ini mengamankan fondasi monorepo agar Web dan Mobile memiliki sumber kebenaran tipe data yang sama.
 
 - [x] **Task 1.1:** Inisialisasi Bun Workspaces (`apps/web`, `apps/backend`, `apps/mobile`, `packages/types`). ✅
-- [~] **Task 1.2:** Setup Supabase Project & inisialisasi tabel berdasarkan `DATABASE_SCHEMA.md`.
+- [x] **Task 1.2:** Setup Supabase Project & inisialisasi tabel berdasarkan `DATABASE_SCHEMA.md`. ✅
   - ✅ Supabase project sudah dibuat (`dsspywhpfjxmrlxwycyi`)
   - ✅ Auth providers (Email, Google OAuth) sudah dikonfigurasi
-  - ❌ Tabel database belum dibuat / belum di-migrasi
-- [ ] **Task 1.3:** Konfigurasi Prisma ORM di `apps/backend` dan migrasi database awal. ❌
-- [~] **Task 1.4:** Buat TypeScript Interfaces di `packages/types`.
+  - ✅ Tabel database sudah dibuat & disinkronkan via Prisma db push
+- [x] **Task 1.3:** Konfigurasi Prisma ORM di `apps/backend` dan migrasi database awal. ✅
+- [x] **Task 1.4:** Buat TypeScript Interfaces di `packages/types`. ✅
   - ✅ Interfaces manual sudah ada (`User`, `SensorData`, `FoodLog`, `Intervention`, `BotLink`)
-  - ❌ Belum auto-generate dari Prisma schema (Task 1.3 belum)
 
 ---
 
@@ -28,15 +27,14 @@ Fase ini mengamankan fondasi monorepo agar Web dan Mobile memiliki sumber kebena
 
 Membangun logika server, validasi, dan jembatan ke n8n.
 
-- [~] **Task 2.1:** Setup struktur Elysia.js + Swagger UI untuk dokumentasi otomatis.
+- [x] **Task 2.1:** Setup struktur Elysia.js + Swagger UI untuk dokumentasi otomatis. ✅
   - ✅ Elysia.js + Swagger UI sudah jalan di `apps/backend/src/index.ts`
   - ✅ Health check endpoint (`GET /health`) sudah ada
-  - ❌ Struktur routing modular belum dipecah per domain
-- [ ] **Task 2.2:** Buat Middleware untuk memvalidasi JWT dari Supabase Auth. ❌
-  - `@elysiajs/jwt` sudah di-install tapi belum dipakai untuk validasi Supabase JWT
-- [ ] **Task 2.3:** Buat rute `POST /sensors/sync` untuk menerima data agregasi dari Mobile. ❌
-- [ ] **Task 2.4:** Buat rute `POST /food/log` (simpan ke database dan teruskan trigger webhook ke n8n). ❌
-- [ ] **Task 2.5:** Buat rute Deep Linking `GET /bot/link` dan `POST /bot/verify` untuk sinkronisasi Telegram/WA. ❌
+  - ✅ Struktur routing modular dipecah per domain (`sensors`, `food`, `bot`)
+- [x] **Task 2.2:** Buat Middleware untuk memvalidasi JWT dari Supabase Auth. ✅
+- [x] **Task 2.3:** Buat rute `POST /sensors/sync` untuk menerima data agregasi dari Mobile. ✅
+- [x] **Task 2.4:** Buat rute `POST /food/log` (simpan ke database dan teruskan trigger webhook ke n8n). ✅
+- [x] **Task 2.5:** Buat rute Deep Linking `GET /bot/link` dan `POST /bot/verify` untuk sinkronisasi Telegram/WA. ✅
 
 ---
 
@@ -55,6 +53,7 @@ Membangun antarmuka pemantauan dengan gaya Minimalist Bento Grid.
   - ✅ Bento cards untuk fitur preview
   - ❌ Belum ada reusable Bento Grid component
 - [ ] **Task 3.4:** Buat halaman Dashboard Utama (Menampilkan agregasi langkah, screen time, dan log intervensi chat). ❌
+- [ ] **Task 3.5:** Buat Halaman Unduhan APK Mandiri & API In-App Update gratis (version metadata + direct download via Supabase Storage). ❌
 
 ---
 
@@ -72,10 +71,10 @@ Aplikasi untuk pengguna akhir, berfokus pada koleksi data sensor pasif.
   - ✅ Email/password login + register + forgot password
   - ✅ Auth state management (freezed sealed class)
   - ✅ Logout flow + auto-redirect ke login
-- [ ] **Task 4.3:** Implementasi Background Task (Workmanager) untuk membaca data _Pedometer_ (Langkah) dan _Screen Time_. ❌
-- [ ] **Task 4.4:** Buat Cron lokal di Flutter untuk sinkronisasi data sensor ke endpoint Elysia `/sensors/sync` setiap beberapa jam. ❌
-- [ ] **Task 4.5:** Buat UI input teks untuk Log Makanan, tembak ke endpoint Elysia `/food/log`. ❌
-- [ ] **Task 4.6:** Implementasi UI Deep Linking bot Telegram/WA. ❌
+- [x] **Task 4.3:** Implementasi Background Task (Workmanager) untuk membaca data _Pedometer_ (Langkah) dan _Screen Time_. ✅
+- [x] **Task 4.4:** Buat Cron lokal di Flutter untuk sinkronisasi data sensor ke endpoint Elysia `/sensors/sync` setiap beberapa jam. ✅
+- [x] **Task 4.5:** Buat UI input teks untuk Log Makanan, tembak ke endpoint Elysia `/food/log`. ✅
+- [x] **Task 4.6:** Implementasi UI Deep Linking bot Telegram/WA. ✅
 
 ### 🎁 Mobile — Extra Work (di luar roadmap, tapi penting)
 

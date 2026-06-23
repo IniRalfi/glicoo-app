@@ -50,114 +50,108 @@ class _BottomNavShellState extends ConsumerState<BottomNavShell> {
     final currentIndex = ref.watch(bottomNavIndexProvider);
     return Scaffold(
       backgroundColor: AppColors.background,
-      extendBody: true,
+      extendBody: false,
       body: IndexedStack(index: currentIndex, children: _screens),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-          child: Container(
-            height: 72,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(36), // full rounded
-              border: Border.all(color: Colors.white, width: 2), // stroke putih
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            top: BorderSide(color: AppColors.border, width: 1),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              navigationBarTheme: NavigationBarThemeData(
+                indicatorColor: Colors.transparent,
+                labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    );
+                  }
+                  return GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  );
+                }),
+              ),
+            ),
+            child: NavigationBar(
+              height: 72,
+              selectedIndex: currentIndex,
+              onDestinationSelected: (index) {
+                ref.read(bottomNavIndexProvider.notifier).state = index;
+              },
+              backgroundColor: Colors.white,
+              elevation: 0,
+              surfaceTintColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+              destinations: [
+                NavigationDestination(
+                  icon: SvgPicture.asset(
+                    'assets/icon/navigation/home.svg',
+                    width: 24,
+                    height: 24,
+                  ),
+                  selectedIcon: SvgPicture.asset(
+                    'assets/icon/navigation/home-active.svg',
+                    width: 24,
+                    height: 24,
+                  ),
+                  label: 'Beranda',
+                ),
+                NavigationDestination(
+                  icon: SvgPicture.asset(
+                    'assets/icon/navigation/misi.svg',
+                    width: 24,
+                    height: 24,
+                  ),
+                  selectedIcon: SvgPicture.asset(
+                    'assets/icon/navigation/misi-aktif.svg',
+                    width: 24,
+                    height: 24,
+                  ),
+                  label: 'Misi',
+                ),
+                NavigationDestination(
+                  icon: SvgPicture.asset(
+                    'assets/icon/navigation/chatbot.svg',
+                    width: 24,
+                    height: 24,
+                  ),
+                  selectedIcon: SvgPicture.asset(
+                    'assets/icon/navigation/chatbot-active.svg',
+                    width: 24,
+                    height: 24,
+                  ),
+                  label: 'Bot Hub',
+                ),
+                NavigationDestination(
+                  icon: SvgPicture.asset(
+                    'assets/icon/navigation/user.svg',
+                    width: 24,
+                    height: 24,
+                  ),
+                  selectedIcon: SvgPicture.asset(
+                    'assets/icon/navigation/user-active.svg',
+                    width: 24,
+                    height: 24,
+                  ),
+                  label: 'Profil',
                 ),
               ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(36),
-              child: Theme(
-                data: Theme.of(context).copyWith(
-                  navigationBarTheme: NavigationBarThemeData(
-                    indicatorColor: Colors.transparent,
-                    labelTextStyle: WidgetStateProperty.resolveWith((states) {
-                      if (states.contains(WidgetState.selected)) {
-                        return GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        );
-                      }
-                      return GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textSecondary,
-                      );
-                    }),
-                  ),
-                ),
-                child: NavigationBar(
-                  height: 72,
-                  selectedIndex: currentIndex,
-                  onDestinationSelected: (index) {
-                    ref.read(bottomNavIndexProvider.notifier).state = index;
-                  },
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  surfaceTintColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-                  destinations: [
-                    NavigationDestination(
-                      icon: SvgPicture.asset(
-                        'assets/icon/navigation/home.svg',
-                        width: 24,
-                        height: 24,
-                      ),
-                      selectedIcon: SvgPicture.asset(
-                        'assets/icon/navigation/home-active.svg',
-                        width: 24,
-                        height: 24,
-                      ),
-                      label: 'Beranda',
-                    ),
-                    NavigationDestination(
-                      icon: SvgPicture.asset(
-                        'assets/icon/navigation/misi.svg',
-                        width: 24,
-                        height: 24,
-                      ),
-                      selectedIcon: SvgPicture.asset(
-                        'assets/icon/navigation/misi-aktif.svg',
-                        width: 24,
-                        height: 24,
-                      ),
-                      label: 'Misi',
-                    ),
-                    NavigationDestination(
-                      icon: SvgPicture.asset(
-                        'assets/icon/navigation/chatbot.svg',
-                        width: 24,
-                        height: 24,
-                      ),
-                      selectedIcon: SvgPicture.asset(
-                        'assets/icon/navigation/chatbot-active.svg',
-                        width: 24,
-                        height: 24,
-                      ),
-                      label: 'Bot Hub',
-                    ),
-                    NavigationDestination(
-                      icon: SvgPicture.asset(
-                        'assets/icon/navigation/user.svg',
-                        width: 24,
-                        height: 24,
-                      ),
-                      selectedIcon: SvgPicture.asset(
-                        'assets/icon/navigation/user-active.svg',
-                        width: 24,
-                        height: 24,
-                      ),
-                      label: 'Profil',
-                    ),
-                  ],
-                ),
-              ),
             ),
           ),
         ),

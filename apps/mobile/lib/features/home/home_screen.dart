@@ -16,6 +16,7 @@
 // Impact:
 // Tab Home di bottom navigation
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,6 +24,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/api_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/bento_card.dart';
 import '../auth/presentation/auth_provider.dart';
@@ -50,16 +52,57 @@ class ActivityData {
 }
 
 /// Provider state untuk data aktivitas harian (langkah, tidur, screen time, history).
-final activityDataProvider = StateProvider<ActivityData>((ref) {
-  return const ActivityData(
-    steps: 3250,
+class ActivityDataNotifier extends StateNotifier<ActivityData> {
+  ActivityDataNotifier() : super(const ActivityData(
+    steps: 0,
     stepsGoal: 5000,
     sleepMinutes: 380, // 6 jam 20 menit = 380 menit
-    screenTimeMinutes: 330, // 5 jam 30 menit = 330 menit
-    stepsHistory: [1500, 2400, 3100, 4200, 3250, 2800],
+    screenTimeMinutes: 0,
+    stepsHistory: [1500, 2400, 3100, 4200, 0, 2800],
     sleepHistory: [450, 360, 480, 330, 380, 420],
-    screenTimeHistory: [270, 372, 300, 426, 330, 360],
-  );
+    screenTimeHistory: [270, 372, 300, 426, 0, 360],
+  )) {
+    _loadDailyValues();
+    _startTimer();
+  }
+
+  Timer? _timer;
+
+  Future<void> _loadDailyValues() async {
+    final prefs = await SharedPreferences.getInstance();
+    final steps = prefs.getInt('glico_daily_steps') ?? 0;
+    final screenTime = prefs.getInt('glico_daily_screen_time') ?? 0;
+
+    final stepsHistory = List<int>.from(state.stepsHistory);
+    if (stepsHistory.length > 4) stepsHistory[4] = steps;
+
+    final screenTimeHistory = List<int>.from(state.screenTimeHistory);
+    if (screenTimeHistory.length > 4) screenTimeHistory[4] = screenTime;
+
+    state = ActivityData(
+      steps: steps,
+      stepsGoal: state.stepsGoal,
+      sleepMinutes: state.sleepMinutes,
+      screenTimeMinutes: screenTime,
+      stepsHistory: stepsHistory,
+      sleepHistory: state.sleepHistory,
+      screenTimeHistory: screenTimeHistory,
+    );
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) => _loadDailyValues());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+}
+
+final activityDataProvider = StateNotifierProvider<ActivityDataNotifier, ActivityData>((ref) {
+  return ActivityDataNotifier();
 });
 
 /// Provider untuk mengambil data FINDRISC terbaru dari SharedPreferences.
@@ -116,6 +159,8 @@ class HomeScreen extends ConsumerWidget {
               _buildRiskCard(ref),
               const SizedBox(height: 12),
               _buildScoreCard(ref),
+              const SizedBox(height: 16),
+              _buildFoodLogCard(context, ref),
               const SizedBox(height: 24),
               Text(
                 'Aktivitas Harian',
@@ -653,6 +698,297 @@ class HomeScreen extends ConsumerWidget {
     ).then((_) {
       ref.read(tutorialDialogShowingProvider.notifier).state = false;
     });
+  }
+
+  Widget _buildFoodLogCard(BuildContext context, WidgetRef ref) {
+    return BentoCard(
+      padding: const EdgeInsets.all(16),
+      backgroundColor: const Color(0xFFFFF9F0), // Beautiful soft orange/yellow pastel
+      borderColor: AppColors.border,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFECB3), // Soft accent orange/yellow
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.restaurant_menu_rounded,
+                  color: AppColors.brand1,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Pencatat Makanan AI',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Laporkan makanan Anda untuk dianalisis oleh Iloo.',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: () => _showFoodLogBottomSheet(context),
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Catat Menu Makan'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.brand1,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFoodLogBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const FoodLogBottomSheet(),
+    );
+  }
+}
+
+class FoodLogBottomSheet extends ConsumerStatefulWidget {
+  const FoodLogBottomSheet({super.key});
+
+  @override
+  ConsumerState<FoodLogBottomSheet> createState() => _FoodLogBottomSheetState();
+}
+
+class _FoodLogBottomSheetState extends ConsumerState<FoodLogBottomSheet> {
+  final TextEditingController _controller = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
+  bool _isSuccess = false;
+
+  Future<void> _submitFoodLog() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final apiService = ref.read(apiServiceProvider);
+      await apiService.logFood(text);
+      
+      setState(() {
+        _isLoading = false;
+        _isSuccess = true;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        child: _isSuccess
+            ? _buildSuccessView()
+            : _buildInputView(),
+      ),
+    );
+  }
+
+  Widget _buildInputView() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Center(
+          child: Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            const Icon(Icons.lunch_dining_rounded, color: AppColors.brand1, size: 24),
+            const SizedBox(width: 8),
+            Text(
+              'Catat Menu Makan',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Tuliskan menu makanan yang Anda santap (termasuk porsi/lauk pauk) secara santai. AI Iloo akan menaksir kalorinya.',
+          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _controller,
+          maxLines: 3,
+          autofocus: true,
+          enabled: !_isLoading,
+          decoration: InputDecoration(
+            hintText: 'Contoh: Nasi padang lauk gulai tunjang, sayur nangka, dan sambal hijau...',
+            hintStyle: GoogleFonts.inter(color: AppColors.placeholderGray, fontSize: 14),
+            filled: true,
+            fillColor: AppColors.background,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.all(16),
+          ),
+          style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
+        ),
+        if (_errorMessage != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            _errorMessage!,
+            style: GoogleFonts.inter(color: AppColors.error, fontSize: 13, fontWeight: FontWeight.w500),
+          ),
+        ],
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _isLoading ? null : () => Navigator.pop(context),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: Colors.grey[300]!),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: Text(
+                  'Batal',
+                  style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton(
+                onPressed: _isLoading ? null : _submitFoodLog,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.brand1,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : Text(
+                        'Kirim ke Iloo',
+                        style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSuccessView() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 8),
+        const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 64),
+        const SizedBox(height: 16),
+        Center(
+          child: Text(
+            'Makanan Tercatat!',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Menu makanan Anda berhasil dicatat ke sistem. Asisten Iloo sedang memproses taksiran gizi dan kalorinya.\n\nDetail analisis gizi lengkap akan langsung dikirimkan ke chat bot WhatsApp/Telegram Anda!',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 24),
+        FilledButton(
+          onPressed: () => Navigator.pop(context),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.success,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+          child: Text(
+            'Selesai',
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
+    );
   }
 }
 

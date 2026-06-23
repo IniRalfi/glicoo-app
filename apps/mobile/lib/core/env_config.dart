@@ -24,6 +24,15 @@ abstract final class EnvConfig {
   /// Supabase anon (public) key from .env
   static String get supabaseAnonKey => _require('SUPABASE_ANON_KEY');
 
+  /// Backend Elysia API URL from .env (defaults to Android emulator host IP)
+  static String get backendUrl => dotenv.env['BACKEND_URL'] ?? 'http://10.0.2.2:3001';
+
+  /// Telegram Bot Username from .env (defaults to 'GlicoBot')
+  static String get telegramBotUsername => dotenv.env['TELEGRAM_BOT_USERNAME'] ?? 'GlicoBot';
+
+  /// WhatsApp Bot Number from .env (defaults to '628123456789')
+  static String get whatsappBotNumber => dotenv.env['WHATSAPP_BOT_NUMBER'] ?? '628123456789';
+
   static String _require(String key) {
     final value = dotenv.env[key];
     if (value == null || value.isEmpty) {
