@@ -61,25 +61,26 @@
 
 ---
 
-## Phase 4 — Bottom Navigation Shell ❌ ← **NEXT**
+## Phase 4 — Bottom Navigation Shell ✅
 
-- [ ] **Home** — placeholder dashboard (sudah ada placeholder, belum ada shell)
-- [ ] **Quests** — placeholder misi harian
-- [ ] **Bot Hub** — placeholder deep link
-- [ ] **Profile** — placeholder profil & settings
-
----
-
-## Phase 5 — Home Dashboard (UI) ❌
-
-- [ ] **FINDRISC Status Bar** — kategori risiko di bagian atas
-- [ ] **Bento Box — Live Sensors** — grafik sirkular langkah & screen time
-- [ ] **Bento Box — Analytics** — mini chart tren mingguan
-- [ ] **Bento Box — AI Insight** — rangkuman saran bot terakhir
+- [x] **Home** — integrasi dashboard di bottom navigation shell
+- [x] **Quests** — integrasi misi harian
+- [x] **Bot Hub** — integrasi menu deep link
+- [x] **Profile** — integrasi menu profil & settings
 
 ---
 
-## Phase 6 — Bot Hub & Deep Linking ❌
+## Phase 5 — Home Dashboard (UI) ✅
+
+- [x] **FINDRISC Status Bar** — kategori risiko di bagian atas
+- [x] **Bento Box — Live Sensors** — kartu aktivitas langkah, tidur, & screen time
+- [x] **Bento Box — Analytics** — mini chart tren mingguan (MiniBarChart)
+- [x] **Bento Box — AI Insight** — kartu tantangan harian (AI prompt/mock)
+- [x] **Tutorial Karakter Iloo** — onboarding dialog & guard overlay (Iloo dialog flow)
+
+---
+
+## Phase 6 — Bot Hub & Deep Linking ❌ ← **NEXT (Frontend)**
 
 - [ ] Status koneksi bot (Belum Terhubung / Terhubung)
 - [ ] Tombol "Hubungkan ke Telegram/WhatsApp"
@@ -99,18 +100,19 @@
 
 ---
 
-## Phase 8 — Quests (Gamifikasi) ❌
+## Phase 8 — Quests (Gamifikasi) ✅
 
-- [ ] Daftar misi harian (auto-tracked + manual)
-- [ ] Auto-check misi langkah dari sensor
-- [ ] Manual check untuk misi perilaku (minum air, tidur)
-- [ ] UI progress & reward sederhana
+- [x] Daftar misi harian (Langkah, Tidur, Screen time)
+- [x] Auto-check misi langkah dari sensor
+- [x] Manual check untuk misi perilaku (belum/sudah selesai filter tabs)
+- [x] UI progress & reward sederhana (misi-bg.svg & progress bar)
 
 ---
 
-## Phase 9 — Profile & Settings ❌ (sebagian)
+## Phase 9 — Profile & Settings 🟡 (sebagian)
 
-- [ ] Tampilkan data diri & FINDRISC score
+- [x] Tampilkan data diri & FINDRISC score
+- [x] Tombol debug reset (Reset FINDRISC, Reset Onboarding, Reset Tutorial Iloo)
 - [ ] Tombol "Hitung Ulang Risiko FINDRISC"
 - [ ] Toggle sensor permissions
 - [x] Logout ✅

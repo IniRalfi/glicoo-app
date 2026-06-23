@@ -2,14 +2,17 @@
 
 > ⚠️ **Aturan AI:** Task di bawah ini merujuk langsung ke `docs/ROADMAP.md`. Sebelum mengeksekusi, buka `docs/ROADMAP.md` untuk melihat fase besarnya, lalu ikuti instruksi arsitektur yang diarahkan di sana.
 
-## 🎯 Fokus Hari Ini — Mobile Home Dashboard & Polish
+## 🎯 Fokus Hari Ini — Setup Database & Backend API
 
-> Detail task mobile: **`docs/MOBILE_TODO.md`**
+> Detail task mobile: **`docs/MOBILE_TODO.md`**  
+> Detail task backend: **`docs/BACKEND_TODO.md`**
 
-- [ ] **Mobile Phase 5:** Home Dashboard UI — FINDRISC status bar, Bento cards (mock data) ← **NEXT**
-- [ ] **Mobile Phase 6:** Bot Hub & Deep Linking
-- [ ] **Mobile Phase 8:** Quests (Gamifikasi)
-- [ ] **Mobile Phase 9:** Profile & Settings
+- [x] **Mobile Phase 5:** Home Dashboard UI — FINDRISC status bar, Bento cards (mock data) ✅
+- [x] **Mobile Phase 8:** Quests (Gamifikasi) — Banner pencapaian & filter pill ✅
+- [x] **Tutorial Karakter Iloo:** Onboarding dialog & guard overlay ✅
+- [~] **Mobile Phase 9:** Profile & Settings — Layout dasar & tombol debug reset
+- [ ] **Mobile Phase 6:** Bot Hub & Deep Linking ← **NEXT (Frontend)**
+- [ ] **Database & Backend Phase 1-2:** Prisma & Elysia routes (sensors/sync, food/log, bot/link) ← **NEXT (Backend)**
 
 ## 📦 Foundation (Selesai)
 
