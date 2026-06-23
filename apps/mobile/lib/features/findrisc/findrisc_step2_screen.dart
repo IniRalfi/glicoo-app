@@ -6,10 +6,10 @@
 // Mengumpulkan data gaya hidup dan riwayat kesehatan untuk menghitung skor FINDRISC.
 //
 // Used By:
-// main.dart (flow: findrisc_step1 → findrisc_step2 → home)
+// main.dart (flow: findrisc_step1 → findrisc_step2 → findrisc_complete → result → home)
 //
 // Depends On:
-// flutter/material, flutter_svg, google_fonts, app_colors, app_spacing
+// flutter/material, flutter_svg, google_fonts, app_colors, app_spacing, domain/findrisc_data.dart
 //
 // Impact:
 // First-time FINDRISC questionnaire — step 2 of 2
@@ -20,13 +20,28 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import 'domain/findrisc_data.dart';
 
 /// FINDRISC Step 2 — pertanyaan gaya hidup dan riwayat kesehatan.
 class FindriscStep2Screen extends StatefulWidget {
-  const FindriscStep2Screen({super.key, this.onComplete});
+  const FindriscStep2Screen({
+    super.key,
+    required this.ageGroup,
+    required this.tinggiCm,
+    required this.beratKg,
+    required this.lingkarPinggangCm,
+    this.onComplete,
+  });
+
+  /// Data fisik dari step 1.
+  final String ageGroup;
+  final double tinggiCm;
+  final double beratKg;
+  final double lingkarPinggangCm;
 
   /// Callback ketika user tap "Lanjut" dan form valid.
-  final VoidCallback? onComplete;
+  /// Mengembalikan data FINDRISC lengkap.
+  final void Function(FindriscData)? onComplete;
 
   @override
   State<FindriscStep2Screen> createState() => _FindriscStep2ScreenState();
@@ -44,7 +59,20 @@ class _FindriscStep2ScreenState extends State<FindriscStep2Screen> {
 
   void _onLanjutPressed() {
     if (!_isFormValid) return;
-    widget.onComplete?.call();
+
+    final data = FindriscData(
+      ageGroup: widget.ageGroup,
+      tinggiCm: widget.tinggiCm,
+      beratKg: widget.beratKg,
+      lingkarPinggangCm: widget.lingkarPinggangCm,
+      aktivitasFisik: _q5!,
+      konsumsiBuahSayur: _q6!,
+      obatHipertensi: _q7!,
+      riwayatGulaDarah: _q8!,
+      riwayatKeluargaDM: _q9!,
+    );
+
+    widget.onComplete?.call(data);
   }
 
   @override

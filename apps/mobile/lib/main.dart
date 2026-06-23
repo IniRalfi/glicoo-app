@@ -32,9 +32,12 @@ import 'features/auth/presentation/login_screen.dart';
 import 'features/auth/presentation/register_screen.dart';
 import 'features/legal/legal_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
+import 'features/findrisc/findrisc_complete_screen.dart';
 import 'features/findrisc/findrisc_intro_screen.dart';
+import 'features/findrisc/findrisc_result_screen.dart';
 import 'features/findrisc/findrisc_step1_screen.dart';
 import 'features/findrisc/findrisc_step2_screen.dart';
+import 'features/findrisc/domain/findrisc_data.dart';
 import 'features/navigation/bottom_nav_shell.dart';
 import 'features/splash/splash_screen.dart';
 
@@ -86,6 +89,8 @@ enum _FlowState {
   findriscIntro,
   findriscStep1,
   findriscStep2,
+  findriscComplete,
+  findriscResult,
   home,
 }
 
@@ -105,6 +110,13 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
 
   /// Flag to prevent multiple navigations from same auth event
   bool _authHandled = false;
+
+  // ── Data passing antar screen FINDRISC ──
+  String? _ageGroup;
+  double? _tinggiCm;
+  double? _beratKg;
+  double? _lingkarPinggangCm;
+  FindriscData? _findriscData;
 
   @override
   void initState() {
@@ -167,15 +179,43 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
   }
 
   /// Setelah user menyelesaikan FINDRISC step 1 (data fisik),
-  /// lanjut ke step 2 (gaya hidup & riwayat kesehatan).
-  void _onFindriscStep1Complete() {
+  /// simpan data fisik dan lanjut ke step 2.
+  void _onFindriscStep1Complete(
+    String ageGroup,
+    double tinggiCm,
+    double beratKg,
+    double lingkarPinggangCm,
+  ) {
     if (!mounted) return;
-    setState(() => _state = _FlowState.findriscStep2);
+    setState(() {
+      _ageGroup = ageGroup;
+      _tinggiCm = tinggiCm;
+      _beratKg = beratKg;
+      _lingkarPinggangCm = lingkarPinggangCm;
+      _state = _FlowState.findriscStep2;
+    });
   }
 
   /// Setelah user menyelesaikan FINDRISC step 2 (gaya hidup & riwayat),
+  /// simpan data lengkap dan lanjut ke halaman "Penilaian Selesai!".
+  void _onFindriscStep2Complete(FindriscData data) {
+    if (!mounted) return;
+    setState(() {
+      _findriscData = data;
+      _state = _FlowState.findriscComplete;
+    });
+  }
+
+  /// Setelah user tap "Lanjutkan" di halaman Penilaian Selesai,
+  /// lanjut ke halaman hasil risiko.
+  void _onFindriscComplete() {
+    if (!mounted) return;
+    setState(() => _state = _FlowState.findriscResult);
+  }
+
+  /// Setelah user melihat hasil dan tap "Selesai",
   /// simpan flag findrisc_done, lalu lanjut ke home.
-  Future<void> _onFindriscStep2Complete() async {
+  Future<void> _onFindriscResultComplete() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('findrisc_done', true);
     if (!mounted) return;
@@ -203,7 +243,18 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
             onComplete: _onFindriscStep1Complete,
           ),
           _FlowState.findriscStep2 => FindriscStep2Screen(
+            ageGroup: _ageGroup!,
+            tinggiCm: _tinggiCm!,
+            beratKg: _beratKg!,
+            lingkarPinggangCm: _lingkarPinggangCm!,
             onComplete: _onFindriscStep2Complete,
+          ),
+          _FlowState.findriscComplete => FindriscCompleteScreen(
+            onComplete: _onFindriscComplete,
+          ),
+          _FlowState.findriscResult => FindriscResultScreen(
+            data: _findriscData!,
+            onComplete: _onFindriscResultComplete,
           ),
           _FlowState.home => const BottomNavShell(),
         },

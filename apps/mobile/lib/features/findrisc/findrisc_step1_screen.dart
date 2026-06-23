@@ -11,7 +11,7 @@
 //
 // Depends On:
 // flutter/material, flutter/services, flutter_svg, google_fonts,
-// app_colors, app_spacing
+// app_colors, app_spacing, domain/findrisc_data.dart
 //
 // Impact:
 // First-time FINDRISC questionnaire — step 1 of 2
@@ -29,7 +29,14 @@ class FindriscStep1Screen extends StatefulWidget {
   const FindriscStep1Screen({super.key, this.onComplete});
 
   /// Callback ketika user tap "Lanjut" dan form valid.
-  final VoidCallback? onComplete;
+  /// Mengembalikan data fisik yang sudah diisi.
+  final void Function(
+    String ageGroup,
+    double tinggiCm,
+    double beratKg,
+    double lingkarPinggangCm,
+  )?
+  onComplete;
 
   @override
   State<FindriscStep1Screen> createState() => _FindriscStep1ScreenState();
@@ -105,7 +112,12 @@ class _FindriscStep1ScreenState extends State<FindriscStep1Screen> {
 
   void _onLanjutPressed() {
     if (!_isFormValid) return;
-    widget.onComplete?.call();
+    widget.onComplete?.call(
+      _ageGroup!,
+      double.parse(_heightCtrl.text),
+      double.parse(_weightCtrl.text),
+      double.parse(_waistCtrl.text),
+    );
   }
 
   @override
