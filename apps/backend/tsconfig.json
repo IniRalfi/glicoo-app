@@ -12,7 +12,7 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "composite": true,
+    "composite": false,
     "noEmit": true,
     "paths": {
       "@/*": ["./src/*"],

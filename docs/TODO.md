@@ -11,8 +11,8 @@
 - [x] **Mobile Phase 8:** Quests (Gamifikasi) — Banner pencapaian & filter pill ✅
 - [x] **Tutorial Karakter Iloo:** Onboarding dialog & guard overlay ✅
 - [~] **Mobile Phase 9:** Profile & Settings — Layout dasar & tombol debug reset
+- [x] **Database & Backend Phase 1-2:** Prisma & Elysia routes (sensors/sync, food/log, bot/link) ✅
 - [ ] **Mobile Phase 6:** Bot Hub & Deep Linking ← **NEXT (Frontend)**
-- [ ] **Database & Backend Phase 1-2:** Prisma & Elysia routes (sensors/sync, food/log, bot/link) ← **NEXT (Backend)**
 
 ## 📦 Foundation (Selesai)
 

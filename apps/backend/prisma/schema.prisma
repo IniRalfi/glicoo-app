@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                 String             @id @db.Uuid
+  name               String
+  phone_number       String?            @unique
+  age                Int?
+  weight             Float?
+  height             Float?
+  has_family_history Boolean?
+  risk_score         Float?             @default(0.0)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  sensorLogs         DailySensorLog[]
+  foodLogs           FoodLog[]
+  chats              InterventionChat[]
+  botTokens          BotLinkToken[]
+
+  @@map("users")
+}
+
+model DailySensorLog {
+  id                  String   @id @default(uuid()) @db.Uuid
+  user_id             String   @db.Uuid
+  date                DateTime @db.Date
+  step_count          Int      @default(0)
+  screen_time_minutes Int      @default(0)
+  updated_at          DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, date])
+  @@map("daily_sensor_logs")
+}
+
+model FoodLog {
+  id                     String   @id @default(uuid()) @db.Uuid
+  user_id                String   @db.Uuid
+  description            String
+  logged_at              DateTime @default(now())
+  estimated_calories     Int?
+  estimated_sugar_grams  Float?
+  ai_feedback            String?
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("food_logs")
+}
+
+model InterventionChat {
+  id                  String   @id @default(uuid()) @db.Uuid
+  user_id             String   @db.Uuid
+  message             String
+  sender_type         String   // "USER" | "AI_AGENT"
+  intervention_moment String   // "MORNING_CHECK" | "AFTERNOON_WALK" | "NIGHT_SLEEP" | "MEAL_TIME" | "NONE"
+  created_at          DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("intervention_chats")
+}
+
+model BotLinkToken {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  token      String   @unique
+  created_at DateTime @default(now())
+  expires_at DateTime
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("bot_link_tokens")
+}

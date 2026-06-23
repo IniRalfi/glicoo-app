@@ -6,84 +6,74 @@
 
 ---
 
-## Phase 1 — Database & Prisma ORM Setup ❌
+## Phase 1 — Database & Prisma ORM Setup ✅
 
-- [ ] **Setup Prisma ORM** di `apps/backend`:
+- [x] **Setup Prisma ORM** di `apps/backend`:
   - Install dependencies: `prisma`, `@prisma/client`.
-  - Inisialisasi Prisma: `bunx prisma init`.
-- [ ] **Desain Skema Database** (`prisma/schema.prisma`):
+  - Inisialisasi Prisma: `bunx prisma init` (menggunakan Prisma v7.8.0).
+- [x] **Desain Skema Database** (`prisma/schema.prisma`):
   - Model `User` (id, name, phone_number, age, weight, height, has_family_history, risk_score).
   - Model `DailySensorLog` (id, user_id, date, step_count, screen_time_minutes, updated_at).
   - Model `FoodLog` (id, user_id, description, logged_at, estimated_calories, estimated_sugar_grams, ai_feedback).
   - Model `InterventionChat` (id, user_id, message, sender_type, intervention_moment, created_at).
-- [ ] **Koneksi Database & Migrasi**:
+  - Model `BotLinkToken` (id, user_id, token, created_at, expires_at).
+- [x] **Koneksi Database & Migrasi**:
   - Ambil Connection String Supabase PostgreSQL (Transaction & Direct URL).
-  - Konfigurasi file `.env` di `apps/backend` (gunakan template `.env.example`).
-  - Jalankan migrasi awal: `bunx prisma migrate dev --name init`.
-- [ ] **Penulisan Seed Script** (Opsional untuk testing/mock data).
+  - Konfigurasi file `.env` di `apps/backend`.
+  - Jalankan migrasi awal: `bun run db:migrate --name init` (sukses diaplikasikan).
+- [x] **Inisialisasi Database Client** (`db.ts`):
+  - Membuat singleton `PrismaClient` dengan driver adapter `@prisma/adapter-pg` & `pg` (Wajib untuk Prisma 7).
 
 ---
 
-## Phase 2 — Project Architecture & Core Config ❌
+## Phase 2 — Project Architecture & Core Config ✅
 
-- [ ] **Struktur Folder Modular**:
-  - Pecah routing Elysia menjadi:
-    ```text
-    src/
-    ├── index.ts
-    ├── core/
-    │   ├── db.ts           (Prisma client instance)
-    │   └── middlewares/    (Supabase JWT verifier)
-    └── features/
-        ├── sensors/        (sync routes)
-        ├── food/           (logging routes)
-        └── bot/            (linking & verification routes)
-    ```
-- [ ] **Inisialisasi Database Client**:
-  - Ekspor instansi `PrismaClient` tunggal di `src/core/db.ts` untuk mencegah kebocoran koneksi.
+- [x] **Struktur Folder Modular**:
+  - Pecah routing Elysia menjadi modular (features & core).
+- [x] **Inisialisasi Database Client**:
+  - Ekspor instansi `PrismaClient` tunggal di `src/core/db.ts` dengan Pool & Driver Adapter.
 
 ---
 
-## Phase 3 — Middleware & Keamanan (Supabase JWT) ❌
+## Phase 3 — Middleware & Keamanan (Supabase JWT) ✅
 
-- [ ] **Supabase JWT Verifier Middleware**:
-  - Ambil header `Authorization: Bearer <JWT_TOKEN>`.
-  - Gunakan `JWT_SECRET` milik Supabase Project untuk memverifikasi keabsahan token.
-  - Masukkan data `userId` hasil dekripsi JWT ke dalam context Elysia (akses via `derive` atau plugin).
-  - Return `401 Unauthorized` jika token tidak valid/kedaluwarsa.
+- [x] **Supabase JWT Verifier Middleware**:
+  - Mengekstrak header `Authorization: Bearer <JWT_TOKEN>`.
+  - Menggunakan plugin `@elysiajs/jwt` dengan `JWT_SECRET`.
+  - Menerapkan macro `isAuth: true` untuk mengamankan route secara elegan dan deklaratif.
 
 ---
 
-## Phase 4 — Implementasi API Endpoints ❌
+## Phase 4 — Implementasi API Endpoints ✅
 
 ### A. Sensor Sync (`/sensors/sync`)
-- [ ] Buat route `POST /api/v1/sensors/sync`.
-- [ ] Terapkan middleware JWT (hanya user terotentikasi yang bisa sinkronisasi).
-- [ ] Schema validation menggunakan Elysia `t.Object` (`date`, `step_count`, `screen_time_minutes`).
-- [ ] Implementasi logika database (Upsert `DailySensorLog` berdasarkan `user_id` + `date`).
+- [x] Buat route `POST /api/v1/sensors/sync`.
+- [x] Terapkan middleware JWT.
+- [x] Schema validation menggunakan Elysia `t.Object` (`date`, `step_count`, `screen_time_minutes`).
+- [x] Implementasi logika database (Upsert `DailySensorLog` berdasarkan `user_id` + `date`).
 
 ### B. Food Logging (`/food/log`)
-- [ ] Buat route `POST /api/v1/food/log`.
-- [ ] Terapkan middleware JWT.
-- [ ] Schema validation (`description` teks makanan).
-- [ ] Implementasi penyimpanan ke database `FoodLog`.
-- [ ] Kirim trigger webhook ke n8n secara asinkronus (non-blocking) untuk memulai analisis gizi AI.
+- [x] Buat route `POST /api/v1/food/log`.
+- [x] Terapkan middleware JWT.
+- [x] Schema validation (`description` teks makanan).
+- [x] Implementasi penyimpanan ke database `FoodLog`.
+- [x] Kirim trigger webhook ke n8n secara asinkronus (non-blocking) untuk memulai analisis gizi AI.
 
 ### C. Bot Linking & Deep Link (`/bot/*`)
-- [ ] Buat tabel/mekanisme penyimpanan token OTP sementara (`BotLinkToken`) dengan masa aktif 10 menit.
-- [ ] Buat route `GET /api/v1/bot/link` (terlindungi JWT):
-  - Generate token OTP acak unik.
+- [x] Buat tabel/mekanisme penyimpanan token OTP sementara (`BotLinkToken`) dengan masa aktif 10 menit.
+- [x] Buat route `GET /api/v1/bot/link` (terlindungi JWT):
+  - Generate token OTP acak unik (6-digit).
   - Simpan relasi `userId` ↔ `token` di database.
   - Return URL Telegram deep link: `https://t.me/GlicoBot?start=<TOKEN>`.
-- [ ] Buat route `POST /api/v1/bot/verify` (Admin/n8n only — menggunakan API Key / Admin token verification):
-  - Terima `token` dan `chatId` dari Telegram.
-  - Validasi token OTP: jika cocok, simpan `chatId` Telegram ke kolom `phone_number` atau kolom khusus `telegram_chat_id` di profil `User`.
+- [x] Buat route `POST /api/v1/bot/verify` (Admin/n8n only — menggunakan API Key / Admin token verification):
+  - Terima `token` dan `identifier` dari Telegram.
+  - Validasi token OTP: jika cocok, simpan identifier ke kolom `phone_number` di profil `User`.
   - Hapus token OTP dari database setelah verifikasi sukses.
 
 ---
 
-## Phase 5 — Dokumentasi Swagger & Integration Test ❌
+## Phase 5 — Dokumentasi Swagger & Integration Test ✅
 
-- [ ] Update Swagger UI tags di `/docs` agar rapi dan terorganisir per kelompok.
-- [ ] Uji coba seluruh API menggunakan berkas test HTTP atau curl.
-- [ ] Verifikasi format response agar konsisten dengan `docs/API_CONTRACTS.md`.
+- [x] Update Swagger UI tags di `/docs` agar rapi dan terorganisir per kelompok.
+- [x] Uji coba seluruh API menggunakan berkas test HTTP atau curl.
+- [x] Verifikasi format response agar konsisten dengan `docs/API_CONTRACTS.md`.

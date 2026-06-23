@@ -13,19 +13,24 @@
     "db:migrate": "prisma migrate dev"
   },
   "dependencies": {
-    "elysia": "^1.1.0",
-    "@elysiajs/swagger": "^1.1.0",
-    "@elysiajs/jwt": "^1.1.0",
     "@elysiajs/cors": "^1.1.0",
-    "@prisma/client": "^5.18.0",
-    "zod": "^3.23.0",
+    "@elysiajs/jwt": "^1.1.0",
+    "@elysiajs/swagger": "^1.1.0",
+    "@glicoo/config": "*",
     "@glicoo/types": "*",
-    "@glicoo/config": "*"
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "elysia": "^1.1.0",
+    "jose": "^6.2.3",
+    "pg": "^8.22.0",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
-    "typescript": "^5",
-    "@types/node": "^20",
-    "prisma": "^5.18.0"
+    "@types/node": "^26.0.0",
+    "@types/pg": "^8.20.0",
+    "dotenv": "^17.4.2",
+    "prisma": "^7.8.0",
+    "typescript": "^5"
   },
   "trustedDependencies": [
     "@prisma/client"
