@@ -20,6 +20,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../auth/presentation/auth_provider.dart';
+import '../home/home_screen.dart';
 
 /// Profile screen — menampilkan profil user dan settings.
 class ProfileScreen extends ConsumerWidget {
@@ -44,6 +45,21 @@ class ProfileScreen extends ConsumerWidget {
       const SnackBar(
         content: Text(
           'Onboarding flag direset! Logout & login lagi untuk test.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _resetIlooTutorial(BuildContext context, WidgetRef ref) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('tutorial_iloo_done');
+    await prefs.remove('ai_companion_active');
+    ref.invalidate(tutorialSeenProvider);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Tutorial Iloo direset! Silakan buka Beranda untuk melihat tutorial.',
         ),
       ),
     );
@@ -114,6 +130,25 @@ class ProfileScreen extends ConsumerWidget {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.textSecondary,
                 side: const BorderSide(color: AppColors.textSecondary),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // --- Debug: Reset Tutorial Iloo ---
+            OutlinedButton.icon(
+              onPressed: () => _resetIlooTutorial(context, ref),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reset Tutorial Iloo'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                side: const BorderSide(color: AppColors.primary),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),

@@ -19,7 +19,7 @@ abstract final class AppColors {
   static const Color primary = brand6;
 
   // Neutrals — belum ada di Figma, dipakai untuk layout minimalis
-  static const Color background = Color(0xFFFFFBF5);
+  static const Color background = Color(0xFFF2F2F7);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color surfaceMuted = Color(0xFFFFF5E6);
   static const Color border = Color(0xFFFFE8B3);

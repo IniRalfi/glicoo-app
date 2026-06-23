@@ -66,6 +66,10 @@ flutter:
     - assets/images/splash/
     - assets/images/loading/
     - assets/images/findrisc/
+    - assets/images/home/
+    - assets/images/misi/
+    - assets/images/tutorial/
+    - assets/icon/navigation/
     - .env
 
   # The following line ensures that the Material Icons font is

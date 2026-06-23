@@ -10,12 +10,15 @@
 // main.dart (setelah auth berhasil)
 //
 // Depends On:
-// flutter/material, app_colors
+// flutter/material, app_colors, flutter_svg, google_fonts
 //
 // Impact:
 // Semua halaman utama aplikasi
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../home/home_screen.dart';
@@ -23,17 +26,18 @@ import '../quests/quests_screen.dart';
 import '../bot_hub/bot_hub_screen.dart';
 import '../profile/profile_screen.dart';
 
+/// Provider state untuk indeks tab navigasi aktif.
+final bottomNavIndexProvider = StateProvider<int>((ref) => 0);
+
 /// Shell utama aplikasi dengan bottom navigation bar.
-class BottomNavShell extends StatefulWidget {
+class BottomNavShell extends ConsumerStatefulWidget {
   const BottomNavShell({super.key});
 
   @override
-  State<BottomNavShell> createState() => _BottomNavShellState();
+  ConsumerState<BottomNavShell> createState() => _BottomNavShellState();
 }
 
-class _BottomNavShellState extends State<BottomNavShell> {
-  int _currentIndex = 0;
-
+class _BottomNavShellState extends ConsumerState<BottomNavShell> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const QuestsScreen(),
@@ -43,42 +47,122 @@ class _BottomNavShellState extends State<BottomNavShell> {
 
   @override
   Widget build(BuildContext context) {
+    final currentIndex = ref.watch(bottomNavIndexProvider);
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() => _currentIndex = index);
-        },
-        backgroundColor: Colors.white,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.transparent,
-        indicatorColor: AppColors.brand1.withValues(alpha: 0.1),
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+      backgroundColor: AppColors.background,
+      extendBody: true,
+      body: IndexedStack(index: currentIndex, children: _screens),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+          child: Container(
+            height: 72,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(36), // full rounded
+              border: Border.all(color: Colors.white, width: 2), // stroke putih
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(36),
+              child: Theme(
+                data: Theme.of(context).copyWith(
+                  navigationBarTheme: NavigationBarThemeData(
+                    indicatorColor: Colors.transparent,
+                    labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        );
+                      }
+                      return GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                      );
+                    }),
+                  ),
+                ),
+                child: NavigationBar(
+                  height: 72,
+                  selectedIndex: currentIndex,
+                  onDestinationSelected: (index) {
+                    ref.read(bottomNavIndexProvider.notifier).state = index;
+                  },
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  surfaceTintColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+                  destinations: [
+                    NavigationDestination(
+                      icon: SvgPicture.asset(
+                        'assets/icon/navigation/home.svg',
+                        width: 24,
+                        height: 24,
+                      ),
+                      selectedIcon: SvgPicture.asset(
+                        'assets/icon/navigation/home-active.svg',
+                        width: 24,
+                        height: 24,
+                      ),
+                      label: 'Beranda',
+                    ),
+                    NavigationDestination(
+                      icon: SvgPicture.asset(
+                        'assets/icon/navigation/misi.svg',
+                        width: 24,
+                        height: 24,
+                      ),
+                      selectedIcon: SvgPicture.asset(
+                        'assets/icon/navigation/misi-aktif.svg',
+                        width: 24,
+                        height: 24,
+                      ),
+                      label: 'Misi',
+                    ),
+                    NavigationDestination(
+                      icon: SvgPicture.asset(
+                        'assets/icon/navigation/chatbot.svg',
+                        width: 24,
+                        height: 24,
+                      ),
+                      selectedIcon: SvgPicture.asset(
+                        'assets/icon/navigation/chatbot-active.svg',
+                        width: 24,
+                        height: 24,
+                      ),
+                      label: 'Bot Hub',
+                    ),
+                    NavigationDestination(
+                      icon: SvgPicture.asset(
+                        'assets/icon/navigation/user.svg',
+                        width: 24,
+                        height: 24,
+                      ),
+                      selectedIcon: SvgPicture.asset(
+                        'assets/icon/navigation/user-active.svg',
+                        width: 24,
+                        height: 24,
+                      ),
+                      label: 'Profil',
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.flag_outlined),
-            selectedIcon: Icon(Icons.flag),
-            label: 'Quests',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.smart_toy_outlined),
-            selectedIcon: Icon(Icons.smart_toy),
-            label: 'Bot Hub',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
+        ),
       ),
     );
   }
 }
+

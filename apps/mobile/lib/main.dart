@@ -35,6 +35,7 @@ import 'features/onboarding/onboarding_screen.dart';
 import 'features/findrisc/findrisc_complete_screen.dart';
 import 'features/findrisc/findrisc_intro_screen.dart';
 import 'features/findrisc/findrisc_result_screen.dart';
+import 'features/findrisc/findrisc_focus_screen.dart';
 import 'features/findrisc/findrisc_step1_screen.dart';
 import 'features/findrisc/findrisc_step2_screen.dart';
 import 'features/findrisc/domain/findrisc_data.dart';
@@ -91,6 +92,7 @@ enum _FlowState {
   findriscStep2,
   findriscComplete,
   findriscResult,
+  findriscFocus,
   home,
 }
 
@@ -213,11 +215,22 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
     setState(() => _state = _FlowState.findriscResult);
   }
 
-  /// Setelah user melihat hasil dan tap "Selesai",
+  /// Setelah user melihat hasil dan tap "Lanjutkan",
+  /// lanjut ke halaman fokus.
+  void _onFindriscResultComplete() {
+    if (!mounted) return;
+    setState(() => _state = _FlowState.findriscFocus);
+  }
+
+  /// Setelah user tap "Lanjut ke Beranda" di halaman fokus,
   /// simpan flag findrisc_done, lalu lanjut ke home.
-  Future<void> _onFindriscResultComplete() async {
+  Future<void> _onFindriscFocusComplete() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('findrisc_done', true);
+    if (_findriscData != null) {
+      await prefs.setInt('findrisc_score', _findriscData!.totalSkor);
+      await prefs.setString('findrisc_category', _findriscData!.kategori);
+    }
     if (!mounted) return;
     setState(() => _state = _FlowState.home);
   }
@@ -255,6 +268,9 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
           _FlowState.findriscResult => FindriscResultScreen(
             data: _findriscData!,
             onComplete: _onFindriscResultComplete,
+          ),
+          _FlowState.findriscFocus => FindriscFocusScreen(
+            onComplete: _onFindriscFocusComplete,
           ),
           _FlowState.home => const BottomNavShell(),
         },

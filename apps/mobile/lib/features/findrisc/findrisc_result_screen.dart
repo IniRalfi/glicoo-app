@@ -203,7 +203,7 @@ class FindriscResultScreen extends StatelessWidget {
           elevation: 0,
         ),
         child: Text(
-          'Selesai',
+          'Lanjutkan',
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w700,
