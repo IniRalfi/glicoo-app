@@ -48,8 +48,8 @@
 - [x] **Email/Password Auth** — Login + Register (dengan konfirmasi sandi) + Forgot Password
 - [x] **Auth Flow** — Splash → Onboarding (first-time) → Legal → Auth → Home, auto-redirect
 - [x] **Logout** — tombol di Home placeholder, auto-redirect ke Login screen
-- [ ] **Profil Risiko** — form FINDRISC (usia, TB/BB, lingkar perut, riwayat keluarga) ❌
-- [ ] Simpan profil ke Supabase setelah registrasi ❌
+- [x] **Profil Risiko** — form FINDRISC (usia, TB/BB, lingkar perut, riwayat keluarga) ✅
+- [x] Simpan profil ke Supabase setelah registrasi ✅
 
 ---
 
@@ -109,11 +109,11 @@
 
 ---
 
-## Phase 9 — Profile & Settings 🟡 (sebagian)
+## Phase 9 — Profile & Settings ✅
 
 - [x] Tampilkan data diri & FINDRISC score
 - [x] Tombol debug reset (Reset FINDRISC, Reset Onboarding, Reset Tutorial Iloo)
-- [ ] Tombol "Hitung Ulang Risiko FINDRISC"
+- [x] Tombol "Hitung Ulang Risiko FINDRISC" (Simpan Perubahan & update score) ✅
 - [ ] Toggle sensor permissions
 - [x] Logout ✅
 

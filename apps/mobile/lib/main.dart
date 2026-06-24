@@ -21,8 +21,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
 import 'package:workmanager/workmanager.dart';
+import 'core/api_service.dart';
 import 'core/env_config.dart';
 import 'core/sensor_service.dart';
+import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/glico_loading.dart';
 import 'core/widgets/loading_provider.dart';
@@ -248,13 +250,145 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
   /// simpan flag findrisc_done, lalu lanjut ke home.
   Future<void> _onFindriscFocusComplete() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('findrisc_done', true);
+    
     if (_findriscData != null) {
-      await prefs.setInt('findrisc_score', _findriscData!.totalSkor);
-      await prefs.setString('findrisc_category', _findriscData!.kategori);
+      // Map age group to a representative integer
+      int age = 30;
+      if (_findriscData!.ageGroup == '45 - 54 tahun') {
+        age = 50;
+      } else if (_findriscData!.ageGroup == '55 - 64 tahun') {
+        age = 60;
+      } else if (_findriscData!.ageGroup == '> 64 tahun') {
+        age = 70;
+      }
+
+      final hasFamilyHistory = _findriscData!.riwayatKeluargaDM != 'Tidak';
+
+      // Tampilkan animated loading overlay
+      ref.read(loadingProvider.notifier).show(
+        title: 'Menyimpan Hasil...',
+        subtitle: 'Mengirim data ke server Glicoo',
+      );
+
+      try {
+        await ref.read(apiServiceProvider).updateUserProfile(
+          age: age,
+          height: _findriscData!.tinggiCm,
+          weight: _findriscData!.beratKg,
+          hasFamilyHistory: hasFamilyHistory,
+        );
+        
+        // Simpan flag findrisc_done secara lokal hanya jika sinkronisasi berhasil
+        await prefs.setBool('findrisc_done', true);
+        await prefs.setInt('findrisc_score', _findriscData!.totalSkor);
+        await prefs.setString('findrisc_category', _findriscData!.kategori);
+
+        // Sembunyikan loading
+        ref.read(loadingProvider.notifier).hide();
+
+        if (!mounted) return;
+        setState(() => _state = _FlowState.home);
+      } catch (e) {
+        // Sembunyikan loading
+        ref.read(loadingProvider.notifier).hide();
+
+        if (!mounted) return;
+        // Tampilkan dialog error agar user bisa screenshot / melihat penyebabnya
+        _showErrorDialog(context, e.toString());
+      }
+    } else {
+      await prefs.setBool('findrisc_done', true);
+      if (!mounted) return;
+      setState(() => _state = _FlowState.home);
     }
-    if (!mounted) return;
-    setState(() => _state = _FlowState.home);
+  }
+
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.error_outline, color: AppColors.error, size: 28),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Gagal Menyimpan Data',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Terjadi kesalahan saat mengirim hasil kuesioner Anda ke server Glicoo:',
+                style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    color: AppColors.error,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Silakan ambil screenshot pesan ini untuk dilaporkan ke pengembang jika masalah berlanjut.',
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                // Bolehkan masuk ke beranda meskipun gagal sync
+                setState(() => _state = _FlowState.home);
+              },
+              child: const Text(
+                'Lewati & Masuk',
+                style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+              ),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _onFindriscFocusComplete();
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.brand1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('Coba Lagi'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

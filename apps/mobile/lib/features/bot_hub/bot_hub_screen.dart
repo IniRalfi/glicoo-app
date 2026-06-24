@@ -21,6 +21,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_service.dart';
 import '../../core/env_config.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/glico_loading.dart';
 import '../auth/presentation/auth_provider.dart';
 
 // ── STATE DEFINITION ──
@@ -282,8 +283,9 @@ class BotHubScreen extends ConsumerWidget {
         ],
       ),
       body: state.isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
+          ? const GlicoLoadingOverlay(
+              title: 'Menghubungkan Bot...',
+              subtitle: 'Memuat status Telegram & WhatsApp',
             )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),

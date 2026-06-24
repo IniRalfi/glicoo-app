@@ -117,4 +117,61 @@ class ApiService {
       throw Exception('Gagal menyimpan log makanan: $e');
     }
   }
+
+  /// [ID] Mengambil data profil user dari backend.
+  /// [EN] Retrieves user profile details from backend.
+  Future<Map<String, dynamic>> getUserProfile() async {
+    final url = Uri.parse('${EnvConfig.backendUrl}/api/v1/users/profile');
+    try {
+      final response = await _client.get(
+        url,
+        headers: _buildHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else {
+        final errBody = jsonDecode(response.body) as Map<String, dynamic>;
+        throw Exception(errBody['message'] ?? 'Failed to load user profile');
+      }
+    } catch (e) {
+      throw Exception('Gagal memuat profil: $e');
+    }
+  }
+
+  /// [ID] Memperbarui data profil user dan menghitung ulang risiko FINDRISC.
+  /// [EN] Updates user profile details and recalculates FINDRISC risk score.
+  Future<Map<String, dynamic>> updateUserProfile({
+    String? name,
+    String? phoneNumber,
+    int? age,
+    double? weight,
+    double? height,
+    bool? hasFamilyHistory,
+  }) async {
+    final url = Uri.parse('${EnvConfig.backendUrl}/api/v1/users/profile');
+    try {
+      final response = await _client.patch(
+        url,
+        headers: _buildHeaders(),
+        body: jsonEncode(<String, dynamic>{
+          'name': name,
+          'phone_number': phoneNumber,
+          'age': age,
+          'weight': weight,
+          'height': height,
+          'has_family_history': hasFamilyHistory,
+        }..removeWhere((key, value) => value == null)),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else {
+        final errBody = jsonDecode(response.body) as Map<String, dynamic>;
+        throw Exception(errBody['message'] ?? 'Failed to update user profile');
+      }
+    } catch (e) {
+      throw Exception('Gagal memperbarui profil: $e');
+    }
+  }
 }
