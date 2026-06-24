@@ -4,6 +4,7 @@ import { cors } from "@elysiajs/cors";
 import { sensorsRoutes } from "./features/sensors/sensors.routes";
 import { foodRoutes } from "./features/food/food.routes";
 import { botRoutes } from "./features/bot/bot.routes";
+import { usersRoutes } from "./features/users/users.routes";
 
 const app = new Elysia()
   .use(
@@ -273,7 +274,17 @@ const app = new Elysia()
       .use(sensorsRoutes)
       .use(foodRoutes)
       .use(botRoutes)
+      .use(usersRoutes)
   )
+  .onError(({ code, error }) => {
+    console.log("Elysia Error Caught:", error);
+    const err = error as any;
+    return {
+      message: err.message || "An unexpected error occurred",
+      code: code,
+      stack: err.stack,
+    };
+  })
   .listen(3001);
 
 console.log(`🦊 Elysia running at http://${app.server?.hostname}:${app.server?.port}`);

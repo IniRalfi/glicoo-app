@@ -11,7 +11,7 @@ export const sensorsRoutes = new Elysia({ prefix: "/sensors" })
   .use(authPlugin)
   .post(
     "/sync",
-    async ({ userId, body, set }) => {
+    async ({ userId, userMetadata, body, set }) => {
       try {
         // [ID] Pastikan data user ada di tabel users publik
         let user = await prisma.user.findUnique({
@@ -19,10 +19,11 @@ export const sensorsRoutes = new Elysia({ prefix: "/sensors" })
         });
 
         if (!user) {
+          const name = userMetadata?.name || "Pengguna Glico";
           user = await prisma.user.create({
             data: {
               id: userId!,
-              name: "Pengguna Glico",
+              name: name,
             },
           });
         }

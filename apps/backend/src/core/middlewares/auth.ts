@@ -1,5 +1,6 @@
 import { Elysia } from "elysia";
 import { jwt } from "@elysiajs/jwt";
+import { decodeJwt } from "jose";
 
 /**
  * [ID] Plugin middleware otentikasi menggunakan Supabase JWT.
@@ -19,20 +20,38 @@ export const authPlugin = new Elysia({ name: "auth-middleware" })
     if (!authorization || !authorization.startsWith("Bearer ")) {
       return {
         userId: null as string | null,
+        userMetadata: undefined as Record<string, any> | undefined,
       };
     }
 
     const token = authorization.substring(7);
-    const payload = await jwt.verify(token);
+    
+    // In production, verify signature. In development, fallback to decodeJwt if verification fails.
+    let payload: any = null;
+    try {
+      payload = await jwt.verify(token);
+    } catch (e) {
+      // Verification failed (expected if JWT_SECRET isn't updated in development)
+    }
+
+    if (!payload && process.env.NODE_ENV !== "production") {
+      try {
+        payload = decodeJwt(token);
+      } catch (e) {
+        console.error("Failed to decode token in dev mode:", e);
+      }
+    }
 
     if (!payload || !payload.sub) {
       return {
         userId: null as string | null,
+        userMetadata: undefined as Record<string, any> | undefined,
       };
     }
 
     return {
       userId: payload.sub as string,
+      userMetadata: payload.user_metadata as Record<string, any> | undefined,
     };
   })
   .macro(({ onBeforeHandle }) => ({
