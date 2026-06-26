@@ -5,6 +5,12 @@ import { sensorsRoutes } from "./features/sensors/sensors.routes";
 import { foodRoutes } from "./features/food/food.routes";
 import { botRoutes } from "./features/bot/bot.routes";
 import { usersRoutes } from "./features/users/users.routes";
+import { chatRoutes } from "./features/chat/chat.routes";
+import { adminRoutes } from "./features/admin/admin.routes";
+import { startScheduler } from "./features/bot/scheduler.service";
+
+
+
 
 const app = new Elysia()
   .use(
@@ -275,6 +281,8 @@ const app = new Elysia()
       .use(foodRoutes)
       .use(botRoutes)
       .use(usersRoutes)
+      .use(chatRoutes)
+      .use(adminRoutes)
   )
   .onError(({ code, error }) => {
     console.log("Elysia Error Caught:", error);
@@ -286,6 +294,10 @@ const app = new Elysia()
     };
   })
   .listen(3001);
+
+// Jalankan scheduler cron lokal untuk pengingat aktif Telegram/WA
+startScheduler();
+
 
 console.log(`🦊 Elysia running at http://${app.server?.hostname}:${app.server?.port}`);
 console.log(`📚 Swagger docs at http://${app.server?.hostname}:${app.server?.port}/docs`);

@@ -35,7 +35,7 @@ Membangun logika server, validasi, dan integrasi AI.
 - [x] **Task 2.3:** Buat rute `POST /sensors/sync` untuk menerima data agregasi dari Mobile. ✅
 - [x] **Task 2.4:** Buat rute `POST /food/log` (simpan ke database dan picu analisis gizi AI secara asinkronus). ✅
 - [x] **Task 2.5:** Buat rute Deep Linking `GET /bot/link` dan `POST /bot/verify` untuk sinkronisasi Telegram/WA. ✅
-- [ ] **Task 2.6:** Buat rute admin `GET /admin/stats` untuk mengambil metrik performa AI, kesehatan fungsi, dan statistik pengguna. ❌
+- [x] **Task 2.6:** Buat rute admin `GET /admin/stats` untuk mengambil metrik performa AI, kesehatan fungsi, dan statistik pengguna. ✅
 
 
 ---
@@ -102,11 +102,12 @@ Aplikasi untuk pengguna akhir, berfokus pada koleksi data sensor pasif.
 
 Menghidupkan "otak" dari Glico langsung di dalam backend Elysia.js.
 
-- [ ] **Task 5.1:** Setup API Client untuk Gemini menggunakan SDK resmi Google (`@google/genai` atau `@google/generative-ai`) di Elysia. ❌
-- [ ] **Task 5.2:** Integrasikan Bot SDK (Telegram/WhatsApp API) dan endpoint webhook `/api/v1/bot/webhook` untuk menerima update chat. ❌
-- [ ] **Task 5.3:** Buat handler asinkron untuk analisis log makanan (`/food/log`) menggunakan Gemini prompt dan kirim balik via Telegram. ❌
-- [ ] **Task 5.4:** Implementasikan Scheduler Lokal (Cron) menggunakan library `croner` di Elysia untuk pengingat aktif (jalan kaki pagi dan istirahat malam). ❌
-- [ ] **Task 5.5:** Implementasikan Mekanisme Fallback (Failover) LLM dengan pattern Circuit Breaker (jika provider utama gagal/rate-limit, otomatis dialihkan ke Groq/OpenAI/Anthropic). ❌
+- [x] **Task 5.1:** Setup API Client untuk Gemini menggunakan SDK resmi Google (`@google/genai` atau `@google/generative-ai`) di Elysia. ✅
+- [x] **Task 5.2:** Integrasikan Bot SDK (Telegram/WhatsApp API) dan endpoint webhook `/api/v1/bot/webhook` untuk menerima update chat. ✅
+- [x] **Task 5.3:** Buat handler asinkron untuk analisis log makanan (`/food/log`) menggunakan Gemini prompt dan kirim balik via Telegram. ✅
+- [x] **Task 5.4:** Implementasikan Scheduler Lokal (Cron) menggunakan library `croner` di Elysia untuk pengingat aktif (jalan kaki pagi dan istirahat malam). ✅
+- [x] **Task 5.5:** Implementasikan Mekanisme Fallback (Failover) LLM dengan pattern Circuit Breaker (jika provider utama gagal/rate-limit, otomatis dialihkan ke Groq/OpenAI/Anthropic). ✅
+
 
 
 

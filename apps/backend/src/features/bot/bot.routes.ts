@@ -1,6 +1,8 @@
 import { Elysia, t } from "elysia";
 import { authPlugin } from "../../core/middlewares/auth";
 import { prisma } from "../../core/db";
+import { BotService } from "./bot.service";
+
 
 /**
  * [ID] Router untuk sinkronisasi akun dengan bot Telegram/WhatsApp (Deep Linking).
@@ -138,4 +140,28 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
         summary: "Verify OTP token and link user to Telegram/WhatsApp identifier (Internal)",
       },
     }
+  )
+  // [ID] Webhook Telegram Bot untuk menerima pesan update dari Telegram
+  .post(
+    "/webhook",
+    async ({ body, set }) => {
+      try {
+        // Jalankan secara asinkronus (non-blocking) agar segera membalas 200 OK ke Telegram
+        BotService.handleTelegramWebhook(body).catch((err) => {
+          console.error("[WEBHOOK] Gagal memproses update webhook Telegram:", err);
+        });
+        return { ok: true };
+      } catch (err) {
+        console.error("[WEBHOOK] Error di endpoint webhook Telegram:", err);
+        set.status = 500;
+        return { error: "Failed to receive webhook" };
+      }
+    },
+    {
+      detail: {
+        tags: ["bot"],
+        summary: "Telegram Bot Webhook receiver (Internal/Telegram only)",
+      },
+    }
   );
+

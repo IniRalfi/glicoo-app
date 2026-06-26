@@ -1,13 +1,14 @@
 import { Elysia, t } from "elysia";
 import { authPlugin } from "../../core/middlewares/auth";
 import { prisma } from "../../core/db";
+import { FoodService } from "./food.service";
 
 /**
  * [ID] Router untuk pencatatan log makanan tekstual (Food Log)
- * yang meneruskan pemicu (webhook) ke n8n secara asinkronus.
+ * yang memproses analisis gizi secara asinkronus menggunakan AI.
  *
  * [EN] Router for food logging using natural text,
- * which forwards a webhook trigger to n8n asynchronously.
+ * which processes nutrition analysis asynchronously using AI.
  */
 export const foodRoutes = new Elysia({ prefix: "/food" })
   .use(authPlugin)
@@ -38,27 +39,9 @@ export const foodRoutes = new Elysia({ prefix: "/food" })
           },
         });
 
-        // [ID] Kirim pemicu (webhook) ke n8n secara asinkronus (non-blocking)
-        const n8nWebhook = process.env.N8N_FOOD_LOG_WEBHOOK_URL;
-        if (n8nWebhook) {
-          fetch(n8nWebhook, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              userId: userId!,
-              foodLogId: foodLog.id,
-              description: body.description,
-              userName: user.name,
-              phone: user.phone_number,
-            }),
-          }).catch((err) => {
-            console.error("Failed to trigger n8n food log webhook asynchronously:", err);
-          });
-        } else {
-          console.warn("N8N_FOOD_LOG_WEBHOOK_URL is not set in environment variables.");
-        }
+        // [ID] Pemicu proses analisis AI di latar belakang secara asinkronus (non-blocking)
+        FoodService.processFoodLogAsync(userId!, foodLog.id, body.description);
+
 
         // [ID] Kembalikan 202 Accepted karena AI masih memproses laporan di latar belakang
         set.status = 202;

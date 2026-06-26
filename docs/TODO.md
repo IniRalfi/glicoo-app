@@ -7,12 +7,12 @@
 > Detail task mobile: **`docs/MOBILE_TODO.md`**  
 > Detail task backend: **`docs/BACKEND_TODO.md`**
 
-- [ ] **Task B.1:** Install dependensi baru di `apps/backend` (`@google/generative-ai` dan `croner`). ❌
-- [ ] **Task B.2:** Desain abstraction `AIService` dan buat `GeminiProvider` serta provider cadangan (failover). ❌
-- [ ] **Task B.3:** Perbarui endpoint `POST /food/log` untuk memproses makanan via AI secara asinkronus. ❌
-- [ ] **Task B.4:** Buat endpoint baru `POST /chat` untuk memproses percakapan dari In-App Chatbot. ❌
-- [ ] **Task B.5:** Buat rute webhook Telegram `/bot/webhook` untuk menangani update dari bot secara langsung. ❌
-- [ ] **Task B.6:** Buat endpoint admin `GET /admin/stats` untuk dasbor visualisasi web. ❌
+- [x] **Task B.1:** Install dependensi baru di `apps/backend` (`@google/generative-ai` dan `croner`). ✅
+- [x] **Task B.2:** Desain abstraction `AIService` dan buat `GeminiProvider` serta provider cadangan (failover). ✅
+- [x] **Task B.3:** Perbarui endpoint `POST /food/log` untuk memproses makanan via AI secara asinkronus. ✅
+- [x] **Task B.4:** Buat endpoint baru `POST /chat` untuk memproses percakapan dari In-App Chatbot. ✅
+- [x] **Task B.5:** Buat rute webhook Telegram `/bot/webhook` untuk menangani update dari bot secara langsung. ✅
+- [x] **Task B.6:** Buat endpoint admin `GET /admin/stats` untuk dasbor visualisasi web. ✅
 
 
 
