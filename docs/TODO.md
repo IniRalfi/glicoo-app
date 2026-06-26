@@ -2,23 +2,18 @@
 
 > ⚠️ **Aturan AI:** Task di bawah ini merujuk langsung ke `docs/ROADMAP.md`. Sebelum mengeksekusi, buka `docs/ROADMAP.md` untuk melihat fase besarnya, lalu ikuti instruksi arsitektur yang diarahkan di sana.
 
-## 🎯 Fokus Hari Ini — Setup Database & Backend API
+## 🎯 Fokus Hari Ini — Backend Core & AI Setup
 
 > Detail task mobile: **`docs/MOBILE_TODO.md`**  
 > Detail task backend: **`docs/BACKEND_TODO.md`**
 
-- [x] **Mobile Phase 5:** Home Dashboard UI — FINDRISC status bar, Bento cards (mock data) ✅
-- [x] **Mobile Phase 8:** Quests (Gamifikasi) — Banner pencapaian & filter pill ✅
-- [x] **Tutorial Karakter Iloo:** Onboarding dialog & guard overlay ✅
-- [x] **Mobile Phase 9:** Profile & Settings — Layout dasar, data real, sinkronisasi FINDRISC & logout ✅
-- [x] **Database & Backend Phase 1-2:** Prisma & Elysia routes (sensors/sync, food/log, bot/link) ✅
-- [x] **Mobile Phase 6:** Bot Hub & Deep Linking — Status, OTP token, & custom AI persona selection ✅
-- [x] **Pencatat Makanan AI:** Bento Card input makanan & Bottom Sheet terintegrasi ke Elysia /food/log ✅
-- [x] **Mobile Phase 7:** Background Sensor & Sync — Pedometer, Screen Time, Workmanager & Elysia sync ✅
-- [ ] **Mobile Phase 11 (New):** In-App Chatbot — Chat interface, local storage history caching (Shared Preferences/SQLite) & integrate with Elysia ❌
-- [ ] **Mobile Phase 12 (New):** Push Notifications — Local push notifications for active daily alerts ❌
-- [ ] **Backend Phase 5:** LLM Failover — Implement multi-provider abstract layer (Gemini, Groq, OpenAI) & circuit breaker fallback logic ❌
-- [ ] **Web Phase 3.6:** Admin Stats Dashboard — Setup admin key auth & metrics dashboard page (uptime, active AI provider, DAU, logs counter) ❌
+- [ ] **Task B.1:** Install dependensi baru di `apps/backend` (`@google/generative-ai` dan `croner`). ❌
+- [ ] **Task B.2:** Desain abstraction `AIService` dan buat `GeminiProvider` serta provider cadangan (failover). ❌
+- [ ] **Task B.3:** Perbarui endpoint `POST /food/log` untuk memproses makanan via AI secara asinkronus. ❌
+- [ ] **Task B.4:** Buat endpoint baru `POST /chat` untuk memproses percakapan dari In-App Chatbot. ❌
+- [ ] **Task B.5:** Buat rute webhook Telegram `/bot/webhook` untuk menangani update dari bot secara langsung. ❌
+- [ ] **Task B.6:** Buat endpoint admin `GET /admin/stats` untuk dasbor visualisasi web. ❌
+
 
 
 
