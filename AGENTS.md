@@ -379,9 +379,9 @@ best practice
 
 ## 20. Architecture Boundaries (Crucial)
 
-- **Separation of Concerns AI:** Backend Elysia HANYA bertugas menerima data sensor dari Mobile dan menyimpan ke Supabase.
-- **Agentic AI Logic:** Logika AI Agent (n8n + Gemini) BERADA DI LUAR codebase ini.
-- Jika diminta membuat fitur AI/Notifikasi, backend Elysia HANYA bertugas memanggil webhook eksternal n8n, bukan mengeksekusi LLM/Gemini SDK secara langsung.
+- **AI Agent & Bot Integration:** AI Agent (Gemini) dan Bot Interface (Telegram/WhatsApp) diintegrasikan langsung di dalam backend Elysia.js secara asinkronus (non-blocking) untuk meminimalkan kompleksitas infrastruktur (menggantikan n8n).
+- Elysia bertugas mengelola perizinan, sinkronisasi data sensor, menerima webhook bot, mengeksekusi prompt LLM/Gemini SDK secara asinkronus, serta mengirim pesan balasan dan pesan proaktif kembali ke platform chat.
+
 
 # 📚 DOCUMENTATION INDEX
 

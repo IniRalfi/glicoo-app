@@ -1,7 +1,7 @@
 # 🌟 CORE FEATURES & APP STRUCTURE
 
 **Project:** Glico — Asisten Cerdas Pencegah Diabetes Tipe 2
-**Platform:** Mobile (Flutter), Web (Next.js), Bot (n8n + Gemini)
+**Platform:** Mobile (Flutter), Web (Next.js), Bot (Elysia + Gemini)
 
 Dokumen ini mendefinisikan fitur utama dan struktur navigasi halaman dari ekosistem Glico.
 
@@ -24,9 +24,12 @@ Aplikasi bertindak sebagai pemantau sensor pasif (langkah & _screen time_) dan p
    - **Auto-Tracker Task:** Misi yang otomatis tercentang (contoh: "Jalan 3000 langkah") karena terhubung ke sensor perangkat.
    - **Manual Task:** Misi perilaku (contoh: "Minum air 2 Liter", "Tidur sebelum jam 10") yang bisa dicentang pengguna.
 
-3. **🤖 Bot Hub (Pusat Kontrol AI)**
-   - Tombol _Deep Link_ untuk sinkronisasi/membuka WhatsApp dan Telegram.
-   - **Pengaturan Persona AI:** Pengguna bisa memilih gaya bahasa Bot (contoh: "Tegas & Menantang" atau "Santai & Edukatif").
+3. **🤖 Bot Hub & Chatbot (Pusat Kontrol AI)**
+   - **In-App Chatbot:** Chatbot bawaan langsung di dalam aplikasi untuk interaksi offline/privacy-first.
+   - **Local Storage Chat:** Seluruh riwayat obrolan In-App Chatbot disimpan di penyimpanan lokal HP pengguna.
+   - **Bot Chat Integration:** Tombol *Deep Link* untuk opsional menghubungkan WhatsApp atau Telegram.
+   - **Pengaturan Persona AI & Notifikasi:** Memilih persona asisten (misal: "Tegas & Menantang" atau "Santai & Edukatif") serta mengaktifkan Push Notifications lokal.
+
 
 4. **👤 Profile**
    - Data diri, pengaturan akun (Google Auth), dan _toggle_ perizinan sensor (_Permissions_).
@@ -34,7 +37,7 @@ Aplikasi bertindak sebagai pemantau sensor pasif (langkah & _screen time_) dan p
 
 ---
 
-## 🤖 2. AI Agent (n8n + Gemini via WA/Tele)
+## 🤖 2. AI Agent (Elysia + Gemini via WA/Tele)
 
 Beroperasi sebagai pendamping asinkron yang proaktif. Logika perilakunya menyesuaikan input FINDRISC.
 

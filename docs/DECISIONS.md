@@ -22,10 +22,28 @@ Dokumen ini mencatat keputusan teknologi utama untuk proyek Glico/Gluco. Jika AI
 - **Alasan:** Mempercepat fase _development_ karena fitur Auth (Google OAuth) dan database langsung tersedia secara instan. Ini adalah keputusan pragmatis untuk mengejar _deadline_ lomba.
 - **Rencana Migrasi:** Ke depannya (fase produksi/post-lomba), _database_ akan dipindahkan ke VPS mandiri untuk menekan biaya. Oleh karena itu, penggunaan ORM (Prisma) diwajibkan agar proses migrasi nanti hanya perlu mengganti URL koneksi tanpa merombak logika kode.
 
-## Decision 004: Memisahkan AI Engine (n8n) dari Backend Utama
+## Decision 004: Mengintegrasikan AI Agent & Bot (Telegram/WhatsApp) ke Backend Utama
+
+- **Status:** Diubah (Menggantikan pemisahan n8n)
+- **Alasan:**
+  1. **Kesederhanaan & Realistis:** Menghindari kompleksitas belajar dan memantau platform *no-code* tambahan (n8n) bagi tim pengembang.
+  2. **Efisiensi Runtime Bun:** Menggunakan runtime Bun yang mendukung pemrosesan asinkronus (*non-blocking*), sehingga pemanggilan API Gemini dan Telegram Bot dapat berjalan di latar belakang tanpa menghambat respon utama server Elysia.
+- **Tradeoff:** Logika chatbot dan penjadwalan (*cron*) didefinisikan langsung dalam kode TypeScript backend, yang membutuhkan *re-deploy* jika terdapat perubahan prompt/logika percakapan.
+
+## Decision 005: Multi-Provider LLM & Fallback Mechanism (Failover)
 
 - **Status:** Diterima
-- **Alasan:**
-  1. **Performa:** Menjaga _backend_ Elysia agar tidak terbebani (_bottleneck_) oleh waktu tunggu pemrosesan _prompt_ LLM.
-  2. **Fleksibilitas:** Logika _chatbot_ (Socratic Questioning, penjadwalan) bisa diubah secara bebas di _visual editor_ n8n kapan saja tanpa perlu melakukan _re-build_ atau _re-deploy_ pada _backend_ utama.
-- **Tradeoff:** Arsitektur menjadi sedikit lebih kompleks karena harus memantau dua _service_ yang berbeda (_backend_ dan n8n) saat _debugging_.
+- **Alasan:** Menjamin keandalan (*availability*) AI Agent agar sistem tetap responsif jika salah satu penyedia LLM (seperti Gemini) mengalami kegagalan, *rate limit*, atau *service outage*.
+- **Desain:** Membuat layer abstrak `AIService` di backend Elysia. Sistem akan mencoba mengeksekusi LLM utama (misal: Gemini). Jika gagal, sistem secara otomatis menangkap *error* (*fallback*) dan mengalihkan *request* ke penyedia cadangan (seperti Groq, OpenAI, atau Anthropic) yang dikonfigurasi melalui API Key di `.env`.
+
+## Decision 006: Web Admin Monitoring Dashboard
+
+- **Status:** Diterima
+- **Alasan:** Menyediakan antarmuka bagi panitia/admin untuk memantau status kesehatan sistem, performa AI, serta statistik penggunaan user secara langsung tanpa harus mengakses database secara mentah.
+- **Metrik Utama:**
+  1. *Health Monitor*: Server uptime, status koneksi Supabase, latensi endpoint.
+  2. *AI Performance*: Status provider aktif, total token, rasio kegagalan/sukses API AI, rata-rata waktu respon AI.
+  3. *User Stats*: Total user terdaftar, DAU (Daily Active User), persentase user terhubung ke Bot Telegram/WA.
+  4. *Aggregated Sensor & Logs*: Total langkah mingguan, rata-rata *screen time*, dan total *food logs* tercatat.
+
+

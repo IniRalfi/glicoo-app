@@ -15,6 +15,12 @@
 - [x] **Mobile Phase 6:** Bot Hub & Deep Linking — Status, OTP token, & custom AI persona selection ✅
 - [x] **Pencatat Makanan AI:** Bento Card input makanan & Bottom Sheet terintegrasi ke Elysia /food/log ✅
 - [x] **Mobile Phase 7:** Background Sensor & Sync — Pedometer, Screen Time, Workmanager & Elysia sync ✅
+- [ ] **Mobile Phase 11 (New):** In-App Chatbot — Chat interface, local storage history caching (Shared Preferences/SQLite) & integrate with Elysia ❌
+- [ ] **Mobile Phase 12 (New):** Push Notifications — Local push notifications for active daily alerts ❌
+- [ ] **Backend Phase 5:** LLM Failover — Implement multi-provider abstract layer (Gemini, Groq, OpenAI) & circuit breaker fallback logic ❌
+- [ ] **Web Phase 3.6:** Admin Stats Dashboard — Setup admin key auth & metrics dashboard page (uptime, active AI provider, DAU, logs counter) ❌
+
+
 
 ## 📦 Foundation (Selesai)
 

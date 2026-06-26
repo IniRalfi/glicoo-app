@@ -36,21 +36,23 @@ Halaman khusus ini adalah jembatan utama antara aplikasi dan AI.
 
 ---
 
-## 🤖 2. Alur Intervensi AI (WhatsApp/Telegram via n8n)
+## 🤖 2. Alur Intervensi AI & Chatbot Multi-Channel (Telegram/WA & In-App)
 
-Fitur utama pendampingan terjadi di platform _chat_, berjalan secara _asynchronous_ dan diinisiasi oleh sistem (_Bot-first_), bukan _User-first_.
+Pendampingan terjadi melalui dua opsi saluran utama: melalui Bot Chat luar (Telegram/WhatsApp) atau Chatbot bawaan langsung di dalam aplikasi Mobile (In-App).
 
-### A. Proactive Food Logging (Jam Makan)
+### A. Alur Proactive Intervensi (Proactive Intervention)
+1. **Pemicu Sistem (Cron):** Sistem mendeteksi jam makan siang (12:30) atau jam malam (21:00/22:00) untuk memeriksa data sensor harian.
+2. **Pengiriman Pengingat:**
+   - **Saluran Bot Chat (Terhubung):** Pesan dikirim duluan ke Telegram/WA (misal: *"Halo Kak! Udah jam makan siang nih, makan apa hari ini? 🍛"* atau *"Kak, udah malam nih, yuk kurangi screen time dan istirahat! 💤"*).
+   - **Saluran In-App (Bawaan):** Aplikasi mobile mengirim **Push Notification** lokal ke HP pengguna, mengarahkan mereka ke tab "In-App Chatbot" untuk berinteraksi.
 
-1. **Sistem Trigger:** Jadwal (Cron) di n8n mendeteksi jam makan siang (misal: 12:30).
-2. **Bot Menyapa:** Bot mengirim pesan duluan: _"Halo Kak! Udah jam makan siang nih, hari ini makan apa aja? 🍛"_
-3. **User Input:** Pengguna membalas dengan teks alami (misal: _"Nasi padang pake es teh"_).
-4. **AI XAI Feedback:** AI memproses estimasi karbohidrat/gula dan membalas dengan saran aktivitas fisik (misal: _"Wah enak! Jangan lupa nanti sore jalan 3000 langkah ya biar gula darah tetap stabil."_).
+### B. Alur Pencatatan Makanan & Feedback (Action-Driven)
+1. **User Input:** Pengguna mengirim log makanan via teks (misal: *"Nasi padang pake es teh"*) baik di Telegram/WA atau melalui antarmuka **In-App Chatbot**.
+2. **Pemrosesan AI:** Backend Elysia secara asinkron memanggil Gemini API untuk menganalisis perkiraan kalori/gula serta membuat feedback Socratic yang bersahabat.
+3. **Response & Penyimpanan Riwayat:**
+   - **Pada Bot Chat:** Respon dikirimkan ke Telegram/WA pengguna dan riwayat chat disimpan di database server.
+   - **Pada In-App Chatbot:** Respon dikirim kembali ke aplikasi Mobile, dan **riwayat percakapan disimpan secara lokal di Local Storage perangkat** (Shared Preferences/SQLite) untuk kenyamanan privasi dan kecepatan.
 
-### B. Proactive Health Reminder (Metrik Sensor)
-
-1. **Sistem Trigger:** n8n membaca data agregasi dari _database_ (jumlah langkah, durasi penggunaan ponsel, durasi duduk).
-2. **Intervensi Malam:** Jika _screen time_ tinggi pada pukul 22:00, bot mengirim pesan: _"Kak, udah malam nih, screen time-nya tinggi banget. Yuk istirahat biar kualitas tidur dan mood besok tetap bagus! 💤"_
 
 ---
 

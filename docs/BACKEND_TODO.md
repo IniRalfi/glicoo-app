@@ -72,6 +72,22 @@
 
 ---
 
+## Phase 6 — LLM Failover & Admin Metrics ❌
+
+- [ ] **Mekanisme Fallback AI**:
+  - Buat class abstract/interface `AIService` untuk LLM Provider.
+  - Implementasikan `GeminiProvider`, `GroqProvider`, dan `OpenAIProvider`.
+  - Buat logic failover (jika Gemini error, otomatis panggil Groq/OpenAI).
+- [ ] **Rute Webhook Bot Telegram Baru (`POST /bot/webhook`)**:
+  - Gantikan integrasi n8n dengan webhook Telegram langsung di Elysia.
+  - Tangani perintah `/start <TOKEN>` secara otomatis di handler webhook.
+- [ ] **Rute Admin Stats (`GET /admin/stats`)**:
+  - Hitung total uptime, status koneksi Supabase, DAU, dan total logs.
+  - Rekam data performa AI (provider aktif, error count, latency) untuk ditampilkan di dashboard.
+
+---
+
+
 ## Phase 5 — Dokumentasi Swagger & Integration Test ✅
 
 - [x] Update Swagger UI tags di `/docs` agar rapi dan terorganisir per kelompok.
