@@ -293,6 +293,7 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
         await prefs.setBool('findrisc_done', true);
         await prefs.setInt('findrisc_score', _findriscData!.totalSkor);
         await prefs.setString('findrisc_category', _findriscData!.kategori);
+        await prefs.setDouble('lingkar_pinggang_cm', _findriscData!.lingkarPinggangCm);
 
         // Sembunyikan loading
         ref.read(loadingProvider.notifier).hide();

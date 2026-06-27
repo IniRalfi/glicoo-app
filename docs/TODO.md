@@ -13,6 +13,13 @@
 - [x] **Task B.4:** Buat endpoint baru `POST /chat` untuk memproses percakapan dari In-App Chatbot. ✅
 - [x] **Task B.5:** Buat rute webhook Telegram `/bot/webhook` untuk menangani update dari bot secara langsung. ✅
 - [x] **Task B.6:** Buat endpoint admin `GET /admin/stats` untuk dasbor visualisasi web. ✅
+- [x] **Task M.1:** Implementasi Sinkronisasi Offline & Cache Lokal (`SyncManager`). ✅
+- [x] **Task M.2:** Integrasi Misi Real-Time Sensor di Tab Misi. ✅
+- [x] **Task M.3:** Implementasi Lembar Catat Tidur Luring Dinamis. ✅
+- [x] **Task M.4:** Perhitungan Skor Kesehatan Dinamis (0-100) Terintegrasi. ✅
+- [x] **Task M.5:** Integrasi Fitur Salin Kode OTP & Direct Link Hubungkan ke Bot Telegram. ✅
+- [ ] **Task B.7:** Setup & implementasi Telegram Bot handler pada webhook `/bot/webhook` terintegrasi dengan Gemini.
+
 
 
 
@@ -66,27 +73,17 @@
   - [x] `@theme` block di `globals.css` — brand scale, semantic aliases, typography
   - [ ] **Task 3.5:** Setup halaman download APK & update API metadata gratis (Supabase Storage)
 
-- [x] **Backend Phase 2.1 (partial):** Elysia.js scaffold + Swagger UI
+- [x] **Backend Phase 2.1:** Elysia.js scaffold + Swagger UI + Prisma Database Setup
 
 ## 🚧 Blocked / Issue
 
-| Task                             | Blocker                                     |
-| -------------------------------- | ------------------------------------------- |
-| Mobile: Profil Risiko (FINDRISC) | DB table `User` belum di-migrasi            |
-| Mobile: Sensor Sync              | Backend endpoint `POST /sensors/sync` belum |
-| Mobile: Bot Deep Link            | Backend endpoint `GET /bot/link` belum      |
-| Backend: Prisma + DB Migration   | Belum dikerjain                             |
+Tidak ada (Semua blocker database, endpoint sensor, dan bot link telah diselesaikan).
 
 ## ✅ Selesai (Summary)
 
 - Dokumen spesifikasi awal (PRD, User Flows, Decisions, ROADMAP, API_CONTRACTS, DB_SCHEMA)
 - Task 1.1: Bun Workspaces + packages/types + packages/config
-- Mobile Phase 0: Full design system (theme, typography, spacing, widgets)
-- Mobile Phase 1: Riverpod + feature-based structure
-- Mobile Phase 2: Splash + Onboarding + Legal + Auth (Login, Register, Forgot Password, Google OAuth native, Logout)
-- Mobile Phase 4: Bottom Navigation Shell (4 tabs, smart onboarding flow)
-- Mobile App Identity: Icon (cropped SVG blob), rename glico→glicoo
-- Mobile Glico Loading: 2-frame SVG animation, Rammetto One title, auto-show from auth state
+- Mobile Phase 0-9: Full design system, Riverpod, Onboarding/Auth, Bottom Nav, Home Dashboard, Bot Hub, Sync Manager offline, Quests dinamis, Local Push Notifications, dan In-App Chatbot.
 - Web: Next.js + Tailwind + fonts + theme
-- Backend: Elysia.js scaffold + Swagger + health check
+- Backend: Elysia.js + Swagger + Prisma + AI Agent + Webhook integration
 - ROADMAP.md + MOBILE_TODO.md di-update dengan progress actual

@@ -97,8 +97,8 @@ class ChatbotNotifier extends StateNotifier<ChatbotState> {
     }
   }
 
-  /// [ID] Mengirim pesan dari pengguna ke backend dan menerima balasan AI.
-  /// [EN] Sends user message to backend and receives AI reply.
+  /// [ID] Mengirim pesan dari pengguna ke backend dan menerima balasan AI dengan menyertakan metrik lokal.
+  /// [EN] Sends user message to backend and receives AI reply containing local health context metrics.
   Future<void> sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
@@ -114,7 +114,28 @@ class ChatbotNotifier extends StateNotifier<ChatbotState> {
     await _saveMessages(updatedMessages);
 
     try {
-      final res = await _apiService.sendChatMessage(text);
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Ambil data kesehatan lokal ter-update
+      final steps = prefs.getInt('glico_daily_steps') ?? 0;
+      final screenTime = prefs.getInt('glico_daily_screen_time') ?? 0;
+      final age = prefs.getInt('glico_cached_profile_age');
+      final weight = prefs.getDouble('glico_cached_profile_weight');
+      final height = prefs.getDouble('glico_cached_profile_height');
+      final waist = prefs.getDouble('lingkar_pinggang_cm');
+      final findrisc = prefs.getInt('findrisc_score');
+
+      final localContext = <String, dynamic>{
+        'today_steps': steps,
+        'today_screen_time_minutes': screenTime,
+        if (age != null && age > 0) 'age': age,
+        if (weight != null && weight > 0) 'weight': weight,
+        if (height != null && height > 0) 'height': height,
+        if (waist != null && waist > 0) 'waist_circumference': waist,
+        'findrisc_score': ?findrisc,
+      };
+
+      final res = await _apiService.sendChatMessage(text, context: localContext);
       
       final replyText = res['reply'] as String;
       final isFood = res['isFood'] as bool? ?? false;

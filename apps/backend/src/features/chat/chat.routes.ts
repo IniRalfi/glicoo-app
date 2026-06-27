@@ -66,6 +66,20 @@ export const chatRoutes = new Elysia({ prefix: "/chat" })
           return `${role}: ${c.message}`;
         }).join('\n');
 
+        // Tambahkan context kesehatan real-time dari payload mobile jika tersedia
+        let contextInfo = "";
+        if (body.context) {
+          const { today_steps, today_screen_time_minutes, age, weight, height, waist_circumference, findrisc_score } = body.context;
+          contextInfo = `\n\n[Konteks Kesehatan Real-time Pengguna Saat Ini]:` +
+            (today_steps !== undefined ? `\n- Langkah kaki hari ini: ${today_steps} langkah` : '') +
+            (today_screen_time_minutes !== undefined ? `\n- Waktu layar hari ini: ${today_screen_time_minutes} menit` : '') +
+            (age !== undefined ? `\n- Umur: ${age} tahun` : '') +
+            (weight !== undefined ? `\n- Berat badan: ${weight} kg` : '') +
+            (height !== undefined ? `\n- Tinggi badan: ${height} cm` : '') +
+            (waist_circumference !== undefined ? `\n- Lingkar pinggang: ${waist_circumference} cm` : '') +
+            (findrisc_score !== undefined ? `\n- Skor risiko Diabetes (FINDRISC): ${findrisc_score}` : '');
+        }
+
         // 3. Konfigurasi Schema parsing AI (is_food, calories, sugar, feedback)
         const schema = {
           type: 'object',
@@ -94,13 +108,14 @@ export const chatRoutes = new Elysia({ prefix: "/chat" })
           Kamu adalah Iloo, sahabat virtual pendeteksi risiko Diabetes Tipe 2 di aplikasi Glicoo.
           Gaya bahasamu santai, menggunakan bahasa Indonesia sehari-hari ("Kamu", "Kak"), dan lengkapi dengan sedikit emoji. Jangan menggurui atau menggunakan bahasa medis kaku.
           Tugasmu adalah membalas percakapan pengguna di dalam in-app chat berdasarkan riwayat chat yang diberikan.
+          Jika informasi Konteks Kesehatan Real-time Pengguna Saat Ini disediakan, gunakan informasi tersebut secara alami untuk mempersonalisasi balasanmu (misalnya memuji langkah kaki mereka jika banyak, memperingatkan screen time jika tinggi, atau menyinggung lingkar pinggang/skor risiko jika mereka bertanya).
           Jika jumlah makanan/porsi yang dimasukkan tidak wajar atau sangat berlebihan (seperti makan nasi 3kg, makan ikan 10 ekor sekaligus, minum sirup seember, dll.), tanggapilah dengan humor, candaan santai, atau rasa terkejut yang lucu khas sahabat dekat (misalnya: "Ini makan porsi satu RT atau gimana Kak? 😂") sebelum memberikan estimasi angka kalori/gula yang fantastis tersebut secara logis.
           Jika pesan terakhir dari Pengguna menanyakan atau mengacu pada deskripsi makanan/minuman sebelumnya, jawablah pertanyaannya sesuai konteks dan tentukan nilai gizi/kalori/gula yang sesuai.
           Jika pesan terakhir berupa deskripsi makanan/minuman, estimasikan kalori (kcal), estimasikan kandungan gula (gram), dan buatlah feedback bersahabat maksimal 2-3 kalimat yang memotivasi mereka untuk bergerak aktif jika makanan tinggi kalori/gula.
           Jika pesan terakhir tidak terkait makanan/minuman, balaslah seperti sahabat yang peduli kesehatan mereka dan tetapkan is_food = false, serta estimated_calories = null dan estimated_sugar_grams = null.
         `;
 
-        const prompt = `Berikut adalah riwayat percakapan terakhir:\n${formattedHistory}\n\nAnalisis pesan terakhir dari Pengguna dan tentukan nilai JSON yang sesuai berdasarkan riwayat tersebut.`;
+        const prompt = `Berikut adalah riwayat percakapan terakhir:\n${formattedHistory}${contextInfo}\n\nAnalisis pesan terakhir dari Pengguna dan tentukan nilai JSON yang sesuai berdasarkan riwayat tersebut.`;
 
         // 4. Panggil AI Service
         const aiResponse = await aiService.generateJSON<{
@@ -153,6 +168,17 @@ export const chatRoutes = new Elysia({ prefix: "/chat" })
           minLength: 1,
           error: "Message content cannot be empty",
         }),
+        context: t.Optional(
+          t.Object({
+            today_steps: t.Optional(t.Integer()),
+            today_screen_time_minutes: t.Optional(t.Integer()),
+            age: t.Optional(t.Integer()),
+            weight: t.Optional(t.Numeric()),
+            height: t.Optional(t.Numeric()),
+            waist_circumference: t.Optional(t.Numeric()),
+            findrisc_score: t.Optional(t.Integer()),
+          })
+        ),
       }),
       detail: {
         tags: ["chat"],

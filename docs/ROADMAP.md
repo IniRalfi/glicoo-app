@@ -79,9 +79,9 @@ Aplikasi untuk pengguna akhir, berfokus pada koleksi data sensor pasif.
 - [x] **Task 4.4:** Buat Cron lokal di Flutter untuk sinkronisasi data sensor ke endpoint Elysia `/sensors/sync` setiap beberapa jam. ✅
 - [x] **Task 4.5:** Buat UI input teks untuk Log Makanan, tembak ke endpoint Elysia `/food/log`. ✅
 - [x] **Task 4.6:** Implementasi UI Deep Linking bot Telegram/WA. ✅
-- [ ] **Task 4.7:** Implementasi In-App Chatbot UI & integrasi ke backend Elysia. ❌
-- [ ] **Task 4.8:** Caching riwayat chat di Local Storage perangkat (Shared Preferences/SQLite/Hive). ❌
-- [ ] **Task 4.9:** Setup Push Notifications lokal (`flutter_local_notifications`) untuk pengingat aktif harian. ❌
+- [x] **Task 4.7:** Implementasi In-App Chatbot UI & integrasi ke backend Elysia. ✅
+- [x] **Task 4.8:** Caching riwayat chat di Local Storage perangkat (Shared Preferences). ✅
+- [x] **Task 4.9:** Setup Push Notifications lokal (`flutter_local_notifications`) untuk pengingat aktif harian. ✅
 
 
 ### 🎁 Mobile — Extra Work (di luar roadmap, tapi penting)
@@ -117,16 +117,15 @@ Menghidupkan "otak" dari Glico langsung di dalam backend Elysia.js.
 
 | Phase             | Status               | Progress                                                          |
 | ----------------- | -------------------- | ----------------------------------------------------------------- |
-| 1. Foundation     | 🟡 In Progress       | ~40% — workspace ✅, Supabase project ✅, DB tables ❌, Prisma ❌ |
-| 2. Backend API    | 🟡 In Progress       | ~15% — Elysia scaffold ✅, endpoints ❌                           |
-| 3. Web Dashboard  | 🟡 In Progress       | ~20% — Next.js + Tailwind ✅, auth + dashboard ❌                 |
-| **4. Mobile App** | **🟢 Good Progress** | **~45% — auth + UI shell ✅, sensors + food + bot ❌**            |
-| 5. AI Engine      | 🔴 Not Started       | 0%                                                                |
+| 1. Foundation     | 🟢 Completed         | 100% — workspaces ✅, Supabase project ✅, DB tables ✅, Prisma ✅  |
+| 2. Backend API    | 🟢 Completed         | 100% — Elysia scaffold, sync, food log, bot link, admin stats ✅   |
+| 3. Web Dashboard  | 🟡 In Progress       | ~25% — Next.js + Tailwind + landing page preview ✅               |
+| **4. Mobile App** | **🟢 Completed**     | **100% — Full Auth, Dashboard, Sync, Chatbot, Quests, Push Notif**|
+| 5. AI Engine      | 🟢 Completed         | 100% — Gemini integration, chatbot, bot webhook, cron, failover ✅ |
 
 ### 🔥 Prioritas Selanjutnya (Suggested)
 
-1. **Mobile Phase 4** — Bottom Navigation Shell (Home, Quests, Bot Hub, Profile tabs)
-2. **Mobile Phase 5** — Home Dashboard UI (FINDRISC status, sensor cards, AI insight)
-3. **Mobile Phase 6** — Bot Hub + Deep Linking (Telegram/WA connect)
-4. **Backend Phase 2** — Middleware JWT + route `/sensors/sync`, `/food/log`, `/bot/link`
-5. **Phase 1** — Prisma schema + DB migration (unblocks backend + web)
+1. **Web Phase 3.2** — Integrasi Supabase Auth (Google OAuth) untuk login Web.
+2. **Web Phase 3.4** — Buat halaman Dashboard Utama (Menampilkan agregasi langkah, screen time, dan log intervensi chat).
+3. **Web Phase 3.5** — Buat Halaman Unduhan APK Mandiri & API In-App Update gratis (direct download via Supabase Storage).
+4. **Web Phase 3.6** — Buat Halaman Dashboard Admin Web untuk memantau performa AI, status kesehatan fungsi, dan grafik statistik pengguna.

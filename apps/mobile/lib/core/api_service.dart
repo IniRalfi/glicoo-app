@@ -175,9 +175,9 @@ class ApiService {
     }
   }
 
-  /// [ID] Mengirim pesan ke in-app chatbot Elysia backend.
-  /// [EN] Sends chat message to Glico Elysia backend in-app chatbot.
-  Future<Map<String, dynamic>> sendChatMessage(String message) async {
+  /// [ID] Mengirim pesan ke in-app chatbot Elysia backend beserta konteks lokal.
+  /// [EN] Sends chat message to Glico Elysia backend in-app chatbot along with local context.
+  Future<Map<String, dynamic>> sendChatMessage(String message, {Map<String, dynamic>? context}) async {
     final url = Uri.parse('${EnvConfig.backendUrl}/api/v1/chat');
     try {
       final response = await _client.post(
@@ -185,6 +185,7 @@ class ApiService {
         headers: _buildHeaders(),
         body: jsonEncode({
           'message': message,
+          'context': ?context,
         }),
       );
 

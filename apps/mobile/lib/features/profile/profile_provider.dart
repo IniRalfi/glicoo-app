@@ -13,8 +13,10 @@
 // Profile editing and display features.
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_service.dart';
+import '../../core/sync_manager.dart';
 
 class ProfileState {
   final String name;
@@ -73,33 +75,84 @@ class ProfileState {
 }
 
 class ProfileNotifier extends StateNotifier<ProfileState> {
-  ProfileNotifier(this._apiService) : super(ProfileState()) {
+  ProfileNotifier(this._apiService, this._syncManager) : super(ProfileState()) {
     loadProfile();
   }
 
   final ApiService _apiService;
+  final SyncManager _syncManager;
 
   Future<void> loadProfile() async {
     state = state.copyWith(isLoading: true, error: null);
-    try {
-      final currentUser = Supabase.instance.client.auth.currentUser;
-      final email = currentUser?.email ?? '';
-      
-      final data = await _apiService.getUserProfile();
-      
+    
+    final prefs = await SharedPreferences.getInstance();
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    final email = currentUser?.email ?? '';
+
+    // 1. Load dari local cache terlebih dahulu agar UI terisi seketika
+    final cachedName = prefs.getString(SyncManager.kPrefProfileName) ?? '';
+    final cachedPhone = prefs.getString(SyncManager.kPrefProfilePhone) ?? '';
+    final cachedAge = prefs.getInt(SyncManager.kPrefProfileAge) ?? 0;
+    final cachedWeight = prefs.getDouble(SyncManager.kPrefProfileWeight) ?? 0.0;
+    final cachedHeight = prefs.getDouble(SyncManager.kPrefProfileHeight) ?? 0.0;
+    final cachedFamilyHistory = prefs.getBool(SyncManager.kPrefProfileFamilyHistory) ?? false;
+    final cachedRisk = prefs.getDouble(SyncManager.kPrefProfileRiskScore) ?? 0.0;
+
+    if (cachedName.isNotEmpty || cachedAge > 0) {
       state = ProfileState(
-        name: data['name'] as String? ?? 'Pengguna Glicoo',
+        name: cachedName,
         email: email,
-        phoneNumber: data['phone_number'] as String? ?? '',
-        age: data['age'] as int? ?? 0,
-        weight: (data['weight'] as num?)?.toDouble() ?? 0.0,
-        height: (data['height'] as num?)?.toDouble() ?? 0.0,
-        hasFamilyHistory: data['has_family_history'] as bool? ?? false,
-        riskScore: (data['risk_score'] as num?)?.toDouble() ?? 0.0,
+        phoneNumber: cachedPhone,
+        age: cachedAge,
+        weight: cachedWeight,
+        height: cachedHeight,
+        hasFamilyHistory: cachedFamilyHistory,
+        riskScore: cachedRisk,
         isLoading: false,
       );
+    }
+
+    // 2. Tarik data terbaru dari API jika online
+    try {
+      if (await _syncManager.isOnline()) {
+        final data = await _apiService.getUserProfile();
+        
+        final name = data['name'] as String? ?? 'Pengguna Glicoo';
+        final phone = data['phone_number'] as String? ?? '';
+        final age = data['age'] as int? ?? 0;
+        final weight = (data['weight'] as num?)?.toDouble() ?? 0.0;
+        final height = (data['height'] as num?)?.toDouble() ?? 0.0;
+        final hasFamilyHistory = data['has_family_history'] as bool? ?? false;
+        final riskScore = (data['risk_score'] as num?)?.toDouble() ?? 0.0;
+
+        state = ProfileState(
+          name: name,
+          email: email,
+          phoneNumber: phone,
+          age: age,
+          weight: weight,
+          height: height,
+          hasFamilyHistory: hasFamilyHistory,
+          riskScore: riskScore,
+          isLoading: false,
+        );
+
+        // Update local cache
+        await _syncManager.cacheProfileLocally(
+          name: name,
+          phoneNumber: phone,
+          age: age,
+          weight: weight,
+          height: height,
+          hasFamilyHistory: hasFamilyHistory,
+          riskScore: riskScore,
+        );
+        // Tandai sudah sinkron
+        await prefs.setBool('glico_profile_pending_sync', false);
+      }
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      // Jika offline atau error, biarkan state menggunakan cache lokal dan jangan crash
+      state = state.copyWith(isLoading: false);
     }
   }
 
@@ -112,35 +165,81 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     required bool hasFamilyHistory,
   }) async {
     state = state.copyWith(isSaving: true, error: null);
-    try {
-      final data = await _apiService.updateUserProfile(
-        name: name,
-        phoneNumber: phoneNumber,
-        age: age,
-        weight: weight,
-        height: height,
-        hasFamilyHistory: hasFamilyHistory,
-      );
+    
+    // 1. Simpan ke local cache terlebih dahulu (Offline-First)
+    await _syncManager.cacheProfileLocally(
+      name: name,
+      phoneNumber: phoneNumber,
+      age: age,
+      weight: weight,
+      height: height,
+      hasFamilyHistory: hasFamilyHistory,
+    );
 
-      state = state.copyWith(
-        name: data['name'] as String? ?? name,
-        phoneNumber: data['phone_number'] as String? ?? phoneNumber,
-        age: data['age'] as int? ?? age,
-        weight: (data['weight'] as num?)?.toDouble() ?? weight,
-        height: (data['height'] as num?)?.toDouble() ?? height,
-        hasFamilyHistory: data['has_family_history'] as bool? ?? hasFamilyHistory,
-        riskScore: (data['risk_score'] as num?)?.toDouble() ?? state.riskScore,
-        isSaving: false,
-      );
-      return true;
+    // Update state agar UI langsung berubah
+    state = state.copyWith(
+      name: name,
+      phoneNumber: phoneNumber,
+      age: age,
+      weight: weight,
+      height: height,
+      hasFamilyHistory: hasFamilyHistory,
+    );
+
+    // 2. Coba sinkronisasi langsung ke server jika online
+    try {
+      if (await _syncManager.isOnline()) {
+        final data = await _apiService.updateUserProfile(
+          name: name,
+          phoneNumber: phoneNumber,
+          age: age,
+          weight: weight,
+          height: height,
+          hasFamilyHistory: hasFamilyHistory,
+        );
+
+        final riskScore = (data['risk_score'] as num?)?.toDouble() ?? state.riskScore;
+
+        state = state.copyWith(
+          name: data['name'] as String? ?? name,
+          phoneNumber: data['phone_number'] as String? ?? phoneNumber,
+          age: data['age'] as int? ?? age,
+          weight: (data['weight'] as num?)?.toDouble() ?? weight,
+          height: (data['height'] as num?)?.toDouble() ?? height,
+          hasFamilyHistory: data['has_family_history'] as bool? ?? hasFamilyHistory,
+          riskScore: riskScore,
+          isSaving: false,
+        );
+
+        // Update local cache dengan risk score baru dari server
+        await _syncManager.cacheProfileLocally(
+          name: state.name,
+          phoneNumber: state.phoneNumber,
+          age: state.age,
+          weight: state.weight,
+          height: state.height,
+          hasFamilyHistory: state.hasFamilyHistory,
+          riskScore: riskScore,
+        );
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('glico_profile_pending_sync', false);
+        return true;
+      } else {
+        // Jika offline, biarkan pending_sync bernilai true
+        state = state.copyWith(isSaving: false);
+        return true; // Berhasil disimpan lokal
+      }
     } catch (e) {
-      state = state.copyWith(isSaving: false, error: e.toString());
-      return false;
+      // Jika terjadi error koneksi saat memanggil server, biarkan tersimpan lokal
+      state = state.copyWith(isSaving: false);
+      return true; 
     }
   }
 }
 
 final profileNotifierProvider = StateNotifierProvider<ProfileNotifier, ProfileState>((ref) {
   final apiService = ref.watch(apiServiceProvider);
-  return ProfileNotifier(apiService);
+  final syncManager = ref.watch(syncManagerProvider);
+  return ProfileNotifier(apiService, syncManager);
 });

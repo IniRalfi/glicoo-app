@@ -25,6 +25,7 @@ import 'package:workmanager/workmanager.dart';
 
 import 'api_service.dart';
 import 'env_config.dart';
+import 'sync_manager.dart';
 
 /// [ID] Kunci konstan untuk SharedPreferences
 /// [EN] Constant keys for SharedPreferences
@@ -68,6 +69,10 @@ void callbackDispatcher() {
           stepCount: steps,
           screenTimeMinutes: screenTime,
         );
+
+        // Sinkronisasi data tertunda lainnya (food log, profile)
+        final syncManager = SyncManager(apiService);
+        await syncManager.syncPendingData();
       }
     } catch (e) {
       debugPrint('Background sync failed: $e');
@@ -163,6 +168,7 @@ class SensorService with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       _screenOnTime = DateTime.now();
       // Pemicu sync manual ke server begitu app dibuka kembali
+      _ref.read(syncManagerProvider).syncPendingData().catchError((_) {});
       _ref.read(apiServiceProvider).getBotLink().then((_) async {
         await forceManualSync();
       }).catchError((_) {});

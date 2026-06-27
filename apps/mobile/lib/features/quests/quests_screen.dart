@@ -23,6 +23,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/bento_card.dart';
 
+import '../home/home_screen.dart';
+
 /// Filter status untuk Misi.
 enum QuestFilter { semua, belumSelesai, sudahSelesai }
 
@@ -54,40 +56,95 @@ class QuestItem {
   });
 }
 
-/// Provider daftar misi harian (mock/siap dihubungkan ke data asli).
+/// Provider daftar misi harian terhubung ke sensor asli.
 final questListProvider = Provider<List<QuestItem>>((ref) {
-  return const [
+  final activityData = ref.watch(activityDataProvider);
+
+  final steps = activityData.steps;
+  final stepsGoal = activityData.stepsGoal;
+  final stepsCompleted = steps >= stepsGoal;
+  final stepsProgress = (steps / stepsGoal).clamp(0.0, 1.0);
+
+  // Tidur Tepat Waktu: target 7 jam (420 menit) tidur berkualitas
+  final sleepMinutes = activityData.sleepMinutes;
+  final sleepCompleted = sleepMinutes >= 420;
+  final sleepProgress = (sleepMinutes / 420).clamp(0.0, 1.0);
+
+  // Kurangi Waktu Layar: target di bawah 6 jam (360 menit)
+  final screenTime = activityData.screenTimeMinutes;
+  final screenCompleted = screenTime <= 360 && screenTime > 0;
+  final screenProgress = screenTime > 0
+      ? (screenTime / 360).clamp(0.0, 1.0)
+      : 0.0;
+
+  return [
     QuestItem(
       title: 'Bergerak Lebih Banyak',
       description: 'Capai 5.000 langkah hari ini',
-      points: '+10 Point',
-      statusText: 'Progress 3250 / 5000',
-      isCompleted: false,
-      progress: 3250 / 5000,
+      points: '+40 Point',
+      statusText: stepsCompleted ? 'Selesai' : 'Progress $steps / $stepsGoal',
+      isCompleted: stepsCompleted,
+      progress: stepsProgress,
       iconPath: 'assets/images/home/footstep.svg',
-      themeColor: Color(0xFF24B35F),
+      themeColor: const Color(0xFF24B35F),
     ),
     QuestItem(
       title: 'Tidur Tepat Waktu',
-      description: 'Tidur sebelum pukul 23.00 malam ini',
-      points: '+10 Point',
-      statusText: 'Belum Dimulai',
-      isCompleted: false,
-      progress: null,
+      description: 'Target tidur berkualitas 7 jam hari ini',
+      points: '+30 Point',
+      statusText: sleepCompleted
+          ? 'Selesai'
+          : 'Progress ${sleepMinutes ~/ 60}j ${sleepMinutes % 60}m / 7j',
+      isCompleted: sleepCompleted,
+      progress: sleepProgress,
       iconPath: 'assets/images/home/sleep.svg',
-      themeColor: Color(0xFF007AFF),
+      themeColor: const Color(0xFF007AFF),
     ),
     QuestItem(
       title: 'Kurangi Waktu Layar',
       description: 'Batasi screen time di bawah 6 jam hari ini',
-      points: '+10 Point',
-      statusText: 'Belum Dimulai',
-      isCompleted: false,
-      progress: null,
+      points: '+30 Point',
+      statusText: screenCompleted
+          ? 'Selesai'
+          : (screenTime > 360
+                ? 'Batas Waktu Layar Terlampaui (${screenTime ~/ 60}j ${screenTime % 60}m)'
+                : 'Progress ${screenTime ~/ 60}j ${screenTime % 60}m / 6j'),
+      isCompleted: screenCompleted,
+      progress: screenProgress,
       iconPath: 'assets/images/home/smartphone-device.svg',
-      themeColor: Color(0xFFFF3B30),
+      themeColor: const Color(0xFFFF3B30),
     ),
   ];
+});
+
+/// Provider untuk menghitung Skor Kesehatan (0-100) secara dinamis.
+final healthScoreProvider = Provider<int>((ref) {
+  final activityData = ref.watch(activityDataProvider);
+
+  // 1. Poin Langkah (Max 40 Poin)
+  final steps = activityData.steps;
+  final stepsGoal = activityData.stepsGoal;
+  final double stepPoints = (stepsGoal > 0)
+      ? ((steps / stepsGoal).clamp(0.0, 1.0) * 40.0)
+      : 0.0;
+
+  // 2. Poin Tidur (Max 30 Poin)
+  // Target tidur 7 jam (420 menit)
+  final sleepMinutes = activityData.sleepMinutes;
+  final double sleepPoints = ((sleepMinutes / 420.0).clamp(0.0, 1.0) * 30.0);
+
+  // 3. Poin Screen Time (Max 30 Poin)
+  // Batas aman di bawah 6 jam (360 menit)
+  final screenTime = activityData.screenTimeMinutes;
+  double screenPoints = 30.0;
+  if (screenTime > 360) {
+    final overage = screenTime - 360;
+    screenPoints = (1.0 - (overage / 360.0)).clamp(0.0, 1.0) * 30.0;
+  } else if (screenTime == 0) {
+    screenPoints = 0.0; // Base point
+  }
+
+  return (stepPoints + sleepPoints + screenPoints).round().clamp(0, 100);
 });
 
 /// Halaman Quests/Misi.
@@ -121,7 +178,7 @@ class QuestsScreen extends ConsumerWidget {
             children: [
               _buildHeader(),
               const SizedBox(height: 24),
-              _buildAchievementBanner(),
+              _buildAchievementBanner(ref),
               const SizedBox(height: 24),
               _buildFilterTabs(ref, activeFilter),
               const SizedBox(height: 20),
@@ -159,7 +216,9 @@ class QuestsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAchievementBanner() {
+  Widget _buildAchievementBanner(WidgetRef ref) {
+    final healthScore = ref.watch(healthScoreProvider);
+
     return AspectRatio(
       aspectRatio: 372 / 152,
       child: ClipRRect(
@@ -175,9 +234,12 @@ class QuestsScreen extends ConsumerWidget {
                   fit: BoxFit.cover,
                 ),
               ),
-              // Overlay Teks
+              // Overlay Teks & Progress Bar
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -185,14 +247,14 @@ class QuestsScreen extends ConsumerWidget {
                     Text(
                       'Pencapaian',
                       style: GoogleFonts.inter(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 4),
                     Text(
-                      '78/100',
+                      '$healthScore/100',
                       style: GoogleFonts.inter(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
@@ -206,6 +268,25 @@ class QuestsScreen extends ConsumerWidget {
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color: Colors.white.withValues(alpha: 0.85),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Progress Bar
+                    Container(
+                      height: 8,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(4),
+                        color: Colors.white.withValues(alpha: 0.25),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: healthScore / 100.0,
+                          backgroundColor: Colors.transparent,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -423,21 +504,24 @@ class _QuestDetailDialog extends StatelessWidget {
     if (quest.title.contains('Bergerak')) {
       bgIlooColor = const Color(0xFF34C759);
       svgAssetPath = 'assets/images/misi/iloo_walk.svg';
-      contentText = 'Aktivitas fisik membantu tubuh mengontrol kadar gula darah dan mengurangi risiko Diabetes Melitus Tipe 2.';
+      contentText =
+          'Aktivitas fisik membantu tubuh mengontrol kadar gula darah dan mengurangi risiko Diabetes Melitus Tipe 2.';
       containerPadding = const EdgeInsets.only(top: 16, bottom: 12);
       imageAlignment = Alignment.bottomCenter;
       svgHeight = 120.0;
     } else if (quest.title.contains('Tidur')) {
       bgIlooColor = const Color(0xFF0088FF);
       svgAssetPath = 'assets/images/misi/iloo_sleep.svg';
-      contentText = 'Tidur yang cukup dan teratur membantu menjaga keseimbangan hormon serta sensitivitas insulin, sehingga dapat mengurangi risiko Diabetes Melitus Tipe 2.';
+      contentText =
+          'Tidur yang cukup dan teratur membantu menjaga keseimbangan hormon serta sensitivitas insulin, sehingga dapat mengurangi risiko Diabetes Melitus Tipe 2.';
       containerPadding = const EdgeInsets.only(top: 16, bottom: 0);
       imageAlignment = Alignment.bottomCenter;
       svgHeight = 154.0;
     } else {
       bgIlooColor = const Color(0xFFFF2D55);
       svgAssetPath = 'assets/images/misi/iloo_screen.svg';
-      contentText = 'Waktu paparan layar yang berlebihan sering kali berkaitan dengan perilaku sedentari dan kurangnya aktivitas fisik, yang dapat meningkatkan risiko Diabetes Melitus Tipe 2.';
+      contentText =
+          'Waktu paparan layar yang berlebihan sering kali berkaitan dengan perilaku sedentari dan kurangnya aktivitas fisik, yang dapat meningkatkan risiko Diabetes Melitus Tipe 2.';
       containerPadding = const EdgeInsets.only(top: 16, bottom: 0);
       imageAlignment = Alignment.bottomCenter;
       svgHeight = 154.0;
@@ -479,10 +563,7 @@ class _QuestDetailDialog extends StatelessWidget {
             Text(
               'Kenapa Penting?',
               textAlign: TextAlign.center,
-              style: GoogleFonts.rammettoOne(
-                fontSize: 22,
-                color: Colors.black,
-              ),
+              style: GoogleFonts.rammettoOne(fontSize: 22, color: Colors.black),
             ),
             const SizedBox(height: 12),
             // Description Content

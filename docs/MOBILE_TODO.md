@@ -53,10 +53,10 @@
 
 ---
 
-## Phase 3 — Sensor Permissions ❌
+## Phase 3 — Sensor Permissions ✅
 
-- [ ] **Edukasi Bento Card** — jelaskan kenapa butuh langkah & screen time
-- [ ] Request permission OS (Activity Recognition / Health)
+- [x] **Edukasi Bento Card** — jelaskan kenapa butuh langkah & screen time
+- [x] Request permission OS (Activity Recognition / Health)
 - [ ] Toggle permission di halaman Profile
 
 ---

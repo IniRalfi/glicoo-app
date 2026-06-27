@@ -24,7 +24,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../core/api_service.dart';
+import '../../core/sync_manager.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/bento_card.dart';
 import '../auth/presentation/auth_provider.dart';
@@ -58,22 +58,23 @@ class ActivityDataNotifier extends StateNotifier<ActivityData> {
   ActivityDataNotifier() : super(const ActivityData(
     steps: 0,
     stepsGoal: 5000,
-    sleepMinutes: 380, // 6 jam 20 menit = 380 menit
+    sleepMinutes: 0,
     screenTimeMinutes: 0,
     stepsHistory: [1500, 2400, 3100, 4200, 0, 2800],
     sleepHistory: [450, 360, 480, 330, 380, 420],
     screenTimeHistory: [270, 372, 300, 426, 0, 360],
   )) {
-    _loadDailyValues();
+    loadDailyValues();
     _startTimer();
   }
 
   Timer? _timer;
 
-  Future<void> _loadDailyValues() async {
+  Future<void> loadDailyValues() async {
     final prefs = await SharedPreferences.getInstance();
     final steps = prefs.getInt('glico_daily_steps') ?? 0;
     final screenTime = prefs.getInt('glico_daily_screen_time') ?? 0;
+    final sleepMinutes = prefs.getInt('glico_daily_sleep_minutes') ?? 0;
 
     final stepsHistory = List<int>.from(state.stepsHistory);
     if (stepsHistory.length > 4) stepsHistory[4] = steps;
@@ -84,7 +85,7 @@ class ActivityDataNotifier extends StateNotifier<ActivityData> {
     state = ActivityData(
       steps: steps,
       stepsGoal: state.stepsGoal,
-      sleepMinutes: state.sleepMinutes,
+      sleepMinutes: sleepMinutes,
       screenTimeMinutes: screenTime,
       stepsHistory: stepsHistory,
       sleepHistory: state.sleepHistory,
@@ -92,8 +93,16 @@ class ActivityDataNotifier extends StateNotifier<ActivityData> {
     );
   }
 
+  /// [ID] Menyimpan durasi tidur ke SharedPreferences dan memperbarui state
+  /// [EN] Saves sleep duration to SharedPreferences and updates state
+  Future<void> setSleepMinutes(int minutes) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('glico_daily_sleep_minutes', minutes);
+    await loadDailyValues();
+  }
+
   void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 2), (_) => _loadDailyValues());
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) => loadDailyValues());
   }
 
   @override
@@ -189,7 +198,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              _buildActivityCards(ref),
+              _buildActivityCards(context, ref),
               const SizedBox(height: 24),
               Text(
                 'Tantangan Hari Ini',
@@ -366,7 +375,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActivityCards(WidgetRef ref) {
+  Widget _buildActivityCards(BuildContext context, WidgetRef ref) {
     final activity = ref.watch(activityDataProvider);
 
     // Format tanggal hari ini (contoh: 22/06/2026)
@@ -472,6 +481,7 @@ class HomeScreen extends ConsumerWidget {
           historyValues:
               activity.sleepHistory.map((m) => m / 480.0).toList(),
           activeColor: const Color(0xFF007AFF),
+          onTap: () => _showSleepLogBottomSheet(context, ref),
         ),
         const SizedBox(height: 12),
 
@@ -535,65 +545,70 @@ class HomeScreen extends ConsumerWidget {
     required RichText richText,
     required List<double> historyValues,
     required Color activeColor,
+    VoidCallback? onTap,
   }) {
-    return BentoCard(
-      padding: const EdgeInsets.all(16),
-      backgroundColor: Colors.white,
-      borderColor: Colors.white,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: BentoCard(
+        padding: const EdgeInsets.all(16),
+        backgroundColor: Colors.white,
+        borderColor: Colors.white,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      SvgPicture.asset(
+                        iconPath,
+                        width: 18,
+                        height: 18,
+                        colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        title,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: titleColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  richText,
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    SvgPicture.asset(
-                      iconPath,
-                      width: 18,
-                      height: 18,
-                      colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      title,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: titleColor,
-                      ),
-                    ),
-                  ],
+                Text(
+                  dateStr,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.subtitleGray,
+                  ),
                 ),
-                const SizedBox(height: 16),
-                richText,
+                const SizedBox(height: 8),
+                MiniBarChart(
+                  values: historyValues,
+                  activeColor: activeColor,
+                  activeIndex: 4, // Kolom ke-5 adalah hari ini
+                ),
               ],
             ),
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                dateStr,
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.subtitleGray,
-                ),
-              ),
-              const SizedBox(height: 8),
-              MiniBarChart(
-                values: historyValues,
-                activeColor: activeColor,
-                activeIndex: 4, // Kolom ke-5 adalah hari ini
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -698,6 +713,194 @@ class HomeScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _showSleepLogBottomSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        int hours = 7;
+        int minutes = 0;
+        
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              padding: EdgeInsets.fromLTRB(
+                24,
+                24,
+                24,
+                MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.nights_stay_rounded, color: Color(0xFF007AFF), size: 24),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Catat Durasi Tidur',
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Masukkan estimasi lama tidur berkualitas Anda tadi malam atau hari ini.',
+                    style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Column(
+                        children: [
+                          Text(
+                            '$hours',
+                            style: GoogleFonts.inter(
+                              fontSize: 48,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF007AFF),
+                            ),
+                          ),
+                          Text(
+                            'Jam',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.remove_circle_outline_rounded),
+                                color: Colors.grey,
+                                onPressed: hours > 0 ? () => setModalState(() => hours--) : null,
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.add_circle_outline_rounded),
+                                color: const Color(0xFF007AFF),
+                                onPressed: hours < 24 ? () => setModalState(() => hours++) : null,
+                              ),
+                            ],
+                          )
+                        ],
+                      ),
+                      const SizedBox(width: 48),
+                      Column(
+                        children: [
+                          Text(
+                            minutes.toString().padLeft(2, '0'),
+                            style: GoogleFonts.inter(
+                              fontSize: 48,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF007AFF),
+                            ),
+                          ),
+                          Text(
+                            'Menit',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.remove_circle_outline_rounded),
+                                color: Colors.grey,
+                                onPressed: minutes > 0 ? () => setModalState(() => minutes -= 5) : null,
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.add_circle_outline_rounded),
+                                color: const Color(0xFF007AFF),
+                                onPressed: minutes < 55 ? () => setModalState(() => minutes += 5) : null,
+                              ),
+                            ],
+                          )
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.grey[300]!),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          child: Text(
+                            'Batal',
+                            style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () async {
+                            final totalMinutes = (hours * 60) + minutes;
+                            await ref.read(activityDataProvider.notifier).setSleepMinutes(totalMinutes);
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Durasi tidur berhasil disimpan.'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          },
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF007AFF),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          child: Text(
+                            'Simpan',
+                            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -841,6 +1044,7 @@ class _FoodLogBottomSheetState extends ConsumerState<FoodLogBottomSheet> {
   bool _isLoading = false;
   String? _errorMessage;
   bool _isSuccess = false;
+  bool _isOfflineSaved = false;
 
   Future<void> _submitFoodLog() async {
     final text = _controller.text.trim();
@@ -852,12 +1056,13 @@ class _FoodLogBottomSheetState extends ConsumerState<FoodLogBottomSheet> {
     });
 
     try {
-      final apiService = ref.read(apiServiceProvider);
-      await apiService.logFood(text);
+      final syncManager = ref.read(syncManagerProvider);
+      final wasSynced = await syncManager.queueFoodLog(text);
       
       setState(() {
         _isLoading = false;
         _isSuccess = true;
+        _isOfflineSaved = !wasSynced;
       });
     } catch (e) {
       setState(() {
@@ -1004,11 +1209,15 @@ class _FoodLogBottomSheetState extends ConsumerState<FoodLogBottomSheet> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 8),
-        const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 64),
+        Icon(
+          _isOfflineSaved ? Icons.cloud_off_rounded : Icons.check_circle_rounded,
+          color: _isOfflineSaved ? Colors.orange : AppColors.success,
+          size: 64,
+        ),
         const SizedBox(height: 16),
         Center(
           child: Text(
-            'Makanan Tercatat!',
+            _isOfflineSaved ? 'Tersimpan Luring!' : 'Makanan Tercatat!',
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -1018,7 +1227,9 @@ class _FoodLogBottomSheetState extends ConsumerState<FoodLogBottomSheet> {
         ),
         const SizedBox(height: 12),
         Text(
-          'Menu makanan Anda berhasil dicatat ke sistem. Asisten Iloo sedang memproses taksiran gizi dan kalorinya.\n\nDetail analisis gizi lengkap akan langsung dikirimkan ke chat bot WhatsApp/Telegram Anda!',
+          _isOfflineSaved
+              ? 'Menu makanan Anda berhasil dicatat secara lokal karena perangkat sedang offline. Analisis gizi akan diproses otomatis begitu Anda kembali terhubung ke internet!'
+              : 'Menu makanan Anda berhasil dicatat ke sistem. Asisten Iloo sedang memproses taksiran gizi dan kalorinya.\n\nDetail analisis gizi lengkap akan langsung dikirimkan ke chat bot WhatsApp/Telegram Anda!',
           textAlign: TextAlign.center,
           style: GoogleFonts.inter(
             fontSize: 14,
@@ -1030,7 +1241,7 @@ class _FoodLogBottomSheetState extends ConsumerState<FoodLogBottomSheet> {
         FilledButton(
           onPressed: () => Navigator.pop(context),
           style: FilledButton.styleFrom(
-            backgroundColor: AppColors.success,
+            backgroundColor: _isOfflineSaved ? Colors.orange : AppColors.success,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             padding: const EdgeInsets.symmetric(vertical: 14),
           ),
