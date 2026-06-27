@@ -26,19 +26,22 @@ export const authPlugin = new Elysia({ name: "auth-middleware" })
 
     const token = authorization.substring(7);
     
-    // In production, verify signature. In development, fallback to decodeJwt if verification fails.
+    // [SECURITY] In production, we MUST verify the JWT signature.
+    // In development only, we fallback to decodeJwt (no signature check) for DX ergonomics.
+    // WARNING: Never allow this fallback in a non-development environment.
     let payload: any = null;
     try {
       payload = await jwt.verify(token);
-    } catch (e) {
-      // Verification failed (expected if JWT_SECRET isn't updated in development)
+    } catch (_e) {
+      // Verification failed (expected in dev if JWT_SECRET doesn't match Supabase secret)
     }
 
-    if (!payload && process.env.NODE_ENV !== "production") {
+    if (!payload && process.env.NODE_ENV === "development") {
       try {
+        console.warn("[AUTH] ⚠️  Dev-mode: using unverified JWT decode. Never expose this in production.");
         payload = decodeJwt(token);
       } catch (e) {
-        console.error("Failed to decode token in dev mode:", e);
+        console.error("[AUTH] Failed to decode token in dev mode:", e);
       }
     }
 

@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia";
+import { rateLimit } from "elysia-rate-limit";
 import { authPlugin } from "../../core/middlewares/auth";
 import { prisma } from "../../core/db";
 import { BotService } from "./bot.service";
@@ -12,6 +13,8 @@ import { BotService } from "./bot.service";
 export const botRoutes = new Elysia({ prefix: "/bot" })
   // [ID] Route untuk generate OTP token link (User Auth)
   .use(authPlugin)
+  // [SECURITY] Rate limit: 20 req/menit per IP untuk webhook dan link generation
+  .use(rateLimit({ duration: 60_000, max: 20 }))
   .get(
     "/link",
     async ({ userId, set }) => {
@@ -25,7 +28,7 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
           user = await prisma.user.create({
             data: {
               id: userId!,
-              name: "Pengguna Glico",
+              name: "Pengguna Glicoo",
             },
           });
         }
@@ -76,9 +79,14 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
     "/verify",
     async ({ body, headers, set }) => {
       try {
-        // [ID] Validasi API Key Admin untuk keamanan
-        const adminApiKey = process.env.BACKEND_ADMIN_API_KEY || "dev-admin-key";
+        // [SECURITY] Admin key MUST be set in env. No hardcoded fallback.
+        const adminApiKey = process.env.BACKEND_ADMIN_API_KEY;
         const requestApiKey = headers["x-api-key"];
+
+        if (!adminApiKey) {
+          set.status = 503;
+          return { message: "Admin endpoint unavailable: server misconfiguration" };
+        }
 
         if (!requestApiKey || requestApiKey !== adminApiKey) {
           set.status = 401;
@@ -161,7 +169,7 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
         // [ID] Hapus phone_number (chat ID Telegram) untuk memutuskan koneksi
         await prisma.user.update({
           where: { id: userId! },
-          data: { phone_number: "" },
+          data: { phone_number: null },
         });
 
         return { message: "Bot successfully disconnected from account" };

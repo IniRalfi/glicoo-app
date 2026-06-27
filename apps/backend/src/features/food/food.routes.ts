@@ -22,7 +22,7 @@ export const foodRoutes = new Elysia({ prefix: "/food" })
         });
 
         if (!user) {
-          const name = userMetadata?.name || "Pengguna Glico";
+          const name = userMetadata?.name || "Pengguna Glicoo";
           user = await prisma.user.create({
             data: {
               id: userId!,

@@ -7,15 +7,26 @@ import { botRoutes } from "./features/bot/bot.routes";
 import { usersRoutes } from "./features/users/users.routes";
 import { chatRoutes } from "./features/chat/chat.routes";
 import { adminRoutes } from "./features/admin/admin.routes";
+import { cronRoutes } from "./features/bot/cron.routes";
 import { startScheduler } from "./features/bot/scheduler.service";
 
 
 
 
+// [ID] Parse ALLOWED_ORIGINS dari env: "*" atau daftar domain pisah koma.
+// [SECURITY] Ubah ke domain spesifik saat production.
+const rawOrigins = process.env.ALLOWED_ORIGINS || "*";
+const corsOrigin: string | string[] | true =
+  rawOrigins === "*" ? true : rawOrigins.split(",").map((o) => o.trim());
+
+if (rawOrigins === "*" && process.env.NODE_ENV === "production") {
+  console.warn("[SECURITY] ⚠️  CORS origin is set to '*' in production. Set ALLOWED_ORIGINS to your specific domain(s).");
+}
+
 const app = new Elysia()
   .use(
     cors({
-      origin: "*", // [ID] Izinkan akses dari mobile app, emulator, dan dashboard web
+      origin: corsOrigin,
       credentials: true,
     })
   )
@@ -24,9 +35,9 @@ const app = new Elysia()
       path: "/docs",
       documentation: {
         info: {
-          title: "Glico API",
+          title: "Glicoo API",
           version: "0.1.0",
-          description: "Backend API for Glico - Agentic AI for Early Diabetes Prevention",
+          description: "Backend API for Glicoo - Agentic AI for Early Diabetes Prevention",
         },
         tags: [
           { name: "sensors", description: "Sensor data endpoints" },
@@ -44,7 +55,7 @@ const app = new Elysia()
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glico Core API Gateway</title>
+    <title>Glicoo Core API Gateway</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -229,7 +240,7 @@ const app = new Elysia()
             <div class="pulse-dot"></div>
             Sistem Aktif & Terhubung
         </div>
-        <h1>Glico API Core</h1>
+        <h1>Glicoo API Core</h1>
         <p class="subtitle">Pusat gerbang data AI Agent & sinkronisasi sensor kesehatan untuk pencegahan dini diabetes.</p>
         
         <div class="stats-grid">
@@ -257,7 +268,7 @@ const app = new Elysia()
         </div>
 
         <footer>
-            &copy; 2026 Glico Team. Hak Cipta Dilindungi.
+            &copy; 2026 Glicoo Team. Hak Cipta Dilindungi.
         </footer>
     </div>
 
@@ -283,6 +294,7 @@ const app = new Elysia()
       .use(usersRoutes)
       .use(chatRoutes)
       .use(adminRoutes)
+      .use(cronRoutes)
   )
   .onError(({ code, error }) => {
     console.log("Elysia Error Caught:", error);
@@ -303,3 +315,4 @@ console.log(`🦊 Elysia running at http://${app.server?.hostname}:${app.server?
 console.log(`📚 Swagger docs at http://${app.server?.hostname}:${app.server?.port}/docs`);
 
 export type App = typeof app;
+export default app;

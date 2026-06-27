@@ -18,7 +18,7 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
         });
 
         if (!user) {
-          const name = userMetadata?.name || "Pengguna Glico";
+          const name = userMetadata?.name || "Pengguna Glicoo";
           user = await prisma.user.create({
             data: {
               id: userId!,
@@ -52,7 +52,7 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
         });
 
         if (!user) {
-          const name = userMetadata?.name || "Pengguna Glico";
+          const name = userMetadata?.name || "Pengguna Glicoo";
           user = await prisma.user.create({
             data: {
               id: userId!,

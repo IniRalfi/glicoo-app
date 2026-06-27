@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia";
+import { rateLimit } from "elysia-rate-limit";
 import { authPlugin } from "../../core/middlewares/auth";
 import { prisma } from "../../core/db";
 import { aiService } from "../ai/ai.service";
@@ -21,6 +22,8 @@ import { aiService } from "../ai/ai.service";
 
 export const chatRoutes = new Elysia({ prefix: "/chat" })
   .use(authPlugin)
+  // [SECURITY] Rate limit: 30 pesan/menit per IP untuk mencegah penyalahgunaan Gemini API
+  .use(rateLimit({ duration: 60_000, max: 30 }))
   .post(
     "/",
     async ({ userId, userMetadata, body, set }) => {
@@ -33,7 +36,7 @@ export const chatRoutes = new Elysia({ prefix: "/chat" })
         });
 
         if (!user) {
-          const name = userMetadata?.name || "Pengguna Glico";
+          const name = userMetadata?.name || "Pengguna Glicoo";
           user = await prisma.user.create({
             data: {
               id: userId!,
@@ -182,7 +185,7 @@ export const chatRoutes = new Elysia({ prefix: "/chat" })
       }),
       detail: {
         tags: ["chat"],
-        summary: "Interact with the in-app Glico AI assistant (processes food logs if mentioned)",
+        summary: "Interact with the in-app Glicoo AI assistant (processes food logs if mentioned)",
       },
     }
   );

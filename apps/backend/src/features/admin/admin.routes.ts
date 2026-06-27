@@ -22,9 +22,15 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
     "/stats",
     async ({ headers, set }) => {
       try {
-        // 1. Validasi API Key Admin demi keamanan akses data PII & Agregasi
-        const adminApiKey = process.env.BACKEND_ADMIN_API_KEY || "dev-admin-key";
+        // [SECURITY] Admin key MUST be set in env. No hardcoded fallback.
+        const adminApiKey = process.env.BACKEND_ADMIN_API_KEY;
         const requestApiKey = headers["x-api-key"];
+
+        if (!adminApiKey) {
+          console.error("[ADMIN] BACKEND_ADMIN_API_KEY is not set in environment variables!");
+          set.status = 503;
+          return { message: "Admin endpoint unavailable: server misconfiguration" };
+        }
 
         if (!requestApiKey || requestApiKey !== adminApiKey) {
           set.status = 401;

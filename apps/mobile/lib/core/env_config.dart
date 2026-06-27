@@ -13,10 +13,25 @@
 // Impact:
 // Any file that reads SUPABASE_URL / SUPABASE_ANON_KEY
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 abstract final class EnvConfig {
-  static Future<void> load() => dotenv.load();
+  static Future<void> load() async {
+    const env = String.fromEnvironment('ENV', defaultValue: kReleaseMode ? 'production' : 'development');
+    final fileName = env == 'production' ? '.env.production' : '.env.development';
+    try {
+      await dotenv.load(fileName: fileName);
+      debugPrint('Loaded environment config: $fileName');
+    } catch (e) {
+      debugPrint('Warning: Failed to load $fileName, trying fallback to default .env: $e');
+      try {
+        await dotenv.load(fileName: '.env');
+      } catch (err) {
+        debugPrint('Error: Could not load any environment configuration file.');
+      }
+    }
+  }
 
   /// Supabase project URL from .env
   static String get supabaseUrl => _require('SUPABASE_URL');

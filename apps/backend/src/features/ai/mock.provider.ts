@@ -17,7 +17,7 @@ export class MockProvider implements ILLMProvider {
   readonly name = 'mock';
 
   async generateText(prompt: string, systemInstruction?: string): Promise<string> {
-    return `[MOCK RESPONSE] Halo! Ini adalah respon simulasi dari Glico Offline Engine. Kami menerima pesan Anda: "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}"`;
+    return `[MOCK RESPONSE] Halo! Ini adalah respon simulasi dari Glicoo Offline Engine. Kami menerima pesan Anda: "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}"`;
   }
 
   async generateJSON<T>(prompt: string, schema: any, systemInstruction?: string): Promise<T> {

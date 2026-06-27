@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --watch src/index.ts",
+    "dev": "bun --watch --env-file=.env.development src/index.ts",
+    "start": "bun src/index.ts",
     "build": "bun build src/index.ts --outdir dist",
-    "start": "bun dist/index.js",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
@@ -23,6 +23,7 @@
     "@prisma/client": "^7.8.0",
     "croner": "^10.0.1",
     "elysia": "^1.1.0",
+    "elysia-rate-limit": "^4.6.2",
     "jose": "^6.2.3",
     "pg": "^8.22.0",
     "zod": "^3.23.0"
