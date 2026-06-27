@@ -39,6 +39,9 @@ Thumbs.db
 .idea/
 *.sublime-workspace
 
+# === MCP & TOOL CONFIGS ===
+.roo/
+
 # === TESTING ===
 coverage/
 .nyc_output/
