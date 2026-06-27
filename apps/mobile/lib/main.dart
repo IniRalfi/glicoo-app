@@ -77,6 +77,7 @@ void main() async {
   // 4. Build AuthRepository after Supabase is ready
   final authRepository = SupabaseAuthRepository(
     supabase: Supabase.instance.client,
+    serverClientId: EnvConfig.googleWebClientId,
   );
 
   runApp(
