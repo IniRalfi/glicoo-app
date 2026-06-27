@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
-import { authPlugin } from "../../core/middlewares/auth";
+import { authPlugin, isAuthenticated } from "../../core/middlewares/auth";
 import { prisma } from "../../core/db";
 import { BotService } from "./bot.service";
 
@@ -13,8 +13,19 @@ import { BotService } from "./bot.service";
 export const botRoutes = new Elysia({ prefix: "/bot" })
   // [ID] Route untuk generate OTP token link (User Auth)
   .use(authPlugin)
-  // [SECURITY] Rate limit: 20 req/menit per IP untuk webhook dan link generation
-  .use(rateLimit({ duration: 60_000, max: 20 }))
+  .use(
+    rateLimit({
+      duration: 60_000,
+      max: 20,
+      generator: (request) => {
+        return (
+          request.headers.get("x-forwarded-for") ||
+          request.headers.get("x-real-ip") ||
+          "unknown"
+        );
+      },
+    })
+  )
   .get(
     "/link",
     async ({ userId, set }) => {
@@ -67,7 +78,7 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
       }
     },
     {
-      isAuth: true,
+      beforeHandle: isAuthenticated,
       detail: {
         tags: ["bot"],
         summary: "Generate a secure temporary OTP token for Telegram bot linking",

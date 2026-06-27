@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { authPlugin } from "../../core/middlewares/auth";
+import { authPlugin, isAuthenticated } from "../../core/middlewares/auth";
 import { prisma } from "../../core/db";
 
 /**
@@ -57,7 +57,7 @@ export const sensorsRoutes = new Elysia({ prefix: "/sensors" })
       }
     },
     {
-      isAuth: true,
+      beforeHandle: isAuthenticated,
       body: t.Object({
         date: t.String({
           pattern: "^\\d{4}-\\d{2}-\\d{2}$",

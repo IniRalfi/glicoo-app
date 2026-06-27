@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { authPlugin } from "../../core/middlewares/auth";
+import { authPlugin, isAuthenticated } from "../../core/middlewares/auth";
 import { prisma } from "../../core/db";
 import { FoodService } from "./food.service";
 
@@ -56,7 +56,7 @@ export const foodRoutes = new Elysia({ prefix: "/food" })
       }
     },
     {
-      isAuth: true,
+      beforeHandle: isAuthenticated,
       body: t.Object({
         description: t.String({
           minLength: 3,

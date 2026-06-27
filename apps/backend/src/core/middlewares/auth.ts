@@ -69,3 +69,15 @@ export const authPlugin = new Elysia({ name: "auth-middleware" })
       });
     },
   }));
+
+/**
+ * [ID] Hook helper untuk validasi otentikasi secara eksplisit di beforeHandle.
+ *
+ * [EN] Hook helper to explicitly validate authentication in beforeHandle.
+ */
+export const isAuthenticated = ({ userId, set }: { userId: string | null; set: any }) => {
+  if (!userId) {
+    set.status = 401;
+    return { message: "Unauthorized: Invalid or missing token" };
+  }
+};
