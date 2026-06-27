@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "bun --watch --env-file=.env.development src/index.ts",
     "start": "bun src/index.ts",
-    "build": "bun build src/index.ts --outdir dist",
+    "build": "prisma generate && bun build src/index.ts --outdir dist --target=bun",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
