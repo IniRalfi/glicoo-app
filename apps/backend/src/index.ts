@@ -29,8 +29,10 @@ const app = new Elysia()
       origin: corsOrigin,
       credentials: true,
     })
-  )
-  .use(
+  );
+
+if (process.env.NODE_ENV !== "production") {
+  app.use(
     swagger({
       path: "/docs",
       documentation: {
@@ -44,10 +46,14 @@ const app = new Elysia()
           { name: "food", description: "Food logging endpoints" },
           { name: "bot", description: "Bot linking endpoints" },
           { name: "health", description: "Health check endpoints" },
+          { name: "cron", description: "Cron trigger endpoints" },
         ],
       },
     })
-  )
+  );
+}
+
+app
   .get("/", ({ set }) => {
     set.headers["content-type"] = "text/html; charset=utf-8";
     return `<!DOCTYPE html>
