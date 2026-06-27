@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
-import { authPlugin } from "../../core/middlewares/auth";
+import { authPlugin, isAuthenticated } from "../../core/middlewares/auth";
 import { prisma } from "../../core/db";
 import { aiService } from "../ai/ai.service";
 
@@ -22,8 +22,19 @@ import { aiService } from "../ai/ai.service";
 
 export const chatRoutes = new Elysia({ prefix: "/chat" })
   .use(authPlugin)
-  // [SECURITY] Rate limit: 30 pesan/menit per IP untuk mencegah penyalahgunaan Gemini API
-  .use(rateLimit({ duration: 60_000, max: 30 }))
+  .use(
+    rateLimit({
+      duration: 60_000,
+      max: 30,
+      generator: (request) => {
+        return (
+          request.headers.get("x-forwarded-for") ||
+          request.headers.get("x-real-ip") ||
+          "unknown"
+        );
+      },
+    })
+  )
   .post(
     "/",
     async ({ userId, userMetadata, body, set }) => {
@@ -165,7 +176,7 @@ export const chatRoutes = new Elysia({ prefix: "/chat" })
       }
     },
     {
-      isAuth: true,
+      beforeHandle: isAuthenticated,
       body: t.Object({
         message: t.String({
           minLength: 1,

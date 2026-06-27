@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { authPlugin } from "../../core/middlewares/auth";
+import { authPlugin, isAuthenticated } from "../../core/middlewares/auth";
 import { prisma } from "../../core/db";
 
 /**
@@ -35,7 +35,7 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       }
     },
     {
-      isAuth: true,
+      beforeHandle: isAuthenticated,
       detail: {
         tags: ["users"],
         summary: "Get authenticated user profile details",
@@ -117,7 +117,7 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       }
     },
     {
-      isAuth: true,
+      beforeHandle: isAuthenticated,
       body: t.Object({
         name: t.Optional(t.String({ minLength: 1 })),
         phone_number: t.Optional(t.String()),
