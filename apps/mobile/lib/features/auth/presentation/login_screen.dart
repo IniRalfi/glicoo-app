@@ -24,6 +24,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import 'auth_provider.dart';
+import '../domain/auth_state.dart';
 
 /// Screen login dengan form email/password + Google OAuth.
 class LoginScreen extends ConsumerStatefulWidget {
@@ -80,6 +81,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       loading: () => true,
       orElse: () => false,
     );
+
+    ref.listen<AuthState>(authProvider, (prev, next) {
+      next.maybeWhen(
+        error: (message) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+          ref.read(authProvider.notifier).clearError();
+        },
+        orElse: () {},
+      );
+    });
 
     return Scaffold(
       backgroundColor: Colors.white,

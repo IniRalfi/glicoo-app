@@ -46,6 +46,8 @@ dependencies:
   pedometer: ^4.0.1
   workmanager: ^0.9.0
   permission_handler: ^11.3.1
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.10.0
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +70,7 @@ dev_dependencies:
 flutter:
   assets:
     - assets/images/
+    - assets/images/bothub/
     - assets/images/splash/
     - assets/images/loading/
     - assets/images/findrisc/

@@ -78,7 +78,7 @@ export class BotService {
       if (!token) {
         await this.sendTelegramMessage(
           chatId,
-          'Selamat datang di Glico Bot! 🤖\n\nUntuk menghubungkan akun Anda, silakan buka menu *Bot Hub* di aplikasi Glico Anda dan ikuti panduannya.'
+          'Selamat datang di Glicoo Bot! 🤖\n\nUntuk menghubungkan akun Anda, silakan buka menu *Bot Hub* di aplikasi Glicoo Anda dan ikuti panduannya.'
         );
         return;
       }
@@ -92,7 +92,7 @@ export class BotService {
       if (!linkToken) {
         await this.sendTelegramMessage(
           chatId,
-          'Maaf Kak, token OTP tidak valid. Silakan generate ulang token di aplikasi Glico. ❌'
+          'Maaf Kak, token OTP tidak valid. Silakan generate ulang token di aplikasi Glicoo. ❌'
         );
         return;
       }
@@ -101,7 +101,7 @@ export class BotService {
         await prisma.botLinkToken.delete({ where: { id: linkToken.id } });
         await this.sendTelegramMessage(
           chatId,
-          'Maaf Kak, token OTP sudah kedaluwarsa. Silakan ambil token baru di aplikasi Glico. ❌'
+          'Maaf Kak, token OTP sudah kedaluwarsa. Silakan ambil token baru di aplikasi Glicoo. ❌'
         );
         return;
       }
@@ -117,7 +117,7 @@ export class BotService {
 
       await this.sendTelegramMessage(
         chatId,
-        `Selamat Kak *${linkToken.user.name}*! 🎉\n\nAkun Glico kamu berhasil terhubung dengan Telegram. Mulai sekarang, Glico akan memantau gizi makanan dan kesehatan harianmu secara interaktif. Cobain ketik apa saja yang kamu makan sekarang! 🥗`
+        `Selamat Kak *${linkToken.user.name}*! 🎉\n\nAkun Glicoo kamu berhasil terhubung dengan Telegram. Mulai sekarang, Iloo akan memantau gizi makanan dan kesehatan harianmu secara interaktif. Cobain ketik apa saja yang kamu makan sekarang! 🥗`
       );
       return;
     }
@@ -131,7 +131,7 @@ export class BotService {
     if (!user) {
       await this.sendTelegramMessage(
         chatId,
-        'Akun Telegram kamu belum terhubung dengan aplikasi Glico. Silakan hubungkan terlebih dahulu di menu *Bot Hub* di dalam aplikasi Glico ya! 🔗'
+        'Akun Telegram kamu belum terhubung dengan aplikasi Glicoo. Silakan hubungkan terlebih dahulu di menu *Bot Hub* di dalam aplikasi Glicoo ya! 🔗'
       );
       return;
     }
@@ -157,13 +157,27 @@ export class BotService {
       }).catch(() => {});
     }
 
+    // Ambil riwayat percakapan sebelumnya untuk memberikan konteks ke AI
+    const recentChats = await prisma.interventionChat.findMany({
+      where: { user_id: user.id },
+      orderBy: { created_at: 'desc' },
+      take: 7, // Ambil 7 pesan terakhir termasuk yang baru saja disimpan
+    });
+
+    recentChats.reverse();
+
+    const formattedHistory = recentChats.map(c => {
+      const role = c.sender_type === 'USER' ? 'Pengguna' : 'Iloo';
+      return `${role}: ${c.message}`;
+    }).join('\n');
+
     // Prompt AI untuk membedakan makanan vs obrolan biasa
     const schema = {
       type: 'object',
       properties: {
         is_food: {
           type: 'boolean',
-          description: 'Apakah pesan ini menceritakan atau mencatat aktivitas makan/minum pengguna?'
+          description: 'Apakah pesan terakhir ini menceritakan atau menanyakan tentang aktivitas makan/minum/kalori/gizi pengguna?'
         },
         estimated_calories: {
           type: 'integer',
@@ -182,11 +196,16 @@ export class BotService {
     };
 
     const systemInstruction = `
-      Kamu adalah Glico, sahabat virtual pendeteksi risiko Diabetes Tipe 2.
+      Kamu adalah Iloo, sahabat virtual pendeteksi risiko Diabetes Tipe 2 di aplikasi Glicoo.
       Gaya bahasamu santai, menggunakan bahasa Indonesia sehari-hari ("Kamu", "Kak"), dan lengkapi dengan sedikit emoji. Jangan menggurui atau menggunakan bahasa medis kaku.
-      Tugasmu adalah membalas pesan pengguna. Jika pesan tersebut berupa deskripsi makanan/minuman, estimasikan kalori (kcal), estimasikan kandungan gula (gram), dan buatlah feedback bersahabat maksimal 2-3 kalimat yang memotivasi mereka untuk bergerak aktif jika makanan tinggi kalori/gula.
-      Jika bukan makanan, balaslah seperti sahabat yang peduli kesehatan mereka dan tetapkan is_food = false, serta estimated_calories = null dan estimated_sugar_grams = null.
+      Tugasmu adalah membalas pesan pengguna berdasarkan riwayat chat yang diberikan.
+      Jika jumlah makanan/porsi yang dimasukkan tidak wajar atau sangat berlebihan (seperti makan nasi 3kg, makan ikan 10 ekor sekaligus, minum sirup seember, dll.), tanggapilah dengan humor, candaan santai, atau rasa terkejut yang lucu khas sahabat dekat (misalnya: "Ini makan porsi satu RT atau gimana Kak? 😂") sebelum memberikan estimasi angka kalori/gula yang fantastis tersebut secara logis.
+      Jika pesan terakhir dari Pengguna menanyakan atau mengacu pada deskripsi makanan/minuman sebelumnya, jawablah pertanyaannya sesuai konteks dan tentukan nilai gizi/kalori/gula yang sesuai.
+      Jika pesan terakhir berupa deskripsi makanan/minuman, estimasikan kalori (kcal), estimasikan kandungan gula (gram), dan buatlah feedback bersahabat maksimal 2-3 kalimat yang memotivasi mereka untuk bergerak aktif jika makanan tinggi kalori/gula.
+      Jika pesan terakhir tidak terkait makanan/minuman, balaslah seperti sahabat yang peduli kesehatan mereka dan tetapkan is_food = false, serta estimated_calories = null dan estimated_sugar_grams = null.
     `;
+
+    const prompt = `Berikut adalah riwayat percakapan terakhir:\n${formattedHistory}\n\nAnalisis pesan terakhir dari Pengguna dan tentukan nilai JSON yang sesuai berdasarkan riwayat tersebut.`;
 
     try {
       const aiResponse = await aiService.generateJSON<{
@@ -194,7 +213,7 @@ export class BotService {
         estimated_calories: number | null;
         estimated_sugar_grams: number | null;
         ai_feedback: string;
-      }>(text, schema, systemInstruction);
+      }>(prompt, schema, systemInstruction);
 
       // Jika menceritakan makanan, simpan ke database FoodLog agar sinkron dengan aplikasi Mobile!
       if (aiResponse.is_food) {

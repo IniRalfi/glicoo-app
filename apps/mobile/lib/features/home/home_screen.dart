@@ -29,6 +29,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/widgets/bento_card.dart';
 import '../auth/presentation/auth_provider.dart';
 import '../navigation/bottom_nav_shell.dart';
+import '../chatbot/presentation/chatbot_screen.dart';
+import 'widgets/iloo_tutorial_dialog.dart';
 
 /// Data model untuk aktivitas harian.
 class ActivityData {
@@ -135,15 +137,31 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Menampilkan tutorial Iloo jika user belum pernah menyelesaikannya
+    // Menampilkan tutorial Iloo jika user belum pernah menyelesaikannya (saat inisialisasi / reset)
     ref.listen<AsyncValue<bool>>(tutorialSeenProvider, (prev, next) {
       next.whenData((seen) {
+        debugPrint('DEBUG: tutorialSeenProvider listener triggered. seen = $seen');
+        if (!seen) {
+          final currentTab = ref.read(bottomNavIndexProvider);
+          if (currentTab == 0) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showTutorialDialog(context, ref);
+            });
+          }
+        }
+      });
+    });
+
+    // Juga tampilkan jika user berpindah kembali ke tab Beranda (index 0) dan belum melihat tutorial
+    ref.listen<int>(bottomNavIndexProvider, (prev, next) {
+      if (next == 0) {
+        final seen = ref.read(tutorialSeenProvider).value ?? true;
         if (!seen) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _showTutorialDialog(context, ref);
           });
         }
-      });
+      }
     });
 
     return Scaffold(
@@ -684,19 +702,26 @@ class HomeScreen extends ConsumerWidget {
   }
 
   void _showTutorialDialog(BuildContext context, WidgetRef ref) {
-    if (ref.read(tutorialDialogShowingProvider)) return;
+    debugPrint('DEBUG: _showTutorialDialog called. isShowing: ${IlooTutorialDialog.isShowing}, provider: ${ref.read(tutorialDialogShowingProvider)}');
+    if (ref.read(tutorialDialogShowingProvider) || IlooTutorialDialog.isShowing) {
+      debugPrint('DEBUG: _showTutorialDialog aborted (already showing)');
+      return;
+    }
 
     ref.read(tutorialDialogShowingProvider.notifier).state = true;
+    IlooTutorialDialog.isShowing = true;
     showGeneralDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withValues(alpha: 0.8), // Scrim gelap transparan
+      barrierColor: Colors.black.withValues(alpha: 0.5), // Scrim gelap transparan
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, anim1, anim2) {
         return const IlooTutorialDialog();
       },
     ).then((_) {
       ref.read(tutorialDialogShowingProvider.notifier).state = false;
+      IlooTutorialDialog.isShowing = false;
+      debugPrint('DEBUG: _showTutorialDialog dismissed');
     });
   }
 
@@ -749,18 +774,45 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: () => _showFoodLogBottomSheet(context),
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('Catat Menu Makan'),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.brand1,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () => _showFoodLogBottomSheet(context),
+                  icon: const Icon(Icons.add_rounded, size: 16),
+                  label: const Text('Catat Makanan'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.brand1,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
               ),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ChatbotScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16, color: AppColors.brand1),
+                  label: const Text('Tanya Iloo'),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.brand1, width: 1.2),
+                    foregroundColor: AppColors.brand1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -992,234 +1044,6 @@ class _FoodLogBottomSheetState extends ConsumerState<FoodLogBottomSheet> {
   }
 }
 
-/// Dialog onboarding/tutorial karakter Iloo.
-class IlooTutorialDialog extends ConsumerStatefulWidget {
-  const IlooTutorialDialog({super.key});
-
-  @override
-  ConsumerState<IlooTutorialDialog> createState() => _IlooTutorialDialogState();
-}
-
-class _IlooTutorialDialogState extends ConsumerState<IlooTutorialDialog> {
-  int _step = 1;
-
-  Future<void> _completeTutorial(bool enableAi) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('tutorial_iloo_done', true);
-    if (enableAi) {
-      await prefs.setBool('ai_companion_active', true);
-    }
-    // Refresh provider agar dialog tidak dipanggil lagi
-    ref.invalidate(tutorialSeenProvider);
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    String assetPath;
-    Widget content;
-
-    if (_step == 1) {
-      assetPath = 'assets/images/tutorial/iloo-greeting.svg';
-      content = Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Halo, aku Iloo!',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Aku akan menjadi teman sehatmu selama menggunakan aplikasi ini.\n\n'
-            'Aku akan membantu memantau kebiasaanmu dan memberikan saran yang sesuai dengan kondisi kesehatanmu.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              color: Colors.white.withValues(alpha: 0.9),
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () {
-                setState(() => _step = 2);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                'Lanjut',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    } else if (_step == 2) {
-      assetPath = 'assets/images/tutorial/iloo-kawai.svg';
-      content = Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Agar aku bisa memberikan pengingat dan rekomendasi yang sesuai, aktifkan fitur Pendamping AI di pengaturan.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-              height: 1.6,
-            ),
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () => _completeTutorial(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                'Aktifkan Sekarang',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () {
-                setState(() => _step = 3);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white.withValues(alpha: 0.3),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                'Nanti Saja',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    } else {
-      assetPath = 'assets/images/tutorial/iloo-oke.svg';
-      content = Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: Colors.white,
-                height: 1.6,
-              ),
-              children: [
-                const TextSpan(text: 'Baik, mungkin lain waktu ya! Saat kamu siap, fitur Pendamping AI dapat diaktifkan kapan saja melalui '),
-                TextSpan(
-                  text: 'Pengaturan > Pendamping AI',
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const TextSpan(text: ' untuk mendapatkan saran dan pengingat yang lebih personal.'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () => _completeTutorial(false),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                'Oke',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return PopScope(
-      canPop: false,
-      child: Material(
-        color: Colors.transparent,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Iloo Character Image
-                SvgPicture.asset(
-                  assetPath,
-                  width: 180,
-                  height: 180,
-                ),
-                const SizedBox(height: 16),
-                // Text card
-                content,
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 /// Widget mini grafik batang (6 baris historis)
 class MiniBarChart extends StatelessWidget {

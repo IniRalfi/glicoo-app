@@ -174,4 +174,29 @@ class ApiService {
       throw Exception('Gagal memperbarui profil: $e');
     }
   }
+
+  /// [ID] Mengirim pesan ke in-app chatbot Elysia backend.
+  /// [EN] Sends chat message to Glico Elysia backend in-app chatbot.
+  Future<Map<String, dynamic>> sendChatMessage(String message) async {
+    final url = Uri.parse('${EnvConfig.backendUrl}/api/v1/chat');
+    try {
+      final response = await _client.post(
+        url,
+        headers: _buildHeaders(),
+        body: jsonEncode({
+          'message': message,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else {
+        final errBody = jsonDecode(response.body) as Map<String, dynamic>;
+        throw Exception(errBody['message'] ?? 'Failed to send chat message');
+      }
+    } catch (e) {
+      throw Exception('Gagal mengirim pesan chat: $e');
+    }
+  }
 }
+

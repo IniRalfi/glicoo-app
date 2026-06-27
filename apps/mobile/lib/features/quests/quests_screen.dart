@@ -125,7 +125,7 @@ class QuestsScreen extends ConsumerWidget {
               const SizedBox(height: 24),
               _buildFilterTabs(ref, activeFilter),
               const SizedBox(height: 20),
-              _buildQuestList(filteredQuests),
+              _buildQuestList(context, filteredQuests),
               const SizedBox(height: 90), // Jarak untuk floating bottom bar
             ],
           ),
@@ -276,7 +276,7 @@ class QuestsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildQuestList(List<QuestItem> quests) {
+  Widget _buildQuestList(BuildContext context, List<QuestItem> quests) {
     if (quests.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 40),
@@ -304,6 +304,7 @@ class QuestsScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           backgroundColor: Colors.white,
           borderColor: Colors.white,
+          onTap: () => _showQuestDetailDialog(context, quest),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -388,6 +389,142 @@ class QuestsScreen extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+
+  void _showQuestDetailDialog(BuildContext context, QuestItem quest) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Detail Misi',
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, anim1, anim2) {
+        return _QuestDetailDialog(quest: quest);
+      },
+    );
+  }
+}
+
+class _QuestDetailDialog extends StatelessWidget {
+  final QuestItem quest;
+
+  const _QuestDetailDialog({required this.quest});
+
+  @override
+  Widget build(BuildContext context) {
+    Color bgIlooColor;
+    String svgAssetPath;
+    String contentText;
+    EdgeInsetsGeometry containerPadding;
+    AlignmentGeometry imageAlignment;
+    double svgHeight;
+
+    if (quest.title.contains('Bergerak')) {
+      bgIlooColor = const Color(0xFF34C759);
+      svgAssetPath = 'assets/images/misi/iloo_walk.svg';
+      contentText = 'Aktivitas fisik membantu tubuh mengontrol kadar gula darah dan mengurangi risiko Diabetes Melitus Tipe 2.';
+      containerPadding = const EdgeInsets.only(top: 16, bottom: 12);
+      imageAlignment = Alignment.bottomCenter;
+      svgHeight = 120.0;
+    } else if (quest.title.contains('Tidur')) {
+      bgIlooColor = const Color(0xFF0088FF);
+      svgAssetPath = 'assets/images/misi/iloo_sleep.svg';
+      contentText = 'Tidur yang cukup dan teratur membantu menjaga keseimbangan hormon serta sensitivitas insulin, sehingga dapat mengurangi risiko Diabetes Melitus Tipe 2.';
+      containerPadding = const EdgeInsets.only(top: 16, bottom: 0);
+      imageAlignment = Alignment.bottomCenter;
+      svgHeight = 154.0;
+    } else {
+      bgIlooColor = const Color(0xFFFF2D55);
+      svgAssetPath = 'assets/images/misi/iloo_screen.svg';
+      contentText = 'Waktu paparan layar yang berlebihan sering kali berkaitan dengan perilaku sedentari dan kurangnya aktivitas fisik, yang dapat meningkatkan risiko Diabetes Melitus Tipe 2.';
+      containerPadding = const EdgeInsets.only(top: 16, bottom: 0);
+      imageAlignment = Alignment.bottomCenter;
+      svgHeight = 154.0;
+    }
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(32),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header Image Container
+            Container(
+              width: 289,
+              height: 170,
+              decoration: BoxDecoration(
+                color: bgIlooColor,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              padding: containerPadding,
+              child: Align(
+                alignment: imageAlignment,
+                child: SvgPicture.asset(
+                  svgAssetPath,
+                  height: svgHeight,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Title
+            Text(
+              'Kenapa Penting?',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.rammettoOne(
+                fontSize: 22,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Description Content
+            Text(
+              contentText,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Tutup Button
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(26),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'Tutup',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

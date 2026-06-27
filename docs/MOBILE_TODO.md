@@ -119,17 +119,17 @@
 
 ---
 
-## Phase 11 — In-App Chatbot ❌
+## Phase 11 — In-App Chatbot ✅
 
-- [ ] Desain Halaman Chatbot bawaan (Tab/Screen terpisah di mobile)
-- [ ] Integrasi pengiriman teks ke endpoint Elysia backend dan tampilkan respon AI
-- [ ] Caching riwayat obrolan secara lokal menggunakan Local Storage (Shared Preferences/SQLite)
+- [x] Desain Halaman Chatbot bawaan (Tab/Screen terpisah di mobile)
+- [x] Integrasi pengiriman teks ke endpoint Elysia backend dan tampilkan respon AI
+- [x] Caching riwayat obrolan secara lokal menggunakan Local Storage (Shared Preferences)
 
-## Phase 12 — Local Push Notifications ❌
+## Phase 12 — Local Push Notifications ✅
 
-- [ ] Integrasi library `flutter_local_notifications`
-- [ ] Setup schedule pengingat pagi (jam 08:00) dan pengingat malam (jam 21:00) berdasarkan data harian
-- [ ] Pengujian push notification lokal saat kondisi terpenuhi
+- [x] Integrasi library `flutter_local_notifications`
+- [x] Setup schedule pengingat pagi (jam 08:00) dan pengingat malam (jam 21:00) berdasarkan data harian
+- [x] Pengujian push notification lokal saat kondisi terpenuhi (Kirim Notifikasi Tes di Profil)
 
 ---
 

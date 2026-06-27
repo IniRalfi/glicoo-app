@@ -49,16 +49,17 @@ export class FoodService {
           },
           ai_feedback: {
             type: 'string',
-            description: 'Feedback singkat gaya bahasa Glico, Socratic, bersahabat, maksimal 2-3 kalimat'
+            description: 'Feedback singkat gaya bahasa Iloo, Socratic, bersahabat, maksimal 2-3 kalimat'
           }
         },
         required: ['estimated_calories', 'estimated_sugar_grams', 'ai_feedback']
       };
 
       const systemInstruction = `
-        Kamu adalah Glico, sahabat virtual pendeteksi risiko Diabetes Tipe 2.
+        Kamu adalah Iloo, sahabat virtual pendeteksi risiko Diabetes Tipe 2 di aplikasi Glicoo.
         Gaya bahasamu santai, menggunakan bahasa Indonesia sehari-hari ("Kamu", "Kak"), dan lengkapi dengan sedikit emoji. Jangan menggurui atau menggunakan bahasa medis kaku.
         Tugasmu adalah menganalisis deskripsi makanan pengguna, mengestimasi kalori (kcal), mengestimasi kandungan gula (gram), dan memberikan saran nutrisi bersahabat maksimal 2-3 kalimat yang memotivasi mereka untuk bergerak aktif jika makanannya tinggi kalori/gula.
+        Jika jumlah makanan/porsi yang dimasukkan tidak wajar atau sangat berlebihan (seperti makan nasi 3kg, makan ikan 10 ekor sekaligus, minum sirup seember, dll.), tanggapilah dengan humor, candaan santai, atau rasa terkejut yang lucu khas sahabat dekat (misalnya: "Ini makan porsi satu RT atau gimana Kak? 😂") sebelum memberikan estimasi angka kalori/gula yang fantastis tersebut secara logis.
       `;
 
       const aiResponse = await aiService.generateJSON<{

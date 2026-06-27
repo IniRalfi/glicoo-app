@@ -19,6 +19,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../../core/sensor_service.dart';
+import '../../core/notification_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/bento_card.dart';
 import '../../core/widgets/glico_loading.dart';
@@ -652,6 +653,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                                 foregroundColor: AppColors.primary,
+                                elevation: 0,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                NotificationService().showInstantTestNotification();
+                              },
+                              icon: const Icon(Icons.notifications_active_outlined, size: 18),
+                              label: const Text('Kirim Notifikasi Tes (Uji Coba)'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.success.withValues(alpha: 0.1),
+                                foregroundColor: AppColors.success,
                                 elevation: 0,
                               ),
                             ),

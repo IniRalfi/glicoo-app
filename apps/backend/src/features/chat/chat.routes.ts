@@ -52,13 +52,27 @@ export const chatRoutes = new Elysia({ prefix: "/chat" })
           },
         });
 
+        // Ambil riwayat percakapan sebelumnya untuk memberikan konteks ke AI
+        const recentChats = await prisma.interventionChat.findMany({
+          where: { user_id: userId! },
+          orderBy: { created_at: 'desc' },
+          take: 7, // Ambil 7 pesan terakhir termasuk yang baru saja disimpan
+        });
+
+        recentChats.reverse();
+
+        const formattedHistory = recentChats.map(c => {
+          const role = c.sender_type === 'USER' ? 'Pengguna' : 'Iloo';
+          return `${role}: ${c.message}`;
+        }).join('\n');
+
         // 3. Konfigurasi Schema parsing AI (is_food, calories, sugar, feedback)
         const schema = {
           type: 'object',
           properties: {
             is_food: {
               type: 'boolean',
-              description: 'Apakah pesan ini menceritakan atau mencatat aktivitas makan/minum pengguna?'
+              description: 'Apakah pesan terakhir ini menceritakan atau menanyakan tentang aktivitas makan/minum/kalori/gizi pengguna?'
             },
             estimated_calories: {
               type: 'integer',
@@ -77,11 +91,16 @@ export const chatRoutes = new Elysia({ prefix: "/chat" })
         };
 
         const systemInstruction = `
-          Kamu adalah Glico, sahabat virtual pendeteksi risiko Diabetes Tipe 2.
+          Kamu adalah Iloo, sahabat virtual pendeteksi risiko Diabetes Tipe 2 di aplikasi Glicoo.
           Gaya bahasamu santai, menggunakan bahasa Indonesia sehari-hari ("Kamu", "Kak"), dan lengkapi dengan sedikit emoji. Jangan menggurui atau menggunakan bahasa medis kaku.
-          Tugasmu adalah membalas percakapan pengguna di dalam in-app chat. Jika pesan tersebut berupa deskripsi makanan/minuman, estimasikan kalori (kcal), estimasikan kandungan gula (gram), dan buatlah feedback bersahabat maksimal 2-3 kalimat yang memotivasi mereka untuk bergerak aktif jika makanan tinggi kalori/gula.
-          Jika bukan makanan, balaslah seperti sahabat yang peduli kesehatan mereka dan tetapkan is_food = false, serta estimated_calories = null dan estimated_sugar_grams = null.
+          Tugasmu adalah membalas percakapan pengguna di dalam in-app chat berdasarkan riwayat chat yang diberikan.
+          Jika jumlah makanan/porsi yang dimasukkan tidak wajar atau sangat berlebihan (seperti makan nasi 3kg, makan ikan 10 ekor sekaligus, minum sirup seember, dll.), tanggapilah dengan humor, candaan santai, atau rasa terkejut yang lucu khas sahabat dekat (misalnya: "Ini makan porsi satu RT atau gimana Kak? 😂") sebelum memberikan estimasi angka kalori/gula yang fantastis tersebut secara logis.
+          Jika pesan terakhir dari Pengguna menanyakan atau mengacu pada deskripsi makanan/minuman sebelumnya, jawablah pertanyaannya sesuai konteks dan tentukan nilai gizi/kalori/gula yang sesuai.
+          Jika pesan terakhir berupa deskripsi makanan/minuman, estimasikan kalori (kcal), estimasikan kandungan gula (gram), dan buatlah feedback bersahabat maksimal 2-3 kalimat yang memotivasi mereka untuk bergerak aktif jika makanan tinggi kalori/gula.
+          Jika pesan terakhir tidak terkait makanan/minuman, balaslah seperti sahabat yang peduli kesehatan mereka dan tetapkan is_food = false, serta estimated_calories = null dan estimated_sugar_grams = null.
         `;
+
+        const prompt = `Berikut adalah riwayat percakapan terakhir:\n${formattedHistory}\n\nAnalisis pesan terakhir dari Pengguna dan tentukan nilai JSON yang sesuai berdasarkan riwayat tersebut.`;
 
         // 4. Panggil AI Service
         const aiResponse = await aiService.generateJSON<{
@@ -89,7 +108,7 @@ export const chatRoutes = new Elysia({ prefix: "/chat" })
           estimated_calories: number | null;
           estimated_sugar_grams: number | null;
           ai_feedback: string;
-        }>(text, schema, systemInstruction);
+        }>(prompt, schema, systemInstruction);
 
         // 5. Jika AI mendeteksi makanan, simpan ke database FoodLog secara asinkron
         if (aiResponse.is_food) {

@@ -84,7 +84,7 @@ class _LegalScreenState extends State<LegalScreen> {
                                 ),
                                 const SizedBox(width: AppSpacing.sm),
                                 Text(
-                                  'Syarat & Ketentuan',
+                                  'Ketentuan Layanan',
                                   style: AppTypography.textTheme.titleSmall,
                                 ),
                               ],
@@ -196,11 +196,33 @@ class _LegalText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: AppTypography.textTheme.bodySmall?.copyWith(
-        color: AppColors.textSecondary,
-        height: 1.6,
+    final lines = text.split('\n');
+    final List<TextSpan> spans = [];
+
+    // Match lines starting with a number and a dot, e.g., "1. Penerimaan Syarat"
+    final subheadingRegex = RegExp(r'^\d+\.\s+.*');
+
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      final isSubheading = subheadingRegex.hasMatch(line.trim());
+
+      spans.add(
+        TextSpan(
+          text: line + (i < lines.length - 1 ? '\n' : ''),
+          style: TextStyle(
+            fontWeight: isSubheading ? FontWeight.bold : FontWeight.normal,
+            color: isSubheading ? Colors.black87 : AppColors.textSecondary,
+          ),
+        ),
+      );
+    }
+
+    return RichText(
+      text: TextSpan(
+        style: AppTypography.textTheme.bodySmall?.copyWith(
+          height: 1.6,
+        ),
+        children: spans,
       ),
     );
   }

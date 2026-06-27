@@ -24,6 +24,7 @@ import 'package:workmanager/workmanager.dart';
 import 'core/api_service.dart';
 import 'core/env_config.dart';
 import 'core/sensor_service.dart';
+import 'core/notification_service.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/glico_loading.dart';
@@ -149,6 +150,16 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
       final sensorService = ref.read(sensorServiceProvider);
       sensorService.initPedometer();
       sensorService.initScreenTimeTracking();
+
+      // Inisialisasi notifikasi lokal & rutinitas harian
+      final notifService = NotificationService();
+      notifService.init().then((_) {
+        notifService.requestPermissions().then((granted) {
+          if (granted) {
+            notifService.scheduleDefaultGlicooReminders();
+          }
+        });
+      });
     });
   }
 
