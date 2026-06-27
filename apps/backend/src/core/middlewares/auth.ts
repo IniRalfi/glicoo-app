@@ -32,8 +32,8 @@ export const authPlugin = new Elysia({ name: "auth-middleware" })
     let payload: any = null;
     try {
       payload = await jwt.verify(token);
-    } catch (_e) {
-      // Verification failed (expected in dev if JWT_SECRET doesn't match Supabase secret)
+    } catch (_e: any) {
+      console.error("[AUTH] JWT verification failed:", _e?.message || _e);
     }
 
     if (!payload && process.env.NODE_ENV === "development") {
