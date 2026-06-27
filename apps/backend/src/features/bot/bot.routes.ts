@@ -141,6 +141,44 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
       },
     }
   )
+  // [ID] Route untuk memutuskan koneksi bot dari akun pengguna
+  .delete(
+    "/disconnect",
+    async ({ userId, set }) => {
+      try {
+        const user = await prisma.user.findUnique({ where: { id: userId! } });
+
+        if (!user) {
+          set.status = 404;
+          return { message: "User not found" };
+        }
+
+        if (!user.phone_number) {
+          set.status = 400;
+          return { message: "Bot is not currently linked to this account" };
+        }
+
+        // [ID] Hapus phone_number (chat ID Telegram) untuk memutuskan koneksi
+        await prisma.user.update({
+          where: { id: userId! },
+          data: { phone_number: "" },
+        });
+
+        return { message: "Bot successfully disconnected from account" };
+      } catch (err) {
+        console.error("Error disconnecting bot:", err);
+        set.status = 500;
+        return { message: "Internal server error during bot disconnect" };
+      }
+    },
+    {
+      isAuth: true,
+      detail: {
+        tags: ["bot"],
+        summary: "Disconnect Telegram/WhatsApp bot from user account",
+      },
+    }
+  )
   // [ID] Webhook Telegram Bot untuk menerima pesan update dari Telegram
   .post(
     "/webhook",

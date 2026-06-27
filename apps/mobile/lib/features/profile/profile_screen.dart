@@ -56,10 +56,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String? _otpToken;
   bool _isLoadingOtp = false;
 
+  // Bot connection state
+  bool _isBotConnected = false;
+  bool _isDisconnecting = false;
+
   @override
   void initState() {
     super.initState();
     _loadSettings();
+    _loadBotStatus();
   }
 
   Future<void> _loadSettings() async {
@@ -167,6 +172,69 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (height <= 0) return 0.0;
     final heightM = height / 100.0;
     return weight / (heightM * heightM);
+  }
+
+  Future<void> _loadBotStatus() async {
+    try {
+      final connected = await ref.read(apiServiceProvider).getBotStatus();
+      if (mounted) setState(() => _isBotConnected = connected);
+    } catch (_) {}
+  }
+
+  Future<void> _disconnectBot() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Putuskan Koneksi Bot?', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+        content: Text(
+          'Setelah diputuskan, Iloo tidak bisa lagi membalas pesan Telegram kamu. Kamu bisa menghubungkan ulang kapan saja.',
+          style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Batal', style: GoogleFonts.inter()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Putuskan', style: GoogleFonts.inter(color: AppColors.error, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isDisconnecting = true);
+    try {
+      await ref.read(apiServiceProvider).disconnectBot();
+      if (mounted) {
+        setState(() {
+          _isBotConnected = false;
+          _isDisconnecting = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Bot berhasil diputus dari akun kamu.'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isDisconnecting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memutus koneksi: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _generateOtp() async {
@@ -1551,46 +1619,107 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Langkah Tautkan Akun',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tekan tombol di bawah untuk mendapatkan kode verifikasi sementara. Salin kode tersebut dan kirimkan ke bot WhatsApp atau Telegram untuk menghubungkan akunmu dengan Pendamping AI. Kode berlaku selama 10 menit.',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: _isLoadingOtp ? null : _generateOtp,
-            icon: _isLoadingOtp
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Icon(Icons.key, size: 18),
-            label: Text(
-              'Dapatkan Kode OTP',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFFFB700),
-              foregroundColor: const Color(0xFF1A1A1A),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+          // --- Status Baris ---
+          Row(
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: _isBotConnected ? AppColors.success : const Color(0xFFD1D1D6),
+                  shape: BoxShape.circle,
+                ),
               ),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
+              const SizedBox(width: 8),
+              Text(
+                _isBotConnected ? 'Bot Terhubung' : 'Bot Belum Terhubung',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: _isBotConnected ? AppColors.success : AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 12),
+
+          if (_isBotConnected) ...[
+            // --- Status Terhubung ---
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle_outline, color: AppColors.success, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Akun kamu sudah terhubung dengan Iloo di Telegram. Kamu bisa mengobrol dan mencatat makanan langsung dari sana!',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.success,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _isDisconnecting ? null : _disconnectBot,
+              icon: _isDisconnecting
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.link_off, size: 18),
+              label: Text(
+                'Putuskan Koneksi Bot',
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.error,
+                side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ] else ...[
+            // --- Status Belum Terhubung ---
+            Text(
+              'Tekan tombol di bawah untuk mendapatkan kode verifikasi sementara. Salin kode tersebut dan kirimkan ke bot WhatsApp atau Telegram untuk menghubungkan akunmu dengan Pendamping AI. Kode berlaku selama 10 menit.',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: _isLoadingOtp ? null : _generateOtp,
+              icon: _isLoadingOtp
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.key, size: 18),
+              label: Text(
+                'Dapatkan Kode OTP',
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFFFB700),
+                foregroundColor: const Color(0xFF1A1A1A),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ],
         ],
       ),
     );

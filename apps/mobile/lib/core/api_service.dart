@@ -45,6 +45,33 @@ class ApiService {
     };
   }
 
+  /// [ID] Memeriksa apakah user sudah menautkan bot (phone_number tidak kosong).
+  /// [EN] Checks if the user has an active bot link (phone_number is non-empty).
+  Future<bool> getBotStatus() async {
+    try {
+      final profile = await getUserProfile();
+      final phone = profile['phone_number']?.toString() ?? '';
+      return phone.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// [ID] Memutus koneksi bot Telegram dari akun pengguna.
+  /// [EN] Disconnects the Telegram bot from the user account.
+  Future<void> disconnectBot() async {
+    final url = Uri.parse('${EnvConfig.backendUrl}/api/v1/bot/disconnect');
+    try {
+      final response = await _client.delete(url, headers: _buildHeaders());
+      if (response.statusCode != 200) {
+        final errBody = jsonDecode(response.body) as Map<String, dynamic>;
+        throw Exception(errBody['message'] ?? 'Failed to disconnect bot');
+      }
+    } catch (e) {
+      throw Exception('Gagal memutus koneksi bot: $e');
+    }
+  }
+
   /// [ID] Mengambil tautan deep link bot Telegram/WhatsApp dari backend.
   /// [EN] Retrieves the Telegram/WhatsApp bot deep link from the backend.
   Future<Map<String, dynamic>> getBotLink() async {
