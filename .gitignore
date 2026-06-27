@@ -18,6 +18,9 @@ out/
 .env.production.local
 .env.*.local
 *.pem
+.env.*
+!.env.example
+!.env.*.example
 
 # === LOGS ===
 npm-debug.log*
@@ -35,6 +38,9 @@ Thumbs.db
 .vscode/settings.json
 .idea/
 *.sublime-workspace
+
+# === MCP & TOOL CONFIGS ===
+.roo/
 
 # === TESTING ===
 coverage/

@@ -1,0 +1,27 @@
+{
+  "name": "glicoo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "bun --cwd apps/web dev",
+    "dev:backend": "bun --cwd apps/backend dev",
+    "build:web": "bun --cwd apps/web build",
+    "build:backend": "bun --cwd apps/backend build",
+    "lint": "bun --cwd apps/web lint",
+    "typecheck": "tsc -b",
+    "db:generate": "bun --cwd apps/backend db:generate",
+    "db:push": "bun --cwd apps/backend db:push",
+    "db:studio": "bun --cwd apps/backend db:studio"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  },
+  "trustedDependencies": [
+    "sharp",
+    "unrs-resolver"
+  ]
+}

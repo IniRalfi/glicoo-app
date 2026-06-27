@@ -1,0 +1,41 @@
+{
+  "name": "@glicoo/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch --env-file=.env.development src/index.ts",
+    "start": "bun src/index.ts",
+    "build": "bun build src/index.ts --outdir dist",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "db:migrate": "prisma migrate dev"
+  },
+  "dependencies": {
+    "@elysiajs/cors": "^1.1.0",
+    "@elysiajs/jwt": "^1.1.0",
+    "@elysiajs/swagger": "^1.1.0",
+    "@glicoo/config": "*",
+    "@glicoo/types": "*",
+    "@google/generative-ai": "^0.24.1",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "croner": "^10.0.1",
+    "elysia": "^1.1.0",
+    "elysia-rate-limit": "^4.6.2",
+    "jose": "^6.2.3",
+    "pg": "^8.22.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.0",
+    "@types/pg": "^8.20.0",
+    "dotenv": "^17.4.2",
+    "prisma": "^7.8.0",
+    "typescript": "^5"
+  },
+  "trustedDependencies": [
+    "@prisma/client"
+  ]
+}
