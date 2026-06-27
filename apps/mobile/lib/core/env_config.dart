@@ -39,6 +39,9 @@ abstract final class EnvConfig {
   /// Supabase anon (public) key from .env
   static String get supabaseAnonKey => _require('SUPABASE_ANON_KEY');
 
+  /// Google Web Application Client ID from .env (for Google Sign-In)
+  static String? get googleWebClientId => dotenv.env['GOOGLE_WEB_CLIENT_ID'];
+
   /// Backend Elysia API URL from .env (defaults to Android emulator host IP)
   static String get backendUrl => dotenv.env['BACKEND_URL'] ?? 'http://10.0.2.2:3001';
 

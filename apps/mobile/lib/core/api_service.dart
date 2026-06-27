@@ -29,16 +29,23 @@ class ApiService {
 
   final http.Client _client;
 
-  /// [ID] Mendapatkan access token JWT dari session aktif Supabase.
-  /// [EN] Retrieves the JWT access token from the active Supabase session.
-  String? _getAuthToken() {
-    return Supabase.instance.client.auth.currentSession?.accessToken;
+  /// [ID] Mendapatkan access token JWT dari session aktif Supabase secara aman.
+  /// [EN] Safely retrieves the JWT access token from the active Supabase session.
+  Future<String?> _getAuthToken() async {
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session == null) return null;
+
+    if (session.isExpired) {
+      final response = await Supabase.instance.client.auth.refreshSession();
+      return response.session?.accessToken;
+    }
+    return session.accessToken;
   }
 
-  /// [ID] Membuat header HTTP default, menyertakan JWT jika tersedia.
-  /// [EN] Creates default HTTP headers, attaching the JWT if available.
-  Map<String, String> _buildHeaders() {
-    final token = _getAuthToken();
+  /// [ID] Membuat header HTTP default secara asinkron, menyertakan JWT jika tersedia.
+  /// [EN] Asynchronously creates default HTTP headers, attaching the JWT if available.
+  Future<Map<String, String>> _buildHeaders() async {
+    final token = await _getAuthToken();
     return {
       'Content-Type': 'application/json; charset=UTF-8',
       if (token != null) 'Authorization': 'Bearer $token',
@@ -62,7 +69,7 @@ class ApiService {
   Future<void> disconnectBot() async {
     final url = Uri.parse('${EnvConfig.backendUrl}/api/v1/bot/disconnect');
     try {
-      final response = await _client.delete(url, headers: _buildHeaders());
+      final response = await _client.delete(url, headers: await _buildHeaders());
       if (response.statusCode != 200) {
         final errBody = jsonDecode(response.body) as Map<String, dynamic>;
         throw Exception(errBody['message'] ?? 'Failed to disconnect bot');
@@ -79,7 +86,7 @@ class ApiService {
     try {
       final response = await _client.get(
         url,
-        headers: _buildHeaders(),
+        headers: await _buildHeaders(),
       );
 
       if (response.statusCode == 200) {
@@ -104,7 +111,7 @@ class ApiService {
     try {
       final response = await _client.post(
         url,
-        headers: _buildHeaders(),
+        headers: await _buildHeaders(),
         body: jsonEncode({
           'date': date,
           'step_count': stepCount,
@@ -128,7 +135,7 @@ class ApiService {
     try {
       final response = await _client.post(
         url,
-        headers: _buildHeaders(),
+        headers: await _buildHeaders(),
         body: jsonEncode({
           'description': description,
         }),
@@ -152,7 +159,7 @@ class ApiService {
     try {
       final response = await _client.get(
         url,
-        headers: _buildHeaders(),
+        headers: await _buildHeaders(),
       );
 
       if (response.statusCode == 200) {
@@ -180,7 +187,7 @@ class ApiService {
     try {
       final response = await _client.patch(
         url,
-        headers: _buildHeaders(),
+        headers: await _buildHeaders(),
         body: jsonEncode(<String, dynamic>{
           'name': name,
           'phone_number': phoneNumber,
@@ -209,10 +216,10 @@ class ApiService {
     try {
       final response = await _client.post(
         url,
-        headers: _buildHeaders(),
+        headers: await _buildHeaders(),
         body: jsonEncode({
           'message': message,
-          'context': ?context,
+          'context': context,
         }),
       );
 

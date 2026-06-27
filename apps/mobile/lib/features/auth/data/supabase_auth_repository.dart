@@ -22,8 +22,9 @@ import '../domain/auth_state.dart';
 
 /// Implementasi AuthRepository menggunakan Supabase Auth.
 final class SupabaseAuthRepository implements AuthRepository {
-  SupabaseAuthRepository({required this.supabase})
+  SupabaseAuthRepository({required this.supabase, String? serverClientId})
     : _googleSignIn = GoogleSignIn(
+        serverClientId: serverClientId,
         scopes: <String>['email', 'profile', 'openid'],
       );
 

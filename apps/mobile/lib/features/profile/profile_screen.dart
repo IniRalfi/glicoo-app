@@ -54,6 +54,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   // OTP Link state
   String? _otpToken;
+  String? _telegramLink;
   bool _isLoadingOtp = false;
 
   // Bot connection state
@@ -245,6 +246,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final res = await ref.read(apiServiceProvider).getBotLink();
       setState(() {
         _otpToken = res['token']?.toString();
+        _telegramLink = res['telegramLink']?.toString();
         _isLoadingOtp = false;
       });
       _showOtpDialog();
@@ -331,18 +333,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               if (_otpToken != null) ...[
                 FilledButton.icon(
                   onPressed: () async {
-                    final telegramUrl = 'https://t.me/GlicoBot?start=$_otpToken';
+                    final telegramUrl = _telegramLink ?? 'https://t.me/glicoo_bot?start=$_otpToken';
                     final uri = Uri.parse(telegramUrl);
-                    if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    } else {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Tidak dapat membuka Telegram.'),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
+                    try {
+                      final success = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      if (!success) {
+                        await launchUrl(uri, mode: LaunchMode.platformDefault);
+                      }
+                    } catch (_) {
+                      // Fallback ke browser jika gagal membuka aplikasi eksternal
+                      try {
+                        await launchUrl(uri, mode: LaunchMode.platformDefault);
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Gagal membuka tautan Telegram: $e'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
                       }
                     }
                   },
