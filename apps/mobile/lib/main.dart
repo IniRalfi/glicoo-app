@@ -179,9 +179,10 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
       );
 
       if (isAuthenticated) {
-        // Sudah login, cek findrisc langsung
-        final findriscDone = prefs.getBool('findrisc_done') ?? false;
+        // Sudah login, cek findrisc langsung (ambil secara async dari backend jika local false)
+        final findriscDone = await _checkFindriscDone();
         _authHandled = true;
+        if (!mounted) return;
         setState(() {
           _state = findriscDone ? _FlowState.home : _FlowState.findriscIntro;
         });
@@ -202,10 +203,35 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
 
   void _onLegalAccepted() => setState(() => _state = _FlowState.auth);
 
-  /// Cek apakah user sudah pernah mengisi FINDRISC questionnaire.
+  /// Cek apakah user sudah pernah mengisi FINDRISC questionnaire (baik lokal maupun di server).
   Future<bool> _checkFindriscDone() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('findrisc_done') ?? false;
+    final localDone = prefs.getBool('findrisc_done') ?? false;
+    if (localDone) return true;
+
+    try {
+      // Cek ke backend apakah data profil user sudah lengkap
+      final profile = await ref.read(apiServiceProvider).getUserProfile();
+      final age = profile['age'];
+      final height = profile['height'];
+      final weight = profile['weight'];
+
+      if (age != null && height != null && weight != null) {
+        // Tandai sudah selesai secara lokal agar tidak perlu request ke server lagi
+        await prefs.setBool('findrisc_done', true);
+        
+        final riskScore = profile['risk_score'] ?? 0.0;
+        await prefs.setInt('findrisc_score', (riskScore as num).toInt());
+        
+        // Simpan default data agar UI profile tidak kosong
+        await prefs.setDouble('lingkar_pinggang_cm', (height as num).toDouble());
+        return true;
+      }
+    } catch (e) {
+      debugPrint('[FINDRISC_CHECK] Gagal mengambil profil dari backend: $e');
+    }
+
+    return false;
   }
 
   /// Setelah user menekan tombol "Yuk, mulai sekarang!" di intro FINDRISC,
