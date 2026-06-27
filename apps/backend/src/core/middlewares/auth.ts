@@ -1,6 +1,26 @@
 import { Elysia } from "elysia";
-import { jwt } from "@elysiajs/jwt";
-import { decodeJwt } from "jose";
+import { createRemoteJWKSet, jwtVerify, decodeJwt } from "jose";
+
+/**
+ * [ID] Mendapatkan Reference ID proyek Supabase secara dinamis dari DATABASE_URL.
+ *
+ * [EN] Dynamically gets the Supabase Project Reference ID from DATABASE_URL.
+ */
+const getSupabaseProjectId = (): string => {
+  if (process.env.SUPABASE_PROJECT_ID) {
+    return process.env.SUPABASE_PROJECT_ID;
+  }
+  const dbUrl = process.env.DATABASE_URL || "";
+  const match = dbUrl.match(/postgres\.([a-z0-9]+):/i);
+  if (match && match[1]) {
+    return match[1];
+  }
+  return "dsspywhpfjxmrlxwycyi"; // Fallback ke reference ID proyek saat ini
+};
+
+const projectId = getSupabaseProjectId();
+const JWKS_URL = `https://${projectId}.supabase.co/auth/v1/.well-known/jwks.json`;
+const JWKS = createRemoteJWKSet(new URL(JWKS_URL));
 
 /**
  * [ID] Plugin middleware otentikasi menggunakan Supabase JWT.
@@ -10,13 +30,7 @@ import { decodeJwt } from "jose";
  * Extracts Authorization Bearer header and decrypts the sub (User UUID).
  */
 export const authPlugin = new Elysia({ name: "auth-middleware" })
-  .use(
-    jwt({
-      name: "jwt",
-      secret: process.env.JWT_SECRET || "dev-secret-change-in-production",
-    })
-  )
-  .derive({ as: "global" }, async ({ jwt, headers: { authorization } }) => {
+  .derive({ as: "global" }, async ({ headers: { authorization } }) => {
     if (!authorization || !authorization.startsWith("Bearer ")) {
       return {
         userId: null as string | null,
@@ -26,14 +40,15 @@ export const authPlugin = new Elysia({ name: "auth-middleware" })
 
     const token = authorization.substring(7);
     
-    // [SECURITY] In production, we MUST verify the JWT signature.
+    // [SECURITY] In production, we MUST verify the JWT signature using JWKS (supports ECC / ES256).
     // In development only, we fallback to decodeJwt (no signature check) for DX ergonomics.
     // WARNING: Never allow this fallback in a non-development environment.
     let payload: any = null;
     try {
-      payload = await jwt.verify(token);
+      const { payload: verifiedPayload } = await jwtVerify(token, JWKS);
+      payload = verifiedPayload;
     } catch (_e: any) {
-      console.error("[AUTH] JWT verification failed:", _e?.message || _e);
+      console.error("[AUTH] JWKS JWT verification failed:", _e?.message || _e);
     }
 
     if (!payload && process.env.NODE_ENV === "development") {
