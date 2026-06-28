@@ -14,6 +14,7 @@
 // Impact:
 // main.dart — initialization order
 
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
@@ -65,23 +66,41 @@ final class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> signInWithGoogle() async {
-    // Trigger native Google Account picker — no browser redirect
-    final googleUser = await _googleSignIn.signIn();
-    if (googleUser == null) {
-      throw Exception('Pengguna membatalkan login Google');
-    }
+    // [ID] Login Google: native account picker → exchange idToken ke Supabase.
+    // [WHY logging] Error Google Sign-In sering swallow jadi pesan generik.
+    // debugPrint disini membantu diagnosis SHA-1/audience (DEVELOPER_ERROR) lewat logcat.
+    try {
+      // Trigger native Google Account picker — no browser redirect
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        throw Exception('Pengguna membatalkan login Google');
+      }
 
-    // Get authentication tokens
-    final googleAuth = await googleUser.authentication;
-    if (googleAuth.idToken == null) {
-      throw Exception('Gagal mendapatkan token Google');
-    }
+      // Get authentication tokens
+      final googleAuth = await googleUser.authentication;
+      if (googleAuth.idToken == null) {
+        // [WARNING] idToken null hampir selalu = SHA-1 fingerprint belum didaftarkan
+        // ke OAuth Client ID di Google Cloud Console (DEVELOPER_ERROR 10).
+        debugPrint('[GOOGLE_SIGN_IN] idToken null — kemungkinan SHA-1 belum terdaftar '
+            'atau Web Client ID tidak cocok.');
+        throw Exception('GAGAL_GOOGLE: Token otentikasi kosong. '
+            'Periksa SHA-1 fingerprint & Web Client ID.');
+      }
 
-    // Exchange Google ID token for Supabase session
-    await supabase.auth.signInWithIdToken(
-      provider: OAuthProvider.google,
-      idToken: googleAuth.idToken!,
-    );
+      // Exchange Google ID token for Supabase session
+      await supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: googleAuth.idToken!,
+      );
+    } on Exception {
+      rethrow; // Sudah berformat, lempar apa adanya ke handler UI
+    } catch (e) {
+      // [ID] Tangkap error native (PlatformException/ApiException dari plugin)
+      // dan bungkus agar _humanReadableError bisa mengenali pola kodenya.
+      final raw = e.toString();
+      debugPrint('[GOOGLE_SIGN_IN] Native error: $raw');
+      throw Exception('GAGAL_GOOGLE: $raw');
+    }
   }
 
   @override
