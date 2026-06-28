@@ -22,6 +22,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/sensor_service.dart';
@@ -720,70 +721,72 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                     const Divider(height: 24, thickness: 1),
 
-                    // Developer Options (ExpansionTile)
-                    Theme(
-                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                      child: ExpansionTile(
-                        title: Text(
-                          'Developer Options',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textSecondary,
+                    if (!kReleaseMode) ...[
+                      // Developer Options (ExpansionTile)
+                      Theme(
+                        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                        child: ExpansionTile(
+                          title: Text(
+                            'Developer Options',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
+                          tilePadding: EdgeInsets.zero,
+                          children: [
+                            const SizedBox(height: 8),
+                            ElevatedButton.icon(
+                              onPressed: () => _resetFindrisc(context),
+                              icon: const Icon(Icons.refresh, size: 18),
+                              label: const Text('Reset FINDRISC Flag'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                                foregroundColor: AppColors.primary,
+                                elevation: 0,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ElevatedButton.icon(
+                              onPressed: () => _resetOnboarding(context),
+                              icon: const Icon(Icons.refresh, size: 18),
+                              label: const Text('Reset Onboarding Flag'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.textSecondary.withValues(alpha: 0.1),
+                                foregroundColor: AppColors.textSecondary,
+                                elevation: 0,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ElevatedButton.icon(
+                              onPressed: () => _resetIlooTutorial(context, ref),
+                              icon: const Icon(Icons.refresh, size: 18),
+                              label: const Text('Reset Tutorial Iloo'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                                foregroundColor: AppColors.primary,
+                                elevation: 0,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                NotificationService().showInstantTestNotification();
+                              },
+                              icon: const Icon(Icons.notifications_active_outlined, size: 18),
+                              label: const Text('Kirim Notifikasi Tes (Uji Coba)'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.success.withValues(alpha: 0.1),
+                                foregroundColor: AppColors.success,
+                                elevation: 0,
+                              ),
+                            ),
+                          ],
                         ),
-                        tilePadding: EdgeInsets.zero,
-                        children: [
-                          const SizedBox(height: 8),
-                          ElevatedButton.icon(
-                            onPressed: () => _resetFindrisc(context),
-                            icon: const Icon(Icons.refresh, size: 18),
-                            label: const Text('Reset FINDRISC Flag'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                              foregroundColor: AppColors.primary,
-                              elevation: 0,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          ElevatedButton.icon(
-                            onPressed: () => _resetOnboarding(context),
-                            icon: const Icon(Icons.refresh, size: 18),
-                            label: const Text('Reset Onboarding Flag'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.textSecondary.withValues(alpha: 0.1),
-                              foregroundColor: AppColors.textSecondary,
-                              elevation: 0,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          ElevatedButton.icon(
-                            onPressed: () => _resetIlooTutorial(context, ref),
-                            icon: const Icon(Icons.refresh, size: 18),
-                            label: const Text('Reset Tutorial Iloo'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                              foregroundColor: AppColors.primary,
-                              elevation: 0,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              NotificationService().showInstantTestNotification();
-                            },
-                            icon: const Icon(Icons.notifications_active_outlined, size: 18),
-                            label: const Text('Kirim Notifikasi Tes (Uji Coba)'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.success.withValues(alpha: 0.1),
-                              foregroundColor: AppColors.success,
-                              elevation: 0,
-                            ),
-                          ),
-                        ],
                       ),
-                    ),
-                    const Divider(height: 24, thickness: 1),
+                      const Divider(height: 24, thickness: 1),
+                    ],
 
                     // Keluar Akun (Logout Button)
                     const SizedBox(height: 16),
