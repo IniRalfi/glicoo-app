@@ -77,6 +77,11 @@ final questListProvider = Provider<List<QuestItem>>((ref) {
       ? (screenTime / 360).clamp(0.0, 1.0)
       : 0.0;
 
+  // Makan Lebih Bijak: target mencatat makanan hari ini (target 2000 kkal limit)
+  final dailyCalories = activityData.dailyCalories;
+  final foodCompleted = dailyCalories > 0;
+  final foodProgress = (dailyCalories / 2000.0).clamp(0.0, 1.0);
+
   return [
     QuestItem(
       title: 'Bergerak Lebih Banyak',
@@ -114,6 +119,18 @@ final questListProvider = Provider<List<QuestItem>>((ref) {
       iconPath: 'assets/images/home/smartphone-device.svg',
       themeColor: const Color(0xFFFF3B30),
     ),
+    QuestItem(
+      title: 'Makan Lebih Bijak',
+      description: 'Catat menu makanan yang kamu konsumsi hari ini',
+      points: '+10 Point',
+      statusText: foodCompleted
+          ? 'Selesai (Progress $dailyCalories / 2000 kkal)'
+          : 'Progress $dailyCalories / 2000 kkal',
+      isCompleted: foodCompleted,
+      progress: foodProgress,
+      iconPath: 'assets/images/misi/food.svg',
+      themeColor: const Color(0xFFC73E8A),
+    ),
   ];
 });
 
@@ -144,7 +161,11 @@ final healthScoreProvider = Provider<int>((ref) {
     screenPoints = 0.0; // Base point
   }
 
-  return (stepPoints + sleepPoints + screenPoints).round().clamp(0, 100);
+  // 4. Poin Makan Lebih Bijak (Max 10 Poin)
+  final dailyCalories = activityData.dailyCalories;
+  final double foodPoints = dailyCalories > 0 ? 10.0 : 0.0;
+
+  return (stepPoints + sleepPoints + screenPoints + foodPoints).round().clamp(0, 100);
 });
 
 /// Halaman Quests/Misi.
@@ -481,16 +502,16 @@ class QuestsScreen extends ConsumerWidget {
       barrierColor: Colors.black.withValues(alpha: 0.5),
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, anim1, anim2) {
-        return _QuestDetailDialog(quest: quest);
+        return QuestDetailDialog(quest: quest);
       },
     );
   }
 }
 
-class _QuestDetailDialog extends StatelessWidget {
+class QuestDetailDialog extends StatelessWidget {
   final QuestItem quest;
 
-  const _QuestDetailDialog({required this.quest});
+  const QuestDetailDialog({super.key, required this.quest});
 
   @override
   Widget build(BuildContext context) {
@@ -517,6 +538,14 @@ class _QuestDetailDialog extends StatelessWidget {
       containerPadding = const EdgeInsets.only(top: 16, bottom: 0);
       imageAlignment = Alignment.bottomCenter;
       svgHeight = 154.0;
+    } else if (quest.title.contains('Makan')) {
+      bgIlooColor = const Color(0xFFC73E8A);
+      svgAssetPath = 'assets/images/misi/food.svg';
+      contentText =
+          'Mencatat makanan secara rutin membantumu mengontrol asupan kalori dan gula harian, yang sangat penting untuk menjaga kestabilan kadar glukosa darah.';
+      containerPadding = const EdgeInsets.all(24);
+      imageAlignment = Alignment.center;
+      svgHeight = 100.0;
     } else {
       bgIlooColor = const Color(0xFFFF2D55);
       svgAssetPath = 'assets/images/misi/iloo_screen.svg';

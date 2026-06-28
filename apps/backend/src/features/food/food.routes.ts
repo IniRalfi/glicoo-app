@@ -39,15 +39,19 @@ export const foodRoutes = new Elysia({ prefix: "/food" })
           },
         });
 
-        // [ID] Pemicu proses analisis AI di latar belakang secara asinkronus (non-blocking)
-        FoodService.processFoodLogAsync(userId!, foodLog.id, body.description);
+        // [ID] Proses analisis AI secara sinkronus untuk mendapatkan data hasil analisis langsung
+        const analysis = await FoodService.processFoodLogSync(userId!, foodLog.id, body.description);
 
-
-        // [ID] Kembalikan 202 Accepted karena AI masih memproses laporan di latar belakang
-        set.status = 202;
+        set.status = 200;
         return {
-          message: "Log saved. AI is processing the analysis via chat.",
+          message: "Food log analyzed and saved successfully",
           foodLogId: foodLog.id,
+          estimated_calories: analysis.estimated_calories,
+          estimated_sugar_grams: analysis.estimated_sugar_grams,
+          carbohydrate_level: analysis.carbohydrate_level,
+          sugar_level: analysis.sugar_level,
+          protein_level: analysis.protein_level,
+          ai_feedback: analysis.ai_feedback,
         };
       } catch (err) {
         console.error("Error creating food log:", err);
