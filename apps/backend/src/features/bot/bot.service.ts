@@ -9,8 +9,6 @@ import { aiService } from "../ai/ai.service";
  */
 const TYPING_REFRESH_INTERVAL_MS = 4000;
 
-/** Pesan ack instan saat bot menerima pesan non-perintah (kontrak API_CONTRACTS.md §3). */
-const PROCESSING_ACK_MESSAGE = "Hmm menarik, wait ya aku hitung dulu ⏳";
 
 /**
  * Purpose:
