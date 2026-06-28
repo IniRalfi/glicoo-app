@@ -198,10 +198,9 @@ export class BotService {
       },
     });
 
-    // [ID] Kirim ack instan + jaga typing indicator tetap hidup selama AI bekerja.
-    // [WHY] Tanpa ini, typing indicator Telegram expire dalam 5 detik → bot terlihat
-    // offline. Ack message juga memenuhi kontrak API_CONTRACTS.md §3 (analisis makanan).
-    await this.sendTelegramMessage(chatId, PROCESSING_ACK_MESSAGE);
+    // [ID] Kirim chat action 'typing' di awal agar user langsung tahu bot aktif merespon,
+    // lalu jaga agar tetap aktif selama pemrosesan AI (via keepTypingWhile).
+    await this.sendChatAction(chatId, 'typing');
 
     // Ambil riwayat percakapan sebelumnya untuk memberikan konteks ke AI
     const recentChats = await prisma.interventionChat.findMany({
