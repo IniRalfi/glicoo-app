@@ -2,6 +2,17 @@ import { prisma } from "../../core/db";
 import { aiService } from "../ai/ai.service";
 
 /**
+ * Interval refresh typing indicator Telegram.
+ * [WHY] Telegram men-expire chat action "typing" setelah ~5 detik. Agar bot tidak
+ * terlihat diam (offline) selama AI Gemini bekerja (8-15 detik), indikator di-refresh
+ * setiap 4 detik sampai balasan benar-benar terkirim.
+ */
+const TYPING_REFRESH_INTERVAL_MS = 4000;
+
+/** Pesan ack instan saat bot menerima pesan non-perintah (kontrak API_CONTRACTS.md §3). */
+const PROCESSING_ACK_MESSAGE = "Hmm menarik, wait ya aku hitung dulu ⏳";
+
+/**
  * Purpose:
  * Layanan khusus untuk mengelola interaksi dengan Bot Telegram.
  * Menangani pengiriman pesan proaktif, webhook dari Telegram, verifikasi OTP,
@@ -52,6 +63,47 @@ export class BotService {
       console.error('[BOT] Failed to send Telegram message:', err);
       return false;
     }
+  }
+
+  /**
+   * [ID]
+   * Mengirim satu Telegram chat action (mis. 'typing') ke chat tertentu.
+   * Helper terpisah agar tidak menumpuk fetch promise yang unhandled.
+   *
+   * [EN]
+   * Sends a single Telegram chat action (e.g. 'typing') to a given chat.
+   */
+  static async sendChatAction(chatId: string, action: 'typing' | 'upload_photo' | 'upload_document' = 'typing'): Promise<void> {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    if (!botToken) return;
+    try {
+      await fetch(`https://api.telegram.org/bot${botToken}/sendChatAction`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, action }),
+      });
+    } catch {
+      // Typing action bersifat best-effort; kegagalan tidak boleh menggagalkan flow utama
+    }
+  }
+
+  /**
+   * [ID]
+   * Menjaga indikator "typing" Telegram tetap hidup selama `task` berjalan.
+   *
+   * Telegram men-expire typing indicator dalam 5 detik, sehingga AI yang lambat
+   * terlihat seperti offline. Helper ini me-refresh action setiap 4 detik
+   * (TYPING_REFRESH_INTERVAL_MS) sampai task selesai, lalu otomatis berhenti.
+   *
+   * [EN]
+   * Keeps the Telegram "typing" indicator alive while `task` is running by
+   * re-sending the chat action on a short interval until the task settles.
+   */
+  static keepTypingWhile<T>(chatId: string, task: Promise<T>): Promise<T> {
+    // [TRADEOFF] refresh 4 detik < expiry 5 detik Telegram → indikator never gaps
+    this.sendChatAction(chatId, 'typing');
+    const interval = setInterval(() => this.sendChatAction(chatId, 'typing'), TYPING_REFRESH_INTERVAL_MS);
+    return task.finally(() => clearInterval(interval));
   }
 
   /**
@@ -146,16 +198,10 @@ export class BotService {
       },
     });
 
-    // Panggil bot untuk merespon secara asinkron (mengirim typing status terlebih dahulu)
-    const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    if (botToken) {
-      // Kirim typing action biar kerasa natural
-      fetch(`https://api.telegram.org/bot${botToken}/sendChatAction`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, action: 'typing' }),
-      }).catch(() => {});
-    }
+    // [ID] Kirim ack instan + jaga typing indicator tetap hidup selama AI bekerja.
+    // [WHY] Tanpa ini, typing indicator Telegram expire dalam 5 detik → bot terlihat
+    // offline. Ack message juga memenuhi kontrak API_CONTRACTS.md §3 (analisis makanan).
+    await this.sendTelegramMessage(chatId, PROCESSING_ACK_MESSAGE);
 
     // Ambil riwayat percakapan sebelumnya untuk memberikan konteks ke AI
     const recentChats = await prisma.interventionChat.findMany({
@@ -208,12 +254,17 @@ export class BotService {
     const prompt = `Berikut adalah riwayat percakapan terakhir:\n${formattedHistory}\n\nAnalisis pesan terakhir dari Pengguna dan tentukan nilai JSON yang sesuai berdasarkan riwayat tersebut.`;
 
     try {
-      const aiResponse = await aiService.generateJSON<{
-        is_food: boolean;
-        estimated_calories: number | null;
-        estimated_sugar_grams: number | null;
-        ai_feedback: string;
-      }>(prompt, schema, systemInstruction);
+      // [ID] Bungkus pemanggilan AI dengan typing indicator agar bot terus aktif
+      // terlihat selama pemrosesan (mencegah kesan "offline").
+      const aiResponse = await this.keepTypingWhile(
+        chatId,
+        aiService.generateJSON<{
+          is_food: boolean;
+          estimated_calories: number | null;
+          estimated_sugar_grams: number | null;
+          ai_feedback: string;
+        }>(prompt, schema, systemInstruction),
+      );
 
       // Jika menceritakan makanan, simpan ke database FoodLog agar sinkron dengan aplikasi Mobile!
       if (aiResponse.is_food) {
