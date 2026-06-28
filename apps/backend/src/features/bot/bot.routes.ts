@@ -203,15 +203,15 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
     "/webhook",
     async ({ body, set }) => {
       try {
-        // Jalankan secara asinkronus (non-blocking) agar segera membalas 200 OK ke Telegram
-        BotService.handleTelegramWebhook(body).catch((err) => {
-          console.error("[WEBHOOK] Gagal memproses update webhook Telegram:", err);
-        });
+        // [WHY] Tidak menggunakan fire-and-forget (.catch()) karena di Vercel Fluid Compute,
+        // function bisa di-freeze setelah response dikirim sebelum async task selesai.
+        // Telegram mentoleransi tunggu hingga 60 detik — AI kita ~5-20 detik, aman.
+        await BotService.handleTelegramWebhook(body);
         return { ok: true };
       } catch (err) {
         console.error("[WEBHOOK] Error di endpoint webhook Telegram:", err);
         set.status = 500;
-        return { error: "Failed to receive webhook" };
+        return { error: "Failed to process webhook" };
       }
     },
     {
