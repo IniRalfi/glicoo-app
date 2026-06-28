@@ -13,6 +13,7 @@
 // Impact:
 // Any screen that reads auth state
 
+import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -122,6 +123,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Ubah error teknis jadi pesan user-friendly.
   String _humanReadableError(Object e) {
     final msg = e.toString();
+
+    // [ID] Error spesifik Google Sign-In (dibungkus dengan prefix GAGAL_GOOGLE
+    // di SupabaseAuthRepository agar mudah dikenali).
+    // [WHY] Tanpa ini, error SHA-1/audience (DEVELOPER_ERROR 10) yang paling umum
+    // jatuh ke pesan generik "Terjadi kesalahan" yang menyesatkan developer.
+    if (msg.contains('GAGAL_GOOGLE')) {
+      // DEVELOPER_ERROR (code 10) — SHA-1 fingerprint belum didaftarkan ke
+      // Google Cloud Console untuk aplikasiId ini.
+      if (msg.contains('10') || msg.contains('DEVELOPER_ERROR') ||
+          msg.contains('Token otentikasi kosong') || msg.contains('idToken null')) {
+        debugPrint('[AUTH] Google DEVELOPER_ERROR — SHA-1 fingerprint kemungkinan '
+            'belum didaftarkan ke Google Cloud Console / Supabase.');
+        return 'Login Google gagal: konfigurasi aplikasi (SHA-1) belum lengkap. '
+            'Hubungi developer.';
+      }
+      if (msg.contains('membatalkan')) {
+        return 'Login Google dibatalkan.';
+      }
+      if (msg.contains('network') || msg.contains('Network') ||
+          msg.contains('INTERNET')) {
+        return 'Koneksi internet bermasalah. Coba lagi.';
+      }
+      debugPrint('[AUTH] Google sign-in error tidak dikenali: $msg');
+      return 'Login Google gagal. Coba lagi atau gunakan email.';
+    }
+
     if (msg.contains('Invalid login credentials')) {
       return 'Email atau kata sandi salah.';
     }
