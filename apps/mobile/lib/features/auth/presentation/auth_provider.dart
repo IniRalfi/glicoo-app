@@ -13,7 +13,7 @@
 // Impact:
 // Any screen that reads auth state
 
-import 'package:flutter/foundation.dart';
+import 'dart:developer' as dev;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -123,20 +123,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Ubah error teknis jadi pesan user-friendly.
   String _humanReadableError(Object e) {
     final msg = e.toString();
+    // [WHY] Gunakan dev.log agar error tetap tercetak di release mode
+    // tanpa trigger lint avoid_print.
+    dev.log('[AUTH_ERROR] $msg', name: 'auth_provider');
 
-    // [ID] Error spesifik Google Sign-In (dibungkus dengan prefix GAGAL_GOOGLE
-    // di SupabaseAuthRepository agar mudah dikenali).
-    // [WHY] Tanpa ini, error SHA-1/audience (DEVELOPER_ERROR 10) yang paling umum
-    // jatuh ke pesan generik "Terjadi kesalahan" yang menyesatkan developer.
     if (msg.contains('GAGAL_GOOGLE')) {
-      // DEVELOPER_ERROR (code 10) — SHA-1 fingerprint belum didaftarkan ke
-      // Google Cloud Console untuk aplikasiId ini.
-      if (msg.contains('10') || msg.contains('DEVELOPER_ERROR') ||
-          msg.contains('Token otentikasi kosong') || msg.contains('idToken null')) {
-        debugPrint('[AUTH] Google DEVELOPER_ERROR — SHA-1 fingerprint kemungkinan '
-            'belum didaftarkan ke Google Cloud Console / Supabase.');
-        return 'Login Google gagal: konfigurasi aplikasi (SHA-1) belum lengkap. '
-            'Hubungi developer.';
+      if (msg.contains('Token otentikasi kosong') || msg.contains('idToken null')) {
+        return 'Login Google gagal: idToken null — Web Client ID salah. ($_googleErrorDetail(msg))';
+      }
+      if (msg.contains('10') || msg.contains('DEVELOPER_ERROR')) {
+        return 'Login Google gagal: DEVELOPER_ERROR 10 — SHA-1 belum terdaftar.';
       }
       if (msg.contains('membatalkan')) {
         return 'Login Google dibatalkan.';
@@ -145,8 +141,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
           msg.contains('INTERNET')) {
         return 'Koneksi internet bermasalah. Coba lagi.';
       }
-      debugPrint('[AUTH] Google sign-in error tidak dikenali: $msg');
-      return 'Login Google gagal. Coba lagi atau gunakan email.';
+      // Tampilkan raw error saat tidak dikenali agar bisa di-debug
+      return 'Login Google gagal: $msg';
     }
 
     if (msg.contains('Invalid login credentials')) {
@@ -161,9 +157,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (msg.contains('Password should be')) {
       return 'Kata sandi minimal 6 karakter.';
     }
-    return 'Terjadi kesalahan. Coba lagi.';
+    return 'Terjadi kesalahan: $msg';
   }
-}
+
+  String _googleErrorDetail(String msg) {
+    final start = msg.indexOf('GAGAL_GOOGLE:');
+    if (start == -1) return msg;
+    return msg.substring(start + 13).trim();
+  }
+
+} // end AuthNotifier
 
 /// Provider state autentikasi.
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
