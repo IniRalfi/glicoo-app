@@ -23,7 +23,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/bento_card.dart';
 
-import '../home/home_screen.dart';
+import '../home/providers/activity_provider.dart';
 
 /// Filter status untuk Misi.
 enum QuestFilter { semua, belumSelesai, sudahSelesai }
@@ -72,9 +72,12 @@ final questListProvider = Provider<List<QuestItem>>((ref) {
 
   // Kurangi Waktu Layar: target di bawah 6 jam (360 menit)
   final screenTime = activityData.screenTimeMinutes;
-  final screenCompleted = screenTime <= 360 && screenTime > 0;
+  final currentHour = DateTime.now().hour;
+  // Dianggap tuntas sepenuhnya jika pemakaian <= 360 menit DAN sudah masuk malam hari (>= 21:00)
+  final isNightTime = currentHour >= 21 || currentHour < 4;
+  final screenCompleted = screenTime <= 360 && screenTime > 0 && isNightTime;
   final screenProgress = screenTime > 0
-      ? (screenTime / 360).clamp(0.0, 1.0)
+      ? (screenTime / 360.0).clamp(0.0, 1.0)
       : 0.0;
 
   // Makan Lebih Bijak: target mencatat makanan hari ini (target 2000 kkal limit)
@@ -86,7 +89,7 @@ final questListProvider = Provider<List<QuestItem>>((ref) {
     QuestItem(
       title: 'Bergerak Lebih Banyak',
       description: 'Capai 5.000 langkah hari ini',
-      points: '+40 Point',
+      points: '+35 Point',
       statusText: stepsCompleted ? 'Selesai' : 'Progress $steps / $stepsGoal',
       isCompleted: stepsCompleted,
       progress: stepsProgress,
@@ -96,7 +99,7 @@ final questListProvider = Provider<List<QuestItem>>((ref) {
     QuestItem(
       title: 'Tidur Tepat Waktu',
       description: 'Target tidur berkualitas 7 jam hari ini',
-      points: '+30 Point',
+      points: '+25 Point',
       statusText: sleepCompleted
           ? 'Selesai'
           : 'Progress ${sleepMinutes ~/ 60}j ${sleepMinutes % 60}m / 7j',
@@ -108,12 +111,14 @@ final questListProvider = Provider<List<QuestItem>>((ref) {
     QuestItem(
       title: 'Kurangi Waktu Layar',
       description: 'Batasi screen time di bawah 6 jam hari ini',
-      points: '+30 Point',
-      statusText: screenCompleted
-          ? 'Selesai'
-          : (screenTime > 360
-                ? 'Batas Waktu Layar Terlampaui (${screenTime ~/ 60}j ${screenTime % 60}m)'
-                : 'Progress ${screenTime ~/ 60}j ${screenTime % 60}m / 6j'),
+      points: '+20 Point',
+      statusText: screenTime > 360
+          ? 'Batas Terlampaui (${screenTime ~/ 60}j ${screenTime % 60}m)'
+          : (screenCompleted
+                ? 'Selesai (${screenTime ~/ 60}j ${screenTime % 60}m / 6j)'
+                : (screenTime > 0
+                      ? 'Dalam Batas Aman (${screenTime ~/ 60}j ${screenTime % 60}m / 6j)'
+                      : 'Progress 0m / 6j')),
       isCompleted: screenCompleted,
       progress: screenProgress,
       iconPath: 'assets/images/home/smartphone-device.svg',
@@ -122,7 +127,7 @@ final questListProvider = Provider<List<QuestItem>>((ref) {
     QuestItem(
       title: 'Makan Lebih Bijak',
       description: 'Catat menu makanan yang kamu konsumsi hari ini',
-      points: '+10 Point',
+      points: '+20 Point',
       statusText: foodCompleted
           ? 'Selesai (Progress $dailyCalories / 2000 kkal)'
           : 'Progress $dailyCalories / 2000 kkal',
@@ -138,32 +143,32 @@ final questListProvider = Provider<List<QuestItem>>((ref) {
 final healthScoreProvider = Provider<int>((ref) {
   final activityData = ref.watch(activityDataProvider);
 
-  // 1. Poin Langkah (Max 40 Poin)
+  // 1. Poin Langkah (Max 35 Poin)
   final steps = activityData.steps;
   final stepsGoal = activityData.stepsGoal;
   final double stepPoints = (stepsGoal > 0)
-      ? ((steps / stepsGoal).clamp(0.0, 1.0) * 40.0)
+      ? ((steps / stepsGoal).clamp(0.0, 1.0) * 35.0)
       : 0.0;
 
-  // 2. Poin Tidur (Max 30 Poin)
+  // 2. Poin Tidur (Max 25 Poin)
   // Target tidur 7 jam (420 menit)
   final sleepMinutes = activityData.sleepMinutes;
-  final double sleepPoints = ((sleepMinutes / 420.0).clamp(0.0, 1.0) * 30.0);
+  final double sleepPoints = ((sleepMinutes / 420.0).clamp(0.0, 1.0) * 25.0);
 
-  // 3. Poin Screen Time (Max 30 Poin)
+  // 3. Poin Screen Time (Max 20 Poin)
   // Batas aman di bawah 6 jam (360 menit)
   final screenTime = activityData.screenTimeMinutes;
-  double screenPoints = 30.0;
+  double screenPoints = 20.0;
   if (screenTime > 360) {
     final overage = screenTime - 360;
-    screenPoints = (1.0 - (overage / 360.0)).clamp(0.0, 1.0) * 30.0;
+    screenPoints = (1.0 - (overage / 360.0)).clamp(0.0, 1.0) * 20.0;
   } else if (screenTime == 0) {
     screenPoints = 0.0; // Base point
   }
 
-  // 4. Poin Makan Lebih Bijak (Max 10 Poin)
+  // 4. Poin Makan Lebih Bijak (Max 20 Poin)
   final dailyCalories = activityData.dailyCalories;
-  final double foodPoints = dailyCalories > 0 ? 10.0 : 0.0;
+  final double foodPoints = dailyCalories > 0 ? 20.0 : 0.0;
 
   return (stepPoints + sleepPoints + screenPoints + foodPoints).round().clamp(0, 100);
 });

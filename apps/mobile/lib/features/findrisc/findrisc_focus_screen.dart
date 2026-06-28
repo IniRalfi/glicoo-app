@@ -15,19 +15,84 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import 'domain/findrisc_data.dart';
 
 /// Halaman Fokus — memberikan motivasi setelah pengisian kuesioner risiko.
-class FindriscFocusScreen extends StatelessWidget {
-  const FindriscFocusScreen({super.key, this.onComplete});
+class FindriscFocusScreen extends StatefulWidget {
+  const FindriscFocusScreen({
+    super.key,
+    this.data,
+    this.category,
+    this.onComplete,
+  });
+
+  /// Data FINDRISC jika tersedia dari flow kuesioner.
+  final FindriscData? data;
+
+  /// Kategori risiko spesifik jika diberikan.
+  final String? category;
 
   /// Callback ketika user tap "Lanjut ke Beranda".
   final VoidCallback? onComplete;
 
   @override
+  State<FindriscFocusScreen> createState() => _FindriscFocusScreenState();
+}
+
+class _FindriscFocusScreenState extends State<FindriscFocusScreen> {
+  String? _loadedCategory;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.category == null && widget.data == null) {
+      _loadSavedCategory();
+    }
+  }
+
+  Future<void> _loadSavedCategory() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _loadedCategory = prefs.getString('findrisc_category');
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final cat = widget.category ?? widget.data?.kategori ?? _loadedCategory ?? 'Sedang';
+    final catLower = cat.toLowerCase();
+
+    String title = 'Fokus';
+    String description =
+        'Kabar baiknya, sebagian besar faktor risiko ini masih bisa diperbaiki melalui kebiasaan sehari-hari.';
+    String svgAsset = 'assets/images/findrisc/sedang.svg';
+
+    if (catLower.contains('sangat tinggi')) {
+      title = 'Hadapi!';
+      description =
+          'Jangan khawatir, hasil ini bukan diagnosis diabetes. Namun, kondisi ini menunjukkan bahwa perubahan hidup dan pemantauan kesehatan perlu mulai dilakukan sejak sekarang.';
+      svgAsset = 'assets/images/findrisc/sangat-tinggi.svg';
+    } else if (catLower.contains('tinggi')) {
+      title = 'Pasti Bisa!';
+      description =
+          'Risiko ini masih dapat diturunkan melalui perubahan gaya hidup yang lebih sehat dan konsisten.';
+      svgAsset = 'assets/images/findrisc/tinggi.svg';
+    } else if (catLower.contains('sedikit')) {
+      title = 'Semangat!';
+      description =
+          'Kabar baiknya, perubahan kecil yang dilakukan secara konsisten dapat membantu menjaga kesehatan dan menurunkan risiko di kemudian hari.';
+      svgAsset = 'assets/images/findrisc/sedikit-meningkat.svg';
+    } else if (catLower.contains('rendah')) {
+      title = 'Pertahankan!';
+      description =
+          'Kondisi ini merupakan awal yang baik. Tetap pertahankan kebiasaan sehatmu agar risiko tetap rendah di masa mendatang.';
+      svgAsset = 'assets/images/findrisc/rendah.svg';
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -39,7 +104,7 @@ class FindriscFocusScreen extends StatelessWidget {
 
               // Illustration
               SvgPicture.asset(
-                'assets/images/findrisc/glicoo_findrisc.svg',
+                svgAsset,
                 width: 200,
                 height: 147,
                 fit: BoxFit.contain,
@@ -47,9 +112,9 @@ class FindriscFocusScreen extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-              // Title: "Fokus" — Rammetto One
+              // Title — Rammetto One
               Text(
-                'Fokus',
+                title,
                 style: GoogleFonts.rammettoOne(
                   fontSize: 24,
                   fontWeight: FontWeight.w400,
@@ -62,7 +127,7 @@ class FindriscFocusScreen extends StatelessWidget {
 
               // Body: Centered Inter body text
               Text(
-                'Kabar baiknya, sebagian besar faktor risiko ini masih bisa diperbaiki melalui kebiasaan sehari-hari.',
+                description,
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w400,
@@ -79,7 +144,7 @@ class FindriscFocusScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: onComplete,
+                  onPressed: widget.onComplete,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     disabledBackgroundColor: AppColors.subtitleGray,

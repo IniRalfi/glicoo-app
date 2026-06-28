@@ -22,9 +22,12 @@ export class MockProvider implements ILLMProvider {
 
   async generateJSON<T>(prompt: string, schema: any, systemInstruction?: string): Promise<T> {
     const mockData: any = {
-      estimated_calories: 250,
+      estimated_calories: 350,
       estimated_sugar_grams: 8.5,
-      ai_feedback: `[MOCK RESPONSE] Makanan Anda telah tercatat. Estimasi kalori: 250 kcal, estimasi gula: 8.5 gram. Bagus! Pertahankan pola makan seimbang dan jangan lupa bergerak aktif hari ini ya.`,
+      carbohydrate_level: 'Sedang',
+      sugar_level: 'Sedang',
+      protein_level: 'Cukup',
+      ai_feedback: `Wah, menu "${prompt}" kelihatan lezat banget Kak! 🍲 Estimasi energi makanan ini sekitar 350 kkal. Tetap imbangi dengan minum air putih dan jaga kebiasaan bergerak aktif ya! ✨`,
     };
     return mockData as T;
   }
