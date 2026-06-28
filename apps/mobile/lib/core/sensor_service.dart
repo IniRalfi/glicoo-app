@@ -198,6 +198,8 @@ class SensorService with WidgetsBindingObserver {
       offset = event.steps;
       await prefs.setInt(kPrefLastBootStepsOffset, offset);
       await prefs.setString(kPrefLastSyncDate, todayStr);
+      await prefs.setInt('glico_daily_screen_time_seconds', 0);
+      await prefs.setInt(kPrefTodayScreenTime, 0);
     }
 
     // Hitung langkah kaki hari ini

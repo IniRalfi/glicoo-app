@@ -21,7 +21,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../home_screen.dart';
+import '../providers/activity_provider.dart';
 
 class IlooTutorialDialog extends ConsumerStatefulWidget {
   const IlooTutorialDialog({super.key});

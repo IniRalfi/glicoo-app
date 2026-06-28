@@ -141,7 +141,7 @@ class ApiService {
         }),
       );
 
-      if (response.statusCode == 202) {
+      if (response.statusCode == 200 || response.statusCode == 202) {
         return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
         final errBody = jsonDecode(response.body) as Map<String, dynamic>;

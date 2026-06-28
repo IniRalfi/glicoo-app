@@ -30,7 +30,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/widgets/glico_loading.dart';
 import '../../core/api_service.dart';
 import '../auth/presentation/auth_provider.dart';
-import '../home/home_screen.dart';
+import '../home/providers/activity_provider.dart';
 import 'profile_provider.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -1065,15 +1065,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final profileState = ref.watch(profileNotifierProvider);
     
     // Dynamic Risk styling helper
-    Color riskColor = const Color(0xFFFFB700); // Yellow/Amber default
-    String riskTitle = 'Sedang';
-    if (_findriscCategory.toLowerCase().contains('rendah')) {
-      riskColor = const Color(0xFF34C759); // Green
-      riskTitle = 'Rendah';
-    } else if (_findriscCategory.toLowerCase().contains('tinggi')) {
-      riskColor = const Color(0xFFFF2D55); // Red
+    Color riskColor = const Color(0xFFFFB700); // Default Yellow
+    String riskTitle = _findriscCategory;
+    final catLower = _findriscCategory.toLowerCase();
+
+    if (catLower.contains('sangat tinggi')) {
+      riskColor = const Color(0xFFFF3B30); // Red
+      riskTitle = 'Sangat Tinggi';
+    } else if (catLower.contains('tinggi')) {
+      riskColor = const Color(0xFFFF8800); // Orange
       riskTitle = 'Tinggi';
-    } else if (_findriscCategory.toLowerCase().contains('sedang')) {
+    } else if (catLower.contains('sedikit')) {
+      riskColor = const Color(0xFF007AFF); // Blue
+      riskTitle = 'Sedikit Meningkat';
+    } else if (catLower.contains('rendah')) {
+      riskColor = const Color(0xFF24B35F); // Green
+      riskTitle = 'Rendah';
+    } else if (catLower.contains('sedang')) {
       riskColor = const Color(0xFFFFB700); // Yellow
       riskTitle = 'Sedang';
     }
@@ -1249,10 +1257,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.wb_sunny_rounded,
-                                color: riskColor,
-                                size: 16,
+                              SvgPicture.asset(
+                                'assets/images/home/kategori.svg',
+                                width: 18,
+                                height: 18,
+                                colorFilter: ColorFilter.mode(riskColor, BlendMode.srcIn),
                               ),
                               const SizedBox(width: 6),
                               Text(
