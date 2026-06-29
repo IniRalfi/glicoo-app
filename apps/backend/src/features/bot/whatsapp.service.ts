@@ -13,6 +13,7 @@
 
 const OPENWA_BASE_URL = process.env.OPENWA_BASE_URL ?? "https://wa.glicoo.my.id";
 const OPENWA_API_KEY = process.env.OPENWA_API_KEY ?? "";
+const OPENWA_SESSION_ID = process.env.OPENWA_SESSION_ID ?? "";
 
 // Rate limiter: max 50 messages/user/hour
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
@@ -50,7 +51,11 @@ function checkRateLimit(chatId: string): boolean {
  * [ID] Kirim pesan teks ke pengguna WhatsApp
  * [EN] Send text message to WhatsApp user
  *
- * @param chatId - Format: "628123456789@c.us" (phone + @c.us suffix)
+ * OpenWA v0.7.11 API: POST /api/sessions/{sessionId}/messages/send-text
+ * Header: X-API-Key (bukan Authorization: Bearer)
+ * Body: { chatId: "...", text: "..." } (bukan content)
+ *
+ * @param chatId - Format: "43448023433464@lid" or "628123456789@c.us"
  * @param message - Plain text message (OpenWA tidak support Markdown)
  * @returns boolean - true jika berhasil
  */
@@ -60,23 +65,35 @@ export async function sendWhatsAppMessage(chatId: string, message: string): Prom
     return false;
   }
 
+  if (!OPENWA_SESSION_ID) {
+    console.error("[WhatsApp] OPENWA_SESSION_ID not configured. Set it in .env");
+    return false;
+  }
+
   try {
-    const response = await fetch(`${OPENWA_BASE_URL}/api/sendText`, {
+    // [WHY] OpenWA v0.7.11 uses session-based API path, not /api/sendText
+    const endpoint = `${OPENWA_BASE_URL}/api/sessions/${OPENWA_SESSION_ID}/messages/send-text`;
+    console.log(`[WhatsApp] Sending to endpoint: ${endpoint}`);
+
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENWA_API_KEY}`,
+        // [WHY] OpenWA v0.7.11 uses X-API-Key, not Authorization: Bearer
+        "X-API-Key": OPENWA_API_KEY,
       },
+      // [WHY] OpenWA v0.7.11 expects "text" not "content"
       body: JSON.stringify({
         chatId,
-        content: message,
+        text: message,
       }),
     });
 
-    const data = (await response.json()) as OpenWAResponse;
+    const responseText = await response.text();
+    console.log(`[WhatsApp] Response status: ${response.status}, body: ${responseText}`);
 
-    if (data.status !== "success") {
-      console.error(`[WhatsApp] sendMessage failed:`, data.message);
+    if (!response.ok) {
+      console.error(`[WhatsApp] sendMessage HTTP ${response.status}: ${responseText}`);
       return false;
     }
 
@@ -92,12 +109,15 @@ export async function sendWhatsAppMessage(chatId: string, message: string): Prom
  * [EN] Send typing indicator to WhatsApp
  */
 export async function sendTypingIndicator(chatId: string): Promise<void> {
+  if (!OPENWA_SESSION_ID) return;
+
   try {
-    await fetch(`${OPENWA_BASE_URL}/api/startTyping`, {
+    const endpoint = `${OPENWA_BASE_URL}/api/sessions/${OPENWA_SESSION_ID}/actions/typing`;
+    await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENWA_API_KEY}`,
+        "X-API-Key": OPENWA_API_KEY,
       },
       body: JSON.stringify({ chatId }),
     });
