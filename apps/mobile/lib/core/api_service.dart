@@ -18,6 +18,7 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'env_config.dart';
+import 'bot_link_exception.dart';
 
 /// Provider untuk ApiService agar dapat di-inject ke berbagai feature.
 final apiServiceProvider = Provider<ApiService>((ref) {
@@ -52,20 +53,31 @@ class ApiService {
     };
   }
 
-  /// [ID] Memeriksa apakah user sudah menautkan bot (phone_number tidak kosong).
-  /// [EN] Checks if the user has an active bot link (phone_number is non-empty).
+  /// [ID] Memeriksa apakah user sudah menautkan bot (bot_platform tidak null).
+  /// [EN] Checks if the user has an active bot link (bot_platform is not null).
   Future<bool> getBotStatus() async {
     try {
       final profile = await getUserProfile();
-      final phone = profile['phone_number']?.toString() ?? '';
-      return phone.isNotEmpty;
+      final platform = profile['bot_platform']?.toString();
+      return platform != null && platform.isNotEmpty;
     } catch (_) {
       return false;
     }
   }
 
-  /// [ID] Memutus koneksi bot Telegram dari akun pengguna.
-  /// [EN] Disconnects the Telegram bot from the user account.
+  /// [ID] Mendapatkan platform bot yang terhubung (telegram/whatsapp).
+  /// [EN] Get connected bot platform (telegram/whatsapp).
+  Future<String?> getConnectedPlatform() async {
+    try {
+      final profile = await getUserProfile();
+      return profile['bot_platform']?.toString().toLowerCase();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// [ID] Memutus koneksi bot Telegram/WhatsApp dari akun pengguna.
+  /// [EN] Disconnects the Telegram/WhatsApp bot from the user account.
   Future<void> disconnectBot() async {
     final url = Uri.parse('${EnvConfig.backendUrl}/api/v1/bot/disconnect');
     try {
@@ -84,18 +96,30 @@ class ApiService {
 
   /// [ID] Mengambil tautan deep link bot Telegram/WhatsApp dari backend.
   /// [EN] Retrieves the Telegram/WhatsApp bot deep link from the backend.
-  Future<Map<String, dynamic>> getBotLink() async {
-    final url = Uri.parse('${EnvConfig.backendUrl}/api/v1/bot/link');
+  Future<Map<String, dynamic>> getBotLink({
+    String platform = 'telegram',
+  }) async {
+    final url = Uri.parse(
+      '${EnvConfig.backendUrl}/api/v1/bot/link?platform=$platform',
+    );
     try {
       final response = await _client.get(url, headers: await _buildHeaders());
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
+      } else if (response.statusCode == 409) {
+        // [WHY] Exclusive connection conflict
+        final errBody = jsonDecode(response.body) as Map<String, dynamic>;
+        throw BotLinkException(
+          errBody['message'] ?? 'Already connected to another platform',
+          errBody['connectedPlatform']?.toString(),
+        );
       } else {
         final errBody = jsonDecode(response.body) as Map<String, dynamic>;
         throw Exception(errBody['message'] ?? 'Failed to get bot link');
       }
     } catch (e) {
+      if (e is BotLinkException) rethrow;
       throw Exception('Gagal menghubungi server: $e');
     }
   }
