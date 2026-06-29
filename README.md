@@ -1,8 +1,8 @@
-# 🧠 Glico — Asisten Cerdas Pencegah Diabetes Tipe 2
+# 🧠 Glicoo — Asisten Cerdas Pencegah Diabetes Tipe 2
 
 > _"Cegah Diabetes Sejak Dini dengan AI yang Ada di Saku Anda"_
 
-**Glico** adalah aplikasi mobile berbasis Agentic AI yang memanfaatkan sensor pasif smartphone (langkah, screen time, kamera) untuk mendeteksi dini risiko Diabetes Melitus Tipe 2. Aplikasi ini hadir dengan asisten AI proaktif yang berkomunikasi melalui WhatsApp/Telegram di 3 momen kritis (jam makan, jam kerja, jam tidur) untuk memberikan intervensi perilaku yang dipersonalisasi.
+**Glicoo** adalah aplikasi mobile berbasis Agentic AI yang memanfaatkan sensor pasif smartphone (langkah, screen time, kamera) untuk mendeteksi dini risiko Diabetes Melitus Tipe 2. Aplikasi ini hadir dengan asisten AI proaktif yang berkomunikasi melalui WhatsApp/Telegram di 3 momen kritis (jam makan, jam kerja, jam tidur) untuk memberikan intervensi perilaku yang dipersonalisasi.
 
 **🏆 Dibuat untuk Lomba PEKAN IT 2026 — Kategori Software Development**
 
@@ -54,7 +54,7 @@
 ## 📂 Struktur Proyek
 
 ```
-glico/
+glicoo/
 ├── apps/
 │   ├── backend/          # Backend API (Elysia + Prisma)
 │   ├── mobile/           # Mobile App (Flutter)
@@ -81,8 +81,8 @@ glico/
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/iniralfi/glico.git
-cd glico
+git clone https://github.com/iniralfi/glicoo.git
+cd glicoo
 ```
 
 ### 2. Setup Backend
@@ -125,7 +125,7 @@ flutter run
 
 Proyek ini dilisensikan di bawah **MIT License** — lihat file [`LICENSE`](LICENSE) untuk detail.
 
-> **Attribution Required:** Setiap distribusi, fork, atau turunan dari proyek ini **wajib** menyertakan kredit yang jelas bahwa aplikasi ini adalah fork atau turunan dari **Glico** oleh [iniralfi](https://github.com/iniralfi). Kredit dapat dicantumkan di README, About page, atau bagian lain yang terlihat oleh pengguna.
+> **Attribution Required:** Setiap distribusi, fork, atau turunan dari proyek ini **wajib** menyertakan kredit yang jelas bahwa aplikasi ini adalah fork atau turunan dari **Glicoo** oleh [iniralfi](https://github.com/iniralfi). Kredit dapat dicantumkan di README, About page, atau bagian lain yang terlihat oleh pengguna.
 
 ---
 
