@@ -62,53 +62,58 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
         }
 
         // [ID] Hitung skor risiko FINDRISC sederhana jika parameter relevan dikirim
-        const age = body.age !== undefined ? body.age : user.age;
-        const weight = body.weight !== undefined ? body.weight : user.weight;
-        const height = body.height !== undefined ? body.height : user.height;
-        const hasFamilyHistory =
-          body.has_family_history !== undefined ? body.has_family_history : user.has_family_history;
+        const findriscAge = body.age ?? user.age;
+        const findriscWeight = body.weight ?? user.weight;
+        const findriscHeight = body.height ?? user.height;
+        const findriscFamilyHistory = body.has_family_history ?? user.has_family_history;
 
-        let riskScore = user.risk_score || 0.0;
+        let riskScore = user.risk_score ?? 0.0;
 
-        if (age !== null && weight !== null && height !== null && hasFamilyHistory !== null) {
-          // Kalkulasi FINDRISC Poin
+        if (
+          findriscAge != null &&
+          findriscWeight != null &&
+          findriscHeight != null &&
+          findriscFamilyHistory != null
+        ) {
           let points = 0;
 
           // 1. Usia
-          if (age < 45) points += 0;
-          else if (age >= 45 && age <= 54) points += 2;
-          else if (age >= 55 && age <= 64) points += 3;
+          if (findriscAge < 45) points += 0;
+          else if (findriscAge >= 45 && findriscAge <= 54) points += 2;
+          else if (findriscAge >= 55 && findriscAge <= 64) points += 3;
           else points += 4;
 
           // 2. BMI
-          const heightMeters = height / 100;
+          const heightMeters = findriscHeight / 100;
           if (heightMeters > 0) {
-            const bmi = weight / (heightMeters * heightMeters);
+            const bmi = findriscWeight / (heightMeters * heightMeters);
             if (bmi < 25) points += 0;
             else if (bmi >= 25 && bmi < 30) points += 1;
             else points += 3;
           }
 
           // 3. Riwayat Keluarga
-          if (hasFamilyHistory) points += 5;
+          if (findriscFamilyHistory) points += 5;
 
-          // Kita normalisasikan poin 0-12 menjadi skala 0-100 persen
+          // Normalisasi poin 0-12 → skala 0-100%
           riskScore = Math.round((points / 12) * 100);
         }
 
-        // [ID] Update profile
+        // [ID] Bangun data object dinamis — hanya field yg dikirim
+        //     Hindari explicit undefined yg bisa error di Prisma + driver adapter
+        const updateData: Record<string, unknown> = {};
+        if (body.name !== undefined) updateData.name = body.name;
+        if (body.phone_number !== undefined) updateData.phone_number = body.phone_number;
+        if (body.age !== undefined) updateData.age = body.age;
+        if (body.weight !== undefined) updateData.weight = body.weight;
+        if (body.height !== undefined) updateData.height = body.height;
+        if (body.has_family_history !== undefined)
+          updateData.has_family_history = body.has_family_history;
+        updateData.risk_score = riskScore;
+
         const updatedUser = await prisma.user.update({
           where: { id: userId! },
-          data: {
-            name: body.name !== undefined ? body.name : undefined,
-            phone_number: body.phone_number !== undefined ? body.phone_number : undefined,
-            age: body.age !== undefined ? body.age : undefined,
-            weight: body.weight !== undefined ? body.weight : undefined,
-            height: body.height !== undefined ? body.height : undefined,
-            has_family_history:
-              body.has_family_history !== undefined ? body.has_family_history : undefined,
-            risk_score: riskScore,
-          },
+          data: updateData,
         });
 
         return updatedUser;
