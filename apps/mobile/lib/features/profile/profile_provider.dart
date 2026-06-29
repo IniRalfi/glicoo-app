@@ -31,6 +31,8 @@ class ProfileState {
   final bool isLoading;
   final bool isSaving;
   final String? error;
+  final String? botChatId; // WhatsApp chatId or Telegram chatId
+  final String? botPlatform; // "TELEGRAM" | "WHATSAPP"
 
   ProfileState({
     this.name = '',
@@ -44,6 +46,8 @@ class ProfileState {
     this.isLoading = false,
     this.isSaving = false,
     this.error,
+    this.botChatId,
+    this.botPlatform,
   });
 
   ProfileState copyWith({
@@ -58,6 +62,8 @@ class ProfileState {
     bool? isLoading,
     bool? isSaving,
     String? error,
+    String? botChatId,
+    String? botPlatform,
   }) {
     return ProfileState(
       name: name ?? this.name,
@@ -71,6 +77,8 @@ class ProfileState {
       isLoading: isLoading ?? this.isLoading,
       isSaving: isSaving ?? this.isSaving,
       error: error,
+      botChatId: botChatId ?? this.botChatId,
+      botPlatform: botPlatform ?? this.botPlatform,
     );
   }
 }
@@ -112,6 +120,9 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         hasFamilyHistory: cachedFamilyHistory,
         riskScore: cachedRisk,
         isLoading: false,
+        // [WHY] Bot fields tidak di-cache locally, hanya dari API
+        botChatId: null,
+        botPlatform: null,
       );
     }
 
@@ -127,6 +138,8 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         final height = (data['height'] as num?)?.toDouble() ?? 0.0;
         final hasFamilyHistory = data['has_family_history'] as bool? ?? false;
         final riskScore = (data['risk_score'] as num?)?.toDouble() ?? 0.0;
+        final botChatId = data['bot_chat_id'] as String?;
+        final botPlatform = data['bot_platform'] as String?;
 
         state = ProfileState(
           name: name,
@@ -138,6 +151,8 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
           hasFamilyHistory: hasFamilyHistory,
           riskScore: riskScore,
           isLoading: false,
+          botChatId: botChatId,
+          botPlatform: botPlatform,
         );
 
         // Update local cache

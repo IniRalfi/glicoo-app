@@ -183,18 +183,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _loadBotStatus() async {
-    try {
-      final connected = await ref.read(apiServiceProvider).getBotStatus();
-      final platform = await ref
-          .read(apiServiceProvider)
-          .getConnectedPlatform();
-      if (mounted) {
-        setState(() {
-          _isBotConnected = connected;
-          _connectedPlatform = platform;
-        });
-      }
-    } catch (_) {}
+    // [WHY] Bot status sekarang sudah ada di ProfileState, tidak perlu API call
+    final profileState = ref.read(profileNotifierProvider);
+    if (mounted) {
+      setState(() {
+        _isBotConnected =
+            profileState.botChatId != null &&
+            profileState.botChatId!.isNotEmpty;
+        _connectedPlatform = profileState.botPlatform?.toLowerCase();
+      });
+    }
   }
 
   Future<void> _disconnectBot() async {
