@@ -73,11 +73,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _bgSyncEnabled = prefs.getBool('bg_sync_enabled') ?? true;
-      _findriscScore = prefs.getInt('findrisc_score') ?? 13;
-      _findriscCategory = prefs.getString('findrisc_category') ?? 'Sedang';
-      _waistCircumference = prefs.getDouble('lingkar_pinggang_cm') ?? 98.0;
+      _findriscScore = prefs.getInt('findrisc_score') ?? 0;
+      _findriscCategory = prefs.getString('findrisc_category') ?? 'Belum Tes';
+      _waistCircumference = prefs.getDouble('lingkar_pinggang_cm') ?? 0.0;
       _avatarBgColor = prefs.getString('avatar_bg_color') ?? '0xFFFFB700';
-      _avatarAssetPath = prefs.getString('avatar_asset_path') ?? 'assets/images/bothub/pp_iloo.svg';
+      _avatarAssetPath =
+          prefs.getString('avatar_asset_path') ??
+          'assets/images/bothub/pp_iloo.svg';
       _avatarFilePath = prefs.getString('avatar_file_path');
       _avatarType = prefs.getString('avatar_type') ?? 'asset';
     });
@@ -188,10 +190,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Putuskan Koneksi Bot?', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+        title: Text(
+          'Putuskan Koneksi Bot?',
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+        ),
         content: Text(
           'Setelah diputuskan, Iloo tidak bisa lagi membalas pesan Telegram kamu. Kamu bisa menghubungkan ulang kapan saja.',
-          style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+          ),
         ),
         actions: [
           TextButton(
@@ -200,7 +208,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Putuskan', style: GoogleFonts.inter(color: AppColors.error, fontWeight: FontWeight.bold)),
+            child: Text(
+              'Putuskan',
+              style: GoogleFonts.inter(
+                color: AppColors.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -221,7 +235,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             content: const Text('Bot berhasil diputus dari akun kamu.'),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -271,7 +287,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: Text(
             'Kode Verifikasi Iloo',
             style: GoogleFonts.inter(fontWeight: FontWeight.bold),
@@ -282,13 +300,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             children: [
               Text(
                 'Gunakan kode di bawah untuk menautkan bot Telegram/WhatsApp:',
-                style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF2F2F7),
                   borderRadius: BorderRadius.circular(12),
@@ -317,7 +341,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           );
                         }
                       },
-                      icon: const Icon(Icons.copy_rounded, size: 16, color: Color(0xFF0088FF)),
+                      icon: const Icon(
+                        Icons.copy_rounded,
+                        size: 16,
+                        color: Color(0xFF0088FF),
+                      ),
                       label: Text(
                         'Salin Kode',
                         style: GoogleFonts.inter(
@@ -334,10 +362,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               if (_otpToken != null) ...[
                 FilledButton.icon(
                   onPressed: () async {
-                    final telegramUrl = _telegramLink ?? 'https://t.me/glicoo_bot?start=$_otpToken';
+                    final telegramUrl =
+                        _telegramLink ??
+                        'https://t.me/glicoo_bot?start=$_otpToken';
                     final uri = Uri.parse(telegramUrl);
                     try {
-                      final success = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      final success = await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
                       if (!success) {
                         await launchUrl(uri, mode: LaunchMode.platformDefault);
                       }
@@ -349,7 +382,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Gagal membuka tautan Telegram: $e'),
+                              content: Text(
+                                'Gagal membuka tautan Telegram: $e',
+                              ),
                               behavior: SnackBarBehavior.floating,
                             ),
                           );
@@ -365,7 +400,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF0088FF),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     minimumSize: const Size(double.infinity, 44),
                   ),
                 ),
@@ -462,7 +499,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Avatar Preview
                   Center(
                     child: Container(
@@ -476,15 +513,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
-                          )
+                          ),
                         ],
                       ),
                       child: ClipOval(
                         child: tempType == 'file' && tempFilePath != null
-                            ? Image.file(
-                                File(tempFilePath!),
-                                fit: BoxFit.cover,
-                              )
+                            ? Image.file(File(tempFilePath!), fit: BoxFit.cover)
                             : Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: SvgPicture.asset(
@@ -530,12 +564,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               color: color,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isSelected ? Colors.black : Colors.transparent,
+                                color: isSelected
+                                    ? Colors.black
+                                    : Colors.transparent,
                                 width: 2.5,
                               ),
                             ),
                             child: isSelected
-                                ? const Icon(Icons.check, color: Colors.white, size: 20)
+                                ? const Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 20,
+                                  )
                                 : null,
                           ),
                         );
@@ -559,7 +599,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       TextButton.icon(
                         onPressed: () async {
                           final picker = ImagePicker();
-                          final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                          final pickedFile = await picker.pickImage(
+                            source: ImageSource.gallery,
+                          );
                           if (pickedFile != null) {
                             setModalState(() {
                               tempType = 'file';
@@ -567,10 +609,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             });
                           }
                         },
-                        icon: const Icon(Icons.photo_library_outlined, size: 16),
+                        icon: const Icon(
+                          Icons.photo_library_outlined,
+                          size: 16,
+                        ),
                         label: Text(
                           'Pilih dari Galeri',
-                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFF0088FF),
@@ -586,7 +634,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       itemCount: assets.length,
                       itemBuilder: (context, index) {
                         final assetPath = assets[index];
-                        final isSelected = tempType == 'asset' && tempAssetPath == assetPath;
+                        final isSelected =
+                            tempType == 'asset' && tempAssetPath == assetPath;
                         return GestureDetector(
                           onTap: () {
                             setModalState(() {
@@ -602,7 +651,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               color: const Color(0xFFF2F2F7),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isSelected ? const Color(0xFF0088FF) : Colors.transparent,
+                                color: isSelected
+                                    ? const Color(0xFF0088FF)
+                                    : Colors.transparent,
                                 width: 2,
                               ),
                             ),
@@ -712,7 +763,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       subtitle: Text(
                         'Membaca langkah kaki & sinkronisasi data saat aplikasi ditutup.',
-                        style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       activeThumbColor: Colors.white,
                       activeTrackColor: AppColors.primary,
@@ -724,7 +778,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     if (!kReleaseMode) ...[
                       // Developer Options (ExpansionTile)
                       Theme(
-                        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                        data: Theme.of(
+                          context,
+                        ).copyWith(dividerColor: Colors.transparent),
                         child: ExpansionTile(
                           title: Text(
                             'Developer Options',
@@ -742,7 +798,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               icon: const Icon(Icons.refresh, size: 18),
                               label: const Text('Reset FINDRISC Flag'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                                backgroundColor: AppColors.primary.withValues(
+                                  alpha: 0.1,
+                                ),
                                 foregroundColor: AppColors.primary,
                                 elevation: 0,
                               ),
@@ -753,7 +811,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               icon: const Icon(Icons.refresh, size: 18),
                               label: const Text('Reset Onboarding Flag'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.textSecondary.withValues(alpha: 0.1),
+                                backgroundColor: AppColors.textSecondary
+                                    .withValues(alpha: 0.1),
                                 foregroundColor: AppColors.textSecondary,
                                 elevation: 0,
                               ),
@@ -764,7 +823,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               icon: const Icon(Icons.refresh, size: 18),
                               label: const Text('Reset Tutorial Iloo'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                                backgroundColor: AppColors.primary.withValues(
+                                  alpha: 0.1,
+                                ),
                                 foregroundColor: AppColors.primary,
                                 elevation: 0,
                               ),
@@ -772,12 +833,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             const SizedBox(height: 8),
                             ElevatedButton.icon(
                               onPressed: () {
-                                NotificationService().showInstantTestNotification();
+                                NotificationService()
+                                    .showInstantTestNotification();
                               },
-                              icon: const Icon(Icons.notifications_active_outlined, size: 18),
-                              label: const Text('Kirim Notifikasi Tes (Uji Coba)'),
+                              icon: const Icon(
+                                Icons.notifications_active_outlined,
+                                size: 18,
+                              ),
+                              label: const Text(
+                                'Kirim Notifikasi Tes (Uji Coba)',
+                              ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.success.withValues(alpha: 0.1),
+                                backgroundColor: AppColors.success.withValues(
+                                  alpha: 0.1,
+                                ),
                                 foregroundColor: AppColors.success,
                                 elevation: 0,
                               ),
@@ -826,11 +895,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _showEditProfileDialog(BuildContext context, ProfileState state) {
     final nameController = TextEditingController(text: state.name);
     final phoneController = TextEditingController(text: state.phoneNumber);
-    final ageController = TextEditingController(text: state.age > 0 ? state.age.toString() : '');
-    final weightController = TextEditingController(text: state.weight > 0 ? state.weight.toString() : '');
-    final heightController = TextEditingController(text: state.height > 0 ? state.height.toString() : '');
+    final ageController = TextEditingController(
+      text: state.age > 0 ? state.age.toString() : '',
+    );
+    final weightController = TextEditingController(
+      text: state.weight > 0 ? state.weight.toString() : '',
+    );
+    final heightController = TextEditingController(
+      text: state.height > 0 ? state.height.toString() : '',
+    );
     final waistController = TextEditingController(
-      text: _waistCircumference > 0 ? _waistCircumference.toInt().toString() : '98'
+      text: _waistCircumference > 0
+          ? _waistCircumference.toInt().toString()
+          : '98',
     );
     bool hasFamilyHistory = state.hasFamilyHistory;
 
@@ -922,7 +999,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: heightController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
                             decoration: InputDecoration(
                               labelText: 'Tinggi (cm)',
                               hintText: 'Tinggi',
@@ -940,7 +1019,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: weightController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
                             decoration: InputDecoration(
                               labelText: 'Berat (kg)',
                               hintText: 'Berat',
@@ -954,7 +1035,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: waistController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
                             decoration: InputDecoration(
                               labelText: 'Lingkar Pinggang (cm)',
                               hintText: 'Lingkar',
@@ -999,11 +1082,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     FilledButton(
                       onPressed: () async {
                         final age = int.tryParse(ageController.text) ?? 0;
-                        final weight = double.tryParse(weightController.text) ?? 0.0;
-                        final height = double.tryParse(heightController.text) ?? 0.0;
-                        final waist = double.tryParse(waistController.text) ?? 98.0;
+                        final weight =
+                            double.tryParse(weightController.text) ?? 0.0;
+                        final height =
+                            double.tryParse(heightController.text) ?? 0.0;
+                        final waist =
+                            double.tryParse(waistController.text) ?? 98.0;
 
-                        final success = await ref.read(profileNotifierProvider.notifier).updateProfile(
+                        final success = await ref
+                            .read(profileNotifierProvider.notifier)
+                            .updateProfile(
                               name: nameController.text.trim(),
                               phoneNumber: phoneController.text.trim(),
                               age: age,
@@ -1021,11 +1109,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Profil & Data Kesehatan berhasil diperbarui! ✓'),
+                                content: const Text(
+                                  'Profil & Data Kesehatan berhasil diperbarui! ✓',
+                                ),
                                 backgroundColor: AppColors.success,
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                             );
                           }
@@ -1050,7 +1141,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             )
                           : Text(
                               'Simpan Perubahan',
-                              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
                     ),
                   ],
@@ -1066,7 +1160,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileNotifierProvider);
-    
+
     // Dynamic Risk styling helper
     Color riskColor = const Color(0xFFFFB700); // Default Yellow
     String riskTitle = _findriscCategory;
@@ -1107,7 +1201,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.black, size: 28),
+            icon: const Icon(
+              Icons.settings_outlined,
+              color: Colors.black,
+              size: 28,
+            ),
             onPressed: _showSettingsBottomSheet,
           ),
           const SizedBox(width: 12),
@@ -1125,7 +1223,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               },
               color: AppColors.brand1,
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20.0,
+                  vertical: 12.0,
+                ),
                 children: [
                   // --- PROFILE USER INFO ROW (TAP TO EDIT NAME/BASIC STATS) ---
                   GestureDetector(
@@ -1152,14 +1253,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.05),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.05,
+                                        ),
                                         blurRadius: 6,
                                         offset: const Offset(0, 3),
                                       ),
                                     ],
                                   ),
                                   child: ClipOval(
-                                    child: _avatarType == 'file' && _avatarFilePath != null
+                                    child:
+                                        _avatarType == 'file' &&
+                                            _avatarFilePath != null
                                         ? Image.file(
                                             File(_avatarFilePath!),
                                             fit: BoxFit.cover,
@@ -1235,10 +1340,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           color: Colors.black.withValues(alpha: 0.02),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
-                        )
+                        ),
                       ],
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                     margin: const EdgeInsets.only(bottom: 12),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1252,7 +1360,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: riskColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
@@ -1264,7 +1375,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 'assets/images/home/kategori.svg',
                                 width: 18,
                                 height: 18,
-                                colorFilter: ColorFilter.mode(riskColor, BlendMode.srcIn),
+                                colorFilter: ColorFilter.mode(
+                                  riskColor,
+                                  BlendMode.srcIn,
+                                ),
                               ),
                               const SizedBox(width: 6),
                               Text(
@@ -1292,10 +1406,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           color: Colors.black.withValues(alpha: 0.02),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
-                        )
+                        ),
                       ],
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 18,
+                    ),
                     margin: const EdgeInsets.only(bottom: 24),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1333,7 +1450,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _showEditProfileDialog(context, profileState),
+                        onTap: () =>
+                            _showEditProfileDialog(context, profileState),
                         child: Text(
                           'Ubah',
                           style: GoogleFonts.inter(
@@ -1355,7 +1473,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           title: 'Usia',
                           value: '${profileState.age}',
                           unit: 'Tahun',
-                          onTap: () => _showEditProfileDialog(context, profileState),
+                          onTap: () =>
+                              _showEditProfileDialog(context, profileState),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1364,7 +1483,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           title: 'Tinggi Badan',
                           value: '${profileState.height.toInt()}',
                           unit: 'cm',
-                          onTap: () => _showEditProfileDialog(context, profileState),
+                          onTap: () =>
+                              _showEditProfileDialog(context, profileState),
                         ),
                       ),
                     ],
@@ -1377,7 +1497,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           title: 'Berat Badan',
                           value: '${profileState.weight.toInt()}',
                           unit: 'kg',
-                          onTap: () => _showEditProfileDialog(context, profileState),
+                          onTap: () =>
+                              _showEditProfileDialog(context, profileState),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1386,7 +1507,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           title: 'Lingkar Pinggang',
                           value: '${_waistCircumference.toInt()}',
                           unit: 'cm',
-                          onTap: () => _showEditProfileDialog(context, profileState),
+                          onTap: () =>
+                              _showEditProfileDialog(context, profileState),
                         ),
                       ),
                     ],
@@ -1404,10 +1526,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           color: const Color(0xFF0088FF).withValues(alpha: 0.2),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
-                        )
+                        ),
                       ],
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 20,
+                    ),
                     margin: const EdgeInsets.only(bottom: 24),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1462,7 +1587,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           color: Colors.black.withValues(alpha: 0.02),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
-                        )
+                        ),
                       ],
                     ),
                     padding: const EdgeInsets.all(16),
@@ -1507,7 +1632,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 12.0),
-                          child: Divider(height: 1, thickness: 1, color: Color(0xFFF2F2F7)),
+                          child: Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Color(0xFFF2F2F7),
+                          ),
                         ),
                         // Telegram Row
                         Row(
@@ -1579,7 +1708,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 8,
               offset: const Offset(0, 2),
-            )
+            ),
           ],
         ),
         padding: const EdgeInsets.all(16),
@@ -1634,7 +1763,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
-          )
+          ),
         ],
       ),
       padding: const EdgeInsets.all(16),
@@ -1648,7 +1777,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 width: 10,
                 height: 10,
                 decoration: BoxDecoration(
-                  color: _isBotConnected ? AppColors.success : const Color(0xFFD1D1D6),
+                  color: _isBotConnected
+                      ? AppColors.success
+                      : const Color(0xFFD1D1D6),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -1658,7 +1789,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: _isBotConnected ? AppColors.success : AppColors.textSecondary,
+                  color: _isBotConnected
+                      ? AppColors.success
+                      : AppColors.textSecondary,
                 ),
               ),
             ],
@@ -1672,11 +1805,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               decoration: BoxDecoration(
                 color: AppColors.success.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AppColors.success.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.check_circle_outline, color: AppColors.success, size: 20),
+                  Icon(
+                    Icons.check_circle_outline,
+                    color: AppColors.success,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -1695,7 +1834,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             OutlinedButton.icon(
               onPressed: _isDisconnecting ? null : _disconnectBot,
               icon: _isDisconnecting
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Icon(Icons.link_off, size: 18),
               label: Text(
                 'Putuskan Koneksi Bot',
@@ -1704,7 +1847,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.error,
                 side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
             ),
@@ -1725,7 +1870,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Icon(Icons.key, size: 18),
               label: Text(

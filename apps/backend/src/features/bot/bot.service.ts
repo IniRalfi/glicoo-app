@@ -9,7 +9,6 @@ import { aiService } from "../ai/ai.service";
  */
 const TYPING_REFRESH_INTERVAL_MS = 4000;
 
-
 /**
  * Purpose:
  * Layanan khusus untuk mengelola interaksi dengan Bot Telegram.
@@ -37,28 +36,30 @@ export class BotService {
   static async sendTelegramMessage(chatId: string, text: string): Promise<boolean> {
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     if (!botToken) {
-      console.warn('[BOT] TELEGRAM_BOT_TOKEN is not configured. Cannot send message.');
+      console.warn("[BOT] TELEGRAM_BOT_TOKEN is not configured. Cannot send message.");
       return false;
     }
 
     try {
       const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
           text: text,
-          parse_mode: 'Markdown',
+          parse_mode: "Markdown",
         }),
       });
 
       if (!response.ok) {
-        console.error(`[BOT] Telegram API error: ${response.statusText} - ${await response.text()}`);
+        console.error(
+          `[BOT] Telegram API error: ${response.statusText} - ${await response.text()}`
+        );
         return false;
       }
       return true;
     } catch (err) {
-      console.error('[BOT] Failed to send Telegram message:', err);
+      console.error("[BOT] Failed to send Telegram message:", err);
       return false;
     }
   }
@@ -71,13 +72,16 @@ export class BotService {
    * [EN]
    * Sends a single Telegram chat action (e.g. 'typing') to a given chat.
    */
-  static async sendChatAction(chatId: string, action: 'typing' | 'upload_photo' | 'upload_document' = 'typing'): Promise<void> {
+  static async sendChatAction(
+    chatId: string,
+    action: "typing" | "upload_photo" | "upload_document" = "typing"
+  ): Promise<void> {
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     if (!botToken) return;
     try {
       await fetch(`https://api.telegram.org/bot${botToken}/sendChatAction`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chat_id: chatId, action }),
       });
     } catch {
@@ -99,8 +103,11 @@ export class BotService {
    */
   static keepTypingWhile<T>(chatId: string, task: Promise<T>): Promise<T> {
     // [TRADEOFF] refresh 4 detik < expiry 5 detik Telegram → indikator never gaps
-    this.sendChatAction(chatId, 'typing');
-    const interval = setInterval(() => this.sendChatAction(chatId, 'typing'), TYPING_REFRESH_INTERVAL_MS);
+    this.sendChatAction(chatId, "typing");
+    const interval = setInterval(
+      () => this.sendChatAction(chatId, "typing"),
+      TYPING_REFRESH_INTERVAL_MS
+    );
     return task.finally(() => clearInterval(interval));
   }
 
@@ -121,14 +128,19 @@ export class BotService {
     const text = message.text.trim();
 
     // 1. Tangani alur verifikasi token (/start <TOKEN>)
-    if (text.startsWith('/start')) {
-      const parts = text.split(' ');
+    if (text.startsWith("/start")) {
+      const parts = text.split(" ");
       const token = parts[1]?.trim();
 
       if (!token) {
         await this.sendTelegramMessage(
           chatId,
-          'Selamat datang di Glicoo Bot! 🤖\n\nUntuk menghubungkan akun Anda, silakan buka menu *Bot Hub* di aplikasi Glicoo Anda dan ikuti panduannya.'
+          "Selamat datang di Glicoo Bot! 🤖\n\n" +
+            "Untuk menghubungkan akun Anda dengan bot ini:\n" +
+            "1. Buka aplikasi *Glicoo* di HP kamu\n" +
+            "2. Masuk ke menu *Profil* → bagian *Asisten AI*\n" +
+            "3. Tap tombol *Hubungkan ke Telegram*\n" +
+            "4. Kamu akan otomatis kembali ke sini dengan akun terhubung! ✅"
         );
         return;
       }
@@ -142,7 +154,7 @@ export class BotService {
       if (!linkToken) {
         await this.sendTelegramMessage(
           chatId,
-          'Maaf Kak, token OTP tidak valid. Silakan generate ulang token di aplikasi Glicoo. ❌'
+          "Maaf Kak, token OTP tidak valid. Silakan generate ulang token di aplikasi Glicoo. ❌"
         );
         return;
       }
@@ -151,7 +163,7 @@ export class BotService {
         await prisma.botLinkToken.delete({ where: { id: linkToken.id } });
         await this.sendTelegramMessage(
           chatId,
-          'Maaf Kak, token OTP sudah kedaluwarsa. Silakan ambil token baru di aplikasi Glicoo. ❌'
+          "Maaf Kak, token OTP sudah kedaluwarsa. Silakan ambil token baru di aplikasi Glicoo. ❌"
         );
         return;
       }
@@ -181,7 +193,7 @@ export class BotService {
     if (!user) {
       await this.sendTelegramMessage(
         chatId,
-        'Akun Telegram kamu belum terhubung dengan aplikasi Glicoo. Silakan hubungkan terlebih dahulu di menu *Bot Hub* di dalam aplikasi Glicoo ya! 🔗'
+        "Akun Telegram kamu belum terhubung dengan aplikasi Glicoo. Silakan hubungkan terlebih dahulu di menu *Bot Hub* di dalam aplikasi Glicoo ya! 🔗"
       );
       return;
     }
@@ -191,51 +203,55 @@ export class BotService {
       data: {
         user_id: user.id,
         message: text,
-        sender_type: 'USER',
-        intervention_moment: 'MEAL_TIME',
+        sender_type: "USER",
+        intervention_moment: "MEAL_TIME",
       },
     });
 
     // [ID] Kirim chat action 'typing' di awal agar user langsung tahu bot aktif merespon,
     // lalu jaga agar tetap aktif selama pemrosesan AI (via keepTypingWhile).
-    await this.sendChatAction(chatId, 'typing');
+    await this.sendChatAction(chatId, "typing");
 
     // Ambil riwayat percakapan sebelumnya untuk memberikan konteks ke AI
     const recentChats = await prisma.interventionChat.findMany({
       where: { user_id: user.id },
-      orderBy: { created_at: 'desc' },
+      orderBy: { created_at: "desc" },
       take: 7, // Ambil 7 pesan terakhir termasuk yang baru saja disimpan
     });
 
     recentChats.reverse();
 
-    const formattedHistory = recentChats.map(c => {
-      const role = c.sender_type === 'USER' ? 'Pengguna' : 'Iloo';
-      return `${role}: ${c.message}`;
-    }).join('\n');
+    const formattedHistory = recentChats
+      .map((c) => {
+        const role = c.sender_type === "USER" ? "Pengguna" : "Iloo";
+        return `${role}: ${c.message}`;
+      })
+      .join("\n");
 
     // Prompt AI untuk membedakan makanan vs obrolan biasa
     const schema = {
-      type: 'object',
+      type: "object",
       properties: {
         is_food: {
-          type: 'boolean',
-          description: 'Apakah pesan terakhir ini menceritakan atau menanyakan tentang aktivitas makan/minum/kalori/gizi pengguna?'
+          type: "boolean",
+          description:
+            "Apakah pesan terakhir ini menceritakan atau menanyakan tentang aktivitas makan/minum/kalori/gizi pengguna?",
         },
         estimated_calories: {
-          type: 'integer',
-          description: 'Estimasi kalori makanan (null jika bukan makanan)'
+          type: "integer",
+          description: "Estimasi kalori makanan (null jika bukan makanan)",
         },
         estimated_sugar_grams: {
-          type: 'number',
-          description: 'Estimasi kandungan gula makanan dalam gram (null jika bukan makanan)'
+          type: "number",
+          description: "Estimasi kandungan gula makanan dalam gram (null jika bukan makanan)",
         },
         ai_feedback: {
-          type: 'string',
-          description: 'Pesan balasan ramah, Socratic, maksimal 2-3 kalimat, dan menyisipkan emoji.'
-        }
+          type: "string",
+          description:
+            "Pesan balasan ramah, Socratic, maksimal 2-3 kalimat, dan menyisipkan emoji.",
+        },
       },
-      required: ['is_food', 'estimated_calories', 'estimated_sugar_grams', 'ai_feedback']
+      required: ["is_food", "estimated_calories", "estimated_sugar_grams", "ai_feedback"],
     };
 
     const systemInstruction = `
@@ -260,7 +276,7 @@ export class BotService {
           estimated_calories: number | null;
           estimated_sugar_grams: number | null;
           ai_feedback: string;
-        }>(prompt, schema, systemInstruction),
+        }>(prompt, schema, systemInstruction)
       );
 
       // Jika menceritakan makanan, simpan ke database FoodLog agar sinkron dengan aplikasi Mobile!
@@ -281,18 +297,18 @@ export class BotService {
         data: {
           user_id: user.id,
           message: aiResponse.ai_feedback,
-          sender_type: 'AI_AGENT',
-          intervention_moment: aiResponse.is_food ? 'MEAL_TIME' : 'NONE',
+          sender_type: "AI_AGENT",
+          intervention_moment: aiResponse.is_food ? "MEAL_TIME" : "NONE",
         },
       });
 
       // Kirim balik ke Telegram
       await this.sendTelegramMessage(chatId, aiResponse.ai_feedback);
     } catch (err) {
-      console.error('[BOT] Gagal memproses respon AI:', err);
+      console.error("[BOT] Gagal memproses respon AI:", err);
       await this.sendTelegramMessage(
         chatId,
-        'Maaf Kak, aku lagi pusing nih (gangguan koneksi AI). Nanti chat aku lagi ya! ⏳'
+        "Maaf Kak, aku lagi pusing nih (gangguan koneksi AI). Nanti chat aku lagi ya! ⏳"
       );
     }
   }
