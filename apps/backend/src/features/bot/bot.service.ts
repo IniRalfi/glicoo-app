@@ -170,13 +170,19 @@ export class BotService {
       }
 
       // [ID] Hubungkan user dengan Telegram chat ID
-      await prisma.user.update({
+      const updatedUser = await prisma.user.update({
         where: { id: linkToken.user_id },
         data: {
           phone_number: chatId, // backward compatibility
           bot_chat_id: chatId,
           bot_platform: "TELEGRAM",
         },
+      });
+
+      console.log("[TELEGRAM OTP] User updated:", {
+        userId: updatedUser.id,
+        botPlatform: updatedUser.bot_platform,
+        botChatId: updatedUser.bot_chat_id,
       });
 
       // Bersihkan token

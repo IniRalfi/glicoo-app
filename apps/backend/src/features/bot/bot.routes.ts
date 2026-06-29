@@ -351,13 +351,19 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
           }
 
           // [ID] Connect user to WhatsApp
-          await prisma.user.update({
+          const updatedUser = await prisma.user.update({
             where: { id: linkToken.user_id },
             data: {
               phone_number: chatId.replace(/@c\.us$/, ""), // backward compat
               bot_chat_id: chatId,
               bot_platform: "WHATSAPP",
             },
+          });
+
+          console.log("[WHATSAPP OTP] User updated:", {
+            userId: updatedUser.id,
+            botPlatform: updatedUser.bot_platform,
+            botChatId: updatedUser.bot_chat_id,
           });
 
           await prisma.botLinkToken.delete({

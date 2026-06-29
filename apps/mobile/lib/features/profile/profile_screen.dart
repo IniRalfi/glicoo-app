@@ -100,31 +100,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         final profileData = await ref.read(apiServiceProvider).getUserProfile();
         final riskScore =
             (profileData['risk_score'] as num?)?.toDouble() ?? 0.0;
+        final riskCategory =
+            (profileData['risk_category'] as String?) ?? 'Belum Tes';
 
         if (riskScore > 0) {
-          // Kalkulasi category dari risk_score
-          String category;
-          if (riskScore < 7) {
-            category = 'Rendah';
-          } else if (riskScore < 12) {
-            category = 'Sedikit Meningkat';
-          } else if (riskScore < 15) {
-            category = 'Sedang';
-          } else if (riskScore < 20) {
-            category = 'Tinggi';
-          } else {
-            category = 'Sangat Tinggi';
-          }
+          // [ID] Ambil category langsung dari API response
+          // [EN] Get category directly from API response
+          // [WHY] Backend sudah hitung category, tidak perlu kalkulasi ulang di client
 
           // Update SharedPreferences untuk cache
           await prefs.setInt('findrisc_score', riskScore.toInt());
-          await prefs.setString('findrisc_category', category);
+          await prefs.setString('findrisc_category', riskCategory);
 
           // Update UI
           if (mounted) {
             setState(() {
               _findriscScore = riskScore.toInt();
-              _findriscCategory = category;
+              _findriscCategory = riskCategory;
             });
           }
         }
