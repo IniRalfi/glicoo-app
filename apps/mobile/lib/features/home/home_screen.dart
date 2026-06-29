@@ -157,9 +157,16 @@ class _HomeHeader extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Hallo, $name!',
-              style: GoogleFonts.rammettoOne(fontSize: 24, color: Colors.black),
+            Flexible(
+              child: Text(
+                'Hallo, $name!',
+                style: GoogleFonts.rammettoOne(
+                  fontSize: 24,
+                  color: Colors.black,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
             ),
             IconButton(
               icon: const Icon(Icons.logout, color: AppColors.error),
