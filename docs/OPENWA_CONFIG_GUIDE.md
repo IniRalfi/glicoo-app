@@ -23,7 +23,7 @@
 2. Login dengan kredensial admin panel (yang kamu buat waktu setup OpenWA di EC2)
 3. Dashboard akan menampilkan:
    - ✅ **1 Active Session** (Status: Connected)
-   - ✅ **Phone: 628967258765**
+   - ✅ **Phone: 6289672585765**
    - ❌ **0 Webhooks Configured** ← ini yang harus diisi
 
 ---
@@ -70,7 +70,7 @@ Tanpa webhook, backend **TIDAK BISA menerima pesan masuk** dari WhatsApp. OpenWA
 
 **Pilih session:** `glicoo-bot`
 
-> Session yang sudah connected dengan WhatsApp kamu (Phone: 628967258765)
+> Session yang sudah connected dengan WhatsApp kamu (Phone: 6289672585765)
 
 ---
 
@@ -224,7 +224,7 @@ curl -X POST https://api.glicoo.my.id/api/v1/bot/webhook/whatsapp \
 ### C. Test End-to-End (Real WhatsApp Message)
 
 1. **Buka WhatsApp di HP kamu**
-2. **Chat nomor bot:** +62 896-7258-765
+2. **Chat nomor bot:** +62 896-7258-5765
 3. **Kirim pesan:** `test`
 4. **Cek logs backend:**
 
@@ -281,11 +281,11 @@ Kembali ke dashboard OpenWA → pastikan:
    Kode OTP: 123456
 
    Instruksi:
-   1. Chat nomor: +62 896-7258-765
+   1. Chat nomor: +62 896-7258-5765
    2. Kirim pesan: OTP 123456
    ```
 
-5. **Buka WhatsApp** → chat +62 896-7258-765
+5. **Buka WhatsApp** → chat +62 896-7258-5765
 6. **Kirim pesan:** `OTP 123456`
 7. **Backend akan:**
    - Verify token via webhook
@@ -412,7 +412,7 @@ Kembali ke dashboard OpenWA → pastikan:
    OPENWA_WEBHOOK_SECRET=""
    ```
 6. **Deploy backend** dengan env vars baru (Vercel redeploy)
-7. **Test:** Chat +62 896-7258-765 dari WhatsApp → kirim "test" → cek logs backend
+7. **Test:** Chat +62 896-7258-5765 dari WhatsApp → kirim "test" → cek logs backend
 
 ---
 

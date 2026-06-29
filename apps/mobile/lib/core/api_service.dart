@@ -17,8 +17,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'env_config.dart';
 import 'bot_link_exception.dart';
+import 'env_config.dart';
 
 /// Provider untuk ApiService agar dapat di-inject ke berbagai feature.
 final apiServiceProvider = Provider<ApiService>((ref) {
