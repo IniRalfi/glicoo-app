@@ -43,24 +43,19 @@ class FindriscStep1Screen extends StatefulWidget {
 }
 
 class _FindriscStep1ScreenState extends State<FindriscStep1Screen> {
-  String? _ageGroup;
+  final _ageCtrl = TextEditingController();
   final _heightCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
   final _waistCtrl = TextEditingController();
 
   double? _bmi;
   String _bmiCategory = '-';
-
-  static const _ageOptions = <String>[
-    '< 45 tahun',
-    '45 - 54 tahun',
-    '55 - 64 tahun',
-    '> 64 tahun',
-  ];
+  String _ageGroup = '';
 
   @override
   void initState() {
     super.initState();
+    _ageCtrl.addListener(_calculateAgeGroup);
     _heightCtrl.addListener(_recalculateBmi);
     _weightCtrl.addListener(_recalculateBmi);
     _waistCtrl.addListener(() => setState(() {}));
@@ -68,10 +63,33 @@ class _FindriscStep1ScreenState extends State<FindriscStep1Screen> {
 
   @override
   void dispose() {
+    _ageCtrl.dispose();
     _heightCtrl.dispose();
     _weightCtrl.dispose();
     _waistCtrl.dispose();
     super.dispose();
+  }
+
+  /// [ID] Hitung age group berdasarkan umur yang diinput untuk skor FINDRISC
+  /// [EN] Calculate age group from entered age for FINDRISC score
+  void _calculateAgeGroup() {
+    final age = int.tryParse(_ageCtrl.text);
+    if (age == null) {
+      setState(() => _ageGroup = '');
+      return;
+    }
+
+    setState(() {
+      if (age < 45) {
+        _ageGroup = '< 45 tahun';
+      } else if (age <= 54) {
+        _ageGroup = '45 - 54 tahun';
+      } else if (age <= 64) {
+        _ageGroup = '55 - 64 tahun';
+      } else {
+        _ageGroup = '> 64 tahun';
+      }
+    });
   }
 
   void _recalculateBmi() {
@@ -105,7 +123,7 @@ class _FindriscStep1ScreenState extends State<FindriscStep1Screen> {
   }
 
   bool get _isFormValid =>
-      _ageGroup != null &&
+      _ageGroup.isNotEmpty &&
       _heightCtrl.text.isNotEmpty &&
       _weightCtrl.text.isNotEmpty &&
       _waistCtrl.text.isNotEmpty;
@@ -113,7 +131,7 @@ class _FindriscStep1ScreenState extends State<FindriscStep1Screen> {
   void _onLanjutPressed() {
     if (!_isFormValid) return;
     widget.onComplete?.call(
-      _ageGroup!,
+      _ageGroup,
       double.parse(_heightCtrl.text),
       double.parse(_weightCtrl.text),
       double.parse(_waistCtrl.text),
@@ -224,17 +242,8 @@ class _FindriscStep1ScreenState extends State<FindriscStep1Screen> {
     return _Card(
       children: [
         _buildQuestionLabel('1.', 'Berapa usia Anda?'),
-        const SizedBox(height: AppSpacing.lg),
-        ..._ageOptions.map((option) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.md),
-            child: _OptionTile(
-              label: option,
-              selected: _ageGroup == option,
-              onTap: () => setState(() => _ageGroup = option),
-            ),
-          );
-        }),
+        const SizedBox(height: AppSpacing.md),
+        _SuffixField(controller: _ageCtrl, hint: 'misal 25', suffix: 'tahun'),
       ],
     );
   }
@@ -370,75 +379,6 @@ class _Card extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: children,
-      ),
-    );
-  }
-}
-
-/// Single selectable radio row — pill style.
-class _OptionTile extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _OptionTile({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
-          border: Border.all(
-            color: selected ? AppColors.brand1 : AppColors.border,
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: selected ? AppColors.brand1 : AppColors.border,
-                  width: 2,
-                ),
-                color: Colors.white,
-              ),
-              alignment: Alignment.center,
-              child: selected
-                  ? Container(
-                      width: 12,
-                      height: 12,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.brand1,
-                      ),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 14),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

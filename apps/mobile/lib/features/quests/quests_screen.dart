@@ -133,8 +133,8 @@ final questListProvider = Provider<List<QuestItem>>((ref) {
           : 'Progress $dailyCalories / 2000 kkal',
       isCompleted: foodCompleted,
       progress: foodProgress,
-      iconPath: 'assets/images/misi/food.svg',
-      themeColor: const Color(0xFFC73E8A),
+      iconPath: 'assets/images/misi/iloo_food.svg',
+      themeColor: const Color(0xFFCB30E0),
     ),
   ];
 });
@@ -170,7 +170,10 @@ final healthScoreProvider = Provider<int>((ref) {
   final dailyCalories = activityData.dailyCalories;
   final double foodPoints = dailyCalories > 0 ? 20.0 : 0.0;
 
-  return (stepPoints + sleepPoints + screenPoints + foodPoints).round().clamp(0, 100);
+  return (stepPoints + sleepPoints + screenPoints + foodPoints).round().clamp(
+    0,
+    100,
+  );
 });
 
 /// Halaman Quests/Misi.
@@ -544,13 +547,13 @@ class QuestDetailDialog extends StatelessWidget {
       imageAlignment = Alignment.bottomCenter;
       svgHeight = 154.0;
     } else if (quest.title.contains('Makan')) {
-      bgIlooColor = const Color(0xFFC73E8A);
-      svgAssetPath = 'assets/images/misi/food.svg';
+      bgIlooColor = const Color(0xFFCB30E0);
+      svgAssetPath = 'assets/images/misi/iloo_food.svg';
       contentText =
-          'Mencatat makanan secara rutin membantumu mengontrol asupan kalori dan gula harian, yang sangat penting untuk menjaga kestabilan kadar glukosa darah.';
-      containerPadding = const EdgeInsets.all(24);
-      imageAlignment = Alignment.center;
-      svgHeight = 100.0;
+          'Mencatat makanan membantu Iloo memahami pola makanmu sehingga dapat memberikan rekomendasi yang lebih sesuai untuk mengurangi risiko Diabetes Melitus Tipe 2.';
+      containerPadding = const EdgeInsets.only(top: 16, bottom: 0);
+      imageAlignment = Alignment.bottomCenter;
+      svgHeight = 154.0;
     } else {
       bgIlooColor = const Color(0xFFFF2D55);
       svgAssetPath = 'assets/images/misi/iloo_screen.svg';

@@ -151,36 +151,31 @@ class MoreQuestsButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: ElevatedButton(
-        onPressed: () {
-          // Pindah ke tab Misi (index 1)
-          ref.read(bottomNavIndexProvider.notifier).state = 1;
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(26),
-          ),
-          elevation: 0,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Cek selengkapnya',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
+    return BentoCard(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      backgroundColor: Colors.white,
+      borderColor: Colors.white,
+      onTap: () {
+        ref.read(bottomNavIndexProvider.notifier).state = 2;
+      },
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Cek selengkapnya',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
             ),
-            const SizedBox(width: 8),
-            const Icon(Icons.chevron_right, color: Colors.white),
-          ],
-        ),
+          ),
+          const SizedBox(width: 4),
+          Icon(
+            Icons.arrow_forward_ios_rounded,
+            size: 14,
+            color: AppColors.primary,
+          ),
+        ],
       ),
     );
   }

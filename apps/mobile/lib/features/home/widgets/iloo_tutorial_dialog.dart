@@ -86,7 +86,8 @@ class _IlooTutorialDialogState extends ConsumerState<IlooTutorialDialog> {
     if (_step == 1) {
       assetPath = 'assets/images/tutorial/iloo-greeting.svg';
       titleText = 'Halo, aku Iloo!';
-      descriptionText = 'Aku akan menjadi teman sehatmu selama menggunakan aplikasi ini.\n\n'
+      descriptionText =
+          'Aku akan menjadi teman sehatmu selama menggunakan aplikasi ini.\n\n'
           'Aku akan membantu memantau kebiasaanmu dan memberikan saran yang sesuai dengan kondisi kesehatanmu.';
       buttonWidget = SizedBox(
         width: double.infinity,
@@ -105,17 +106,15 @@ class _IlooTutorialDialogState extends ConsumerState<IlooTutorialDialog> {
           ),
           child: Text(
             'Lanjut',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
+            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
           ),
         ),
       );
     } else if (_step == 2) {
       assetPath = 'assets/images/tutorial/iloo-kawai.svg';
       titleText = 'Aktifkan Asisten';
-      descriptionText = 'Agar aku bisa memberikan pengingat dan rekomendasi yang sesuai, aktifkan fitur Pendamping AI di pengaturan.';
+      descriptionText =
+          'Agar aku bisa memberikan pengingat dan rekomendasi yang sesuai, aktifkan fitur Pendamping AI di pengaturan.';
       buttonWidget = Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -146,7 +145,19 @@ class _IlooTutorialDialogState extends ConsumerState<IlooTutorialDialog> {
             width: double.infinity,
             height: 52,
             child: OutlinedButton(
-              onPressed: () => _completeTutorial(false),
+              onPressed: () async {
+                // [FIX] Langsung set flag dan close dialog tanpa pindah ke step 3
+                debugPrint(
+                  'DEBUG: Nanti Saja pressed, closing dialog immediately',
+                );
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('tutorial_iloo_done', true);
+                await prefs.setBool('ai_companion_active', false);
+                ref.invalidate(tutorialSeenProvider);
+                if (mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.textPrimary,
                 side: const BorderSide(color: AppColors.border, width: 1.5),
@@ -178,7 +189,10 @@ class _IlooTutorialDialogState extends ConsumerState<IlooTutorialDialog> {
             height: 1.6,
           ),
           children: [
-            const TextSpan(text: 'Baik, mungkin lain waktu ya! Saat kamu siap, fitur Pendamping AI dapat diaktifkan kapan saja melalui '),
+            const TextSpan(
+              text:
+                  'Baik, mungkin lain waktu ya! Saat kamu siap, fitur Pendamping AI dapat diaktifkan kapan saja melalui ',
+            ),
             TextSpan(
               text: 'Pengaturan > Pendamping AI',
               style: GoogleFonts.inter(
@@ -186,7 +200,10 @@ class _IlooTutorialDialogState extends ConsumerState<IlooTutorialDialog> {
                 color: AppColors.primary,
               ),
             ),
-            const TextSpan(text: ' untuk mendapatkan saran dan pengingat yang lebih personal.'),
+            const TextSpan(
+              text:
+                  ' untuk mendapatkan saran dan pengingat yang lebih personal.',
+            ),
           ],
         ),
       );
@@ -205,10 +222,7 @@ class _IlooTutorialDialogState extends ConsumerState<IlooTutorialDialog> {
           ),
           child: Text(
             'Oke',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
+            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
           ),
         ),
       );
@@ -234,19 +248,18 @@ class _IlooTutorialDialogState extends ConsumerState<IlooTutorialDialog> {
                 width: double.infinity,
                 height: 220,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF9E6), // Soft cream/yellow pastel color
+                  color: const Color(
+                    0xFFFFF9E6,
+                  ), // Soft cream/yellow pastel color
                   borderRadius: BorderRadius.circular(24),
                 ),
                 padding: const EdgeInsets.all(16),
                 child: Center(
-                  child: SvgPicture.asset(
-                    assetPath,
-                    fit: BoxFit.contain,
-                  ),
+                  child: SvgPicture.asset(assetPath, fit: BoxFit.contain),
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Title text
               Text(
                 titleText,
@@ -258,24 +271,25 @@ class _IlooTutorialDialogState extends ConsumerState<IlooTutorialDialog> {
                 ),
               ),
               const SizedBox(height: 12),
-              
+
               // Description text
-              customDescription ?? Text(
-                descriptionText,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
-              ),
+              customDescription ??
+                  Text(
+                    descriptionText,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
+                  ),
               const SizedBox(height: 16),
-              
+
               // Page indicator dots
               _buildPageIndicator(_step),
               const SizedBox(height: 24),
-              
+
               // Action button(s)
               buttonWidget,
             ],

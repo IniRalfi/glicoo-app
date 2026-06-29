@@ -13,6 +13,7 @@
 // → Tab Home di bottom navigation
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -45,17 +46,7 @@ class HomeScreen extends ConsumerWidget {
       });
     });
 
-    // Juga tampilkan jika user berpindah kembali ke tab Beranda
-    ref.listen<int>(bottomNavIndexProvider, (prev, next) {
-      if (next == 0) {
-        final seen = ref.read(tutorialSeenProvider).value ?? true;
-        if (!seen) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _showTutorialDialog(context, ref);
-          });
-        }
-      }
-    });
+    // [FIX] Listener kedua (bottomNavIndexProvider) DIHAPUS untuk mencegah double trigger
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -105,7 +96,8 @@ class HomeScreen extends ConsumerWidget {
   }
 
   void _showTutorialDialog(BuildContext context, WidgetRef ref) {
-    if (ref.read(tutorialDialogShowingProvider) || IlooTutorialDialog.isShowing) {
+    if (ref.read(tutorialDialogShowingProvider) ||
+        IlooTutorialDialog.isShowing) {
       return;
     }
 
@@ -174,7 +166,82 @@ class _RiskCard extends ConsumerWidget {
     return findriscData.when(
       data: (data) {
         final category = data['category'] as String;
-        return _StatRow(label: 'Risiko Saat Ini', value: category, useSvg: true);
+
+        // Dynamic Risk styling helper (same as profile_screen.dart)
+        Color riskColor = const Color(0xFFFFB700); // Default Yellow
+        String riskTitle = category;
+        final catLower = category.toLowerCase();
+
+        if (catLower.contains('sangat tinggi')) {
+          riskColor = const Color(0xFFFF3B30); // Red
+          riskTitle = 'Sangat Tinggi';
+        } else if (catLower.contains('tinggi')) {
+          riskColor = const Color(0xFFFF8800); // Orange
+          riskTitle = 'Tinggi';
+        } else if (catLower.contains('sedikit')) {
+          riskColor = const Color(0xFF007AFF); // Blue
+          riskTitle = 'Sedikit Meningkat';
+        } else if (catLower.contains('rendah')) {
+          riskColor = const Color(0xFF24B35F); // Green
+          riskTitle = 'Rendah';
+        } else if (catLower.contains('sedang')) {
+          riskColor = const Color(0xFFFFB700); // Yellow
+          riskTitle = 'Sedang';
+        } else if (catLower.contains('belum')) {
+          riskColor = const Color(0xFF8E8E93); // Gray
+          riskTitle = 'Belum Tes';
+        }
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Risiko Saat Ini',
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: riskColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SvgPicture.asset(
+                      'assets/images/home/kategori.svg',
+                      width: 18,
+                      height: 18,
+                      colorFilter: ColorFilter.mode(riskColor, BlendMode.srcIn),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      riskTitle,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: riskColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
       },
       loading: () => const SizedBox(height: 56),
       error: (e, _) => const SizedBox(height: 56),
@@ -229,7 +296,11 @@ class _ScoreCard extends ConsumerWidget {
                           color: Color(0xFFFFB700),
                         ),
                         child: const Center(
-                          child: Icon(Icons.remove, size: 9, color: Colors.white),
+                          child: Icon(
+                            Icons.remove,
+                            size: 9,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 4),

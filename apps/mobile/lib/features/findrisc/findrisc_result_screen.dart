@@ -68,8 +68,22 @@ class FindriscResultScreen extends StatelessWidget {
   }
 
   Widget _buildResultIllustration() {
+    // Determine SVG based on risk category
+    final catLower = data.kategori.toLowerCase();
+    String svgAsset = 'assets/images/findrisc/sedang.svg';
+
+    if (catLower.contains('sangat tinggi')) {
+      svgAsset = 'assets/images/findrisc/sangat-tinggi.svg';
+    } else if (catLower.contains('tinggi')) {
+      svgAsset = 'assets/images/findrisc/tinggi.svg';
+    } else if (catLower.contains('sedikit')) {
+      svgAsset = 'assets/images/findrisc/sedikit-meningkat.svg';
+    } else if (catLower.contains('rendah')) {
+      svgAsset = 'assets/images/findrisc/rendah.svg';
+    }
+
     return SvgPicture.asset(
-      'assets/images/findrisc/glicoo_result.svg',
+      svgAsset,
       width: 160,
       height: 168,
       fit: BoxFit.contain,

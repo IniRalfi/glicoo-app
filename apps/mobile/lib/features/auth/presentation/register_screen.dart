@@ -21,6 +21,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/loading_provider.dart';
 import 'auth_provider.dart';
 import '../domain/auth_state.dart';
 
@@ -82,6 +83,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       orElse: () => false,
     );
 
+    // Listen to auth state for error handling
     ref.listen<AuthState>(authProvider, (prev, next) {
       next.maybeWhen(
         error: (message) {
@@ -97,6 +99,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           );
           ref.read(authProvider.notifier).clearError();
         },
+        orElse: () {},
+      );
+    });
+
+    // Listen to auth state for global loading overlay (Google sign-in exchange token)
+    ref.listen<AuthState>(authProvider, (prev, next) {
+      final loading = ref.read(loadingProvider.notifier);
+      next.maybeWhen(
+        loading: () => loading.show(
+          title: 'Daftar dengan Google',
+          subtitle: 'Mohon tunggu sebentar...',
+        ),
+        authenticated: (_) => loading.hide(),
+        error: (_) => loading.hide(),
+        unauthenticated: () => loading.hide(),
         orElse: () {},
       );
     });

@@ -43,16 +43,20 @@ class ActivityData {
 
 /// Provider state untuk data aktivitas harian (langkah, tidur, screen time, history).
 class ActivityDataNotifier extends StateNotifier<ActivityData> {
-  ActivityDataNotifier() : super(const ActivityData(
-    steps: 0,
-    stepsGoal: 5000,
-    sleepMinutes: 0,
-    screenTimeMinutes: 0,
-    dailyCalories: 0,
-    stepsHistory: [1500, 2400, 3100, 4200, 0, 2800],
-    sleepHistory: [450, 360, 480, 330, 380, 420],
-    screenTimeHistory: [270, 372, 300, 426, 0, 360],
-  )) {
+  ActivityDataNotifier()
+    : super(
+        const ActivityData(
+          steps: 0,
+          stepsGoal: 5000,
+          sleepMinutes: 0,
+          screenTimeMinutes: 0,
+          dailyCalories: 0,
+          // [FIX] Ganti dummy data dengan array kosong untuk prevent progress bar palsu
+          stepsHistory: [],
+          sleepHistory: [],
+          screenTimeHistory: [],
+        ),
+      ) {
     loadDailyValues();
     _startTimer();
   }
@@ -62,7 +66,8 @@ class ActivityDataNotifier extends StateNotifier<ActivityData> {
   Future<void> loadDailyValues() async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
-    final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final todayStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     final lastActiveDate = prefs.getString('glico_active_date');
 
     if (lastActiveDate != null && lastActiveDate != todayStr) {
@@ -154,7 +159,44 @@ class ActivityDataNotifier extends StateNotifier<ActivityData> {
   }
 
   void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 2), (_) => loadDailyValues());
+    // [FIX] Increase polling interval dari 2 detik ke 15 detik untuk battery efficiency
+    // TODO: Refactor ke push-based pattern dari sensor service untuk real-time update
+    _timer = Timer.periodic(
+      const Duration(seconds: 15),
+      (_) => loadDailyValues(),
+    );
+  }
+
+  /// [ID] Update state langsung tanpa reload (untuk dipanggil dari sensor service)
+  /// [EN] Update state directly without reload (to be called from sensor service)
+  void updateSteps(int steps) {
+    if (!mounted) return;
+    state = ActivityData(
+      steps: steps,
+      stepsGoal: state.stepsGoal,
+      sleepMinutes: state.sleepMinutes,
+      screenTimeMinutes: state.screenTimeMinutes,
+      dailyCalories: state.dailyCalories,
+      stepsHistory: state.stepsHistory,
+      sleepHistory: state.sleepHistory,
+      screenTimeHistory: state.screenTimeHistory,
+    );
+  }
+
+  /// [ID] Update screen time langsung tanpa reload
+  /// [EN] Update screen time directly without reload
+  void updateScreenTime(int minutes) {
+    if (!mounted) return;
+    state = ActivityData(
+      steps: state.steps,
+      stepsGoal: state.stepsGoal,
+      sleepMinutes: state.sleepMinutes,
+      screenTimeMinutes: minutes,
+      dailyCalories: state.dailyCalories,
+      stepsHistory: state.stepsHistory,
+      sleepHistory: state.sleepHistory,
+      screenTimeHistory: state.screenTimeHistory,
+    );
   }
 
   @override
@@ -164,15 +206,16 @@ class ActivityDataNotifier extends StateNotifier<ActivityData> {
   }
 }
 
-final activityDataProvider = StateNotifierProvider<ActivityDataNotifier, ActivityData>((ref) {
-  return ActivityDataNotifier();
-});
+final activityDataProvider =
+    StateNotifierProvider<ActivityDataNotifier, ActivityData>((ref) {
+      return ActivityDataNotifier();
+    });
 
 /// Provider untuk mengambil data FINDRISC terbaru dari SharedPreferences.
 final findriscDataProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final prefs = await SharedPreferences.getInstance();
-  final score = prefs.getInt('findrisc_score') ?? 13;
-  final category = prefs.getString('findrisc_category') ?? 'Sedang';
+  final score = prefs.getInt('findrisc_score') ?? 0;
+  final category = prefs.getString('findrisc_category') ?? 'Belum Tes';
   return {'score': score, 'category': category};
 });
 
