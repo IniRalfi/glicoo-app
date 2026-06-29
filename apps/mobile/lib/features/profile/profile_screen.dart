@@ -64,7 +64,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _isBotConnected = false;
   bool _isDisconnecting = false;
   String? _connectedPlatform; // telegram/whatsapp
-  String _selectedPlatform = 'telegram'; // default for new connections
+  final String _selectedPlatform = 'telegram'; // default for new connections
 
   @override
   void initState() {
@@ -75,6 +75,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+
+    // [ID] Load dari SharedPreferences terlebih dahulu
+    // [EN] Load from SharedPreferences first
     setState(() {
       _bgSyncEnabled = prefs.getBool('bg_sync_enabled') ?? true;
       _findriscScore = prefs.getInt('findrisc_score') ?? 0;
@@ -87,6 +90,49 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _avatarFilePath = prefs.getString('avatar_file_path');
       _avatarType = prefs.getString('avatar_type') ?? 'asset';
     });
+
+    // [ID] Jika FINDRISC kosong di SharedPreferences, fetch dari API
+    // [WHY] Bug: Setelah logout/ganti akun, prefs.clear() menghapus semua data
+    // tapi ProfileScreen tidak re-fetch dari API
+    // [EN] If FINDRISC is empty in SharedPreferences, fetch from API
+    if (_findriscScore == 0 && _findriscCategory == 'Belum Tes') {
+      try {
+        final profileData = await ref.read(apiServiceProvider).getUserProfile();
+        final riskScore =
+            (profileData['risk_score'] as num?)?.toDouble() ?? 0.0;
+
+        if (riskScore > 0) {
+          // Kalkulasi category dari risk_score
+          String category;
+          if (riskScore < 7) {
+            category = 'Rendah';
+          } else if (riskScore < 12) {
+            category = 'Sedikit Meningkat';
+          } else if (riskScore < 15) {
+            category = 'Sedang';
+          } else if (riskScore < 20) {
+            category = 'Tinggi';
+          } else {
+            category = 'Sangat Tinggi';
+          }
+
+          // Update SharedPreferences untuk cache
+          await prefs.setInt('findrisc_score', riskScore.toInt());
+          await prefs.setString('findrisc_category', category);
+
+          // Update UI
+          if (mounted) {
+            setState(() {
+              _findriscScore = riskScore.toInt();
+              _findriscCategory = category;
+            });
+          }
+        }
+      } catch (e) {
+        // Ignore error - tetap gunakan default
+        debugPrint('[ProfileScreen] Error fetching FINDRISC from API: $e');
+      }
+    }
   }
 
   Future<void> _toggleBgSync(bool value) async {
@@ -183,18 +229,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _loadBotStatus() async {
-    try {
-      final connected = await ref.read(apiServiceProvider).getBotStatus();
-      final platform = await ref
-          .read(apiServiceProvider)
-          .getConnectedPlatform();
-      if (mounted) {
-        setState(() {
-          _isBotConnected = connected;
-          _connectedPlatform = platform;
-        });
-      }
-    } catch (_) {}
+    // [WHY] Bot status sekarang sudah ada di ProfileState, tidak perlu API call
+    final profileState = ref.read(profileNotifierProvider);
+    if (mounted) {
+      setState(() {
+        _isBotConnected =
+            profileState.botChatId != null &&
+            profileState.botChatId!.isNotEmpty;
+        _connectedPlatform = profileState.botPlatform?.toLowerCase();
+      });
+    }
   }
 
   Future<void> _disconnectBot() async {
@@ -240,11 +284,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     setState(() => _isDisconnecting = true);
     try {
       await ref.read(apiServiceProvider).disconnectBot();
+
+      // [ID] Reload ProfileState untuk update bot_chat_id & bot_platform ke NULL
+      // [EN] Reload ProfileState to update bot_chat_id & bot_platform to NULL
+      await ref.read(profileNotifierProvider.notifier).loadProfile();
+      await _loadBotStatus();
+
       if (mounted) {
         setState(() {
-          _isBotConnected = false;
           _isDisconnecting = false;
-          _connectedPlatform = null;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -331,8 +379,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   /// [ID] Tampilkan dialog OTP dengan design baru sesuai screenshot (popup-aktivasi-ai)
   /// [EN] Show OTP dialog with new design matching screenshot (popup-aktivasi-ai)
-  void _showOtpDialog() {
-    showDialog(
+  Future<void> _showOtpDialog() async {
+    await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) {
@@ -554,6 +602,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         );
       },
     );
+
+    // [ID] Reload ProfileState setelah dialog ditutup untuk update status koneksi
+    // [EN] Reload ProfileState after dialog closes to update connection status
+    if (mounted) {
+      await ref.read(profileNotifierProvider.notifier).loadProfile();
+      await _loadBotStatus();
+    }
   }
 
   void _showAvatarEditorBottomSheet() {
@@ -1980,88 +2035,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ] else ...[
             // --- Status Belum Terhubung ---
             Text(
-              'Pilih platform lalu dapatkan kode verifikasi untuk menghubungkan akun dengan Pendamping AI:',
+              'Hubungkan akun dengan Pendamping AI untuk mendapatkan pengingat harian dan tips kesehatan langsung di chat kamu!',
               style: GoogleFonts.inter(
                 fontSize: 12,
                 color: AppColors.textSecondary,
                 height: 1.4,
               ),
-            ),
-            const SizedBox(height: 16),
-
-            // Platform Picker Chips
-            Row(
-              children: [
-                Expanded(
-                  child: ChoiceChip(
-                    label: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.telegram, size: 18),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Telegram',
-                          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    selected: _selectedPlatform == 'telegram',
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() => _selectedPlatform = 'telegram');
-                      }
-                    },
-                    selectedColor: const Color(
-                      0xFF0088FF,
-                    ).withValues(alpha: 0.15),
-                    checkmarkColor: const Color(0xFF0088FF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: _selectedPlatform == 'telegram'
-                            ? const Color(0xFF0088FF)
-                            : const Color(0xFFE5E5EA),
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ChoiceChip(
-                    label: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.phone_android, size: 18),
-                        const SizedBox(width: 6),
-                        Text(
-                          'WhatsApp',
-                          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    selected: _selectedPlatform == 'whatsapp',
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() => _selectedPlatform = 'whatsapp');
-                      }
-                    },
-                    selectedColor: const Color(
-                      0xFF25D366,
-                    ).withValues(alpha: 0.15),
-                    checkmarkColor: const Color(0xFF25D366),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: _selectedPlatform == 'whatsapp'
-                            ? const Color(0xFF25D366)
-                            : const Color(0xFFE5E5EA),
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
             ),
             const SizedBox(height: 16),
 
@@ -2076,9 +2055,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         color: Colors.white,
                       ),
                     )
-                  : const Icon(Icons.key, size: 18),
+                  : const Icon(Icons.link, size: 18),
               label: Text(
-                'Dapatkan Kode OTP',
+                'Hubungkan Bot',
                 style: GoogleFonts.inter(fontWeight: FontWeight.bold),
               ),
               style: FilledButton.styleFrom(
