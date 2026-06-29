@@ -336,13 +336,8 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
             return { ok: true };
           }
 
-          if (linkToken.platform !== "WHATSAPP") {
-            await sendWhatsAppMessage(
-              chatId,
-              "❌ Token ini untuk Telegram, bukan WhatsApp. Silakan generate ulang dengan memilih platform WhatsApp."
-            );
-            return { ok: true };
-          }
+          // [WHY] Tidak perlu cek platform - biarkan user pilih platform yang mana saat kirim OTP
+          // Token yang sama bisa digunakan untuk Telegram atau WhatsApp (yang kirim duluan menang)
 
           if (linkToken.expires_at < new Date()) {
             await prisma.botLinkToken.delete({
