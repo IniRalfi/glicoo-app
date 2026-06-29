@@ -30,7 +30,9 @@ class FindriscStep1Screen extends StatefulWidget {
 
   /// Callback ketika user tap "Lanjut" dan form valid.
   /// Mengembalikan data fisik yang sudah diisi.
+  /// [age] adalah angka umur asli dari input user, bukan dari mapping ageGroup.
   final void Function(
+    int age,
     String ageGroup,
     double tinggiCm,
     double beratKg,
@@ -130,7 +132,9 @@ class _FindriscStep1ScreenState extends State<FindriscStep1Screen> {
 
   void _onLanjutPressed() {
     if (!_isFormValid) return;
+    final age = int.tryParse(_ageCtrl.text) ?? 0;
     widget.onComplete?.call(
+      age,
       _ageGroup,
       double.parse(_heightCtrl.text),
       double.parse(_weightCtrl.text),

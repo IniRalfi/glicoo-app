@@ -30,6 +30,7 @@ import '../../core/notification_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/glico_loading.dart';
 import '../../core/api_service.dart';
+import '../../core/bot_link_exception.dart';
 import '../auth/presentation/auth_provider.dart';
 import '../home/providers/activity_provider.dart';
 import 'profile_provider.dart';
@@ -45,9 +46,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _bgSyncEnabled = true;
 
   // Local settings for FINDRISC & Custom Avatar
-  int _findriscScore = 13;
-  String _findriscCategory = 'Sedang';
-  double _waistCircumference = 98.0;
+  // [WHY] Initial defaults harus cocok dgn SharedPreferences defaults biar ga mismatch dgn Home
+  int _findriscScore = 0;
+  String _findriscCategory = 'Belum Tes';
+  double _waistCircumference = 0.0;
   String _avatarBgColor = '0xFFFFB700';
   String _avatarAssetPath = 'assets/images/bothub/pp_iloo.svg';
   String? _avatarFilePath;
@@ -61,6 +63,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   // Bot connection state
   bool _isBotConnected = false;
   bool _isDisconnecting = false;
+  String? _connectedPlatform; // telegram/whatsapp
+  String _selectedPlatform = 'telegram'; // default for new connections
 
   @override
   void initState() {
@@ -181,11 +185,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _loadBotStatus() async {
     try {
       final connected = await ref.read(apiServiceProvider).getBotStatus();
-      if (mounted) setState(() => _isBotConnected = connected);
+      final platform = await ref
+          .read(apiServiceProvider)
+          .getConnectedPlatform();
+      if (mounted) {
+        setState(() {
+          _isBotConnected = connected;
+          _connectedPlatform = platform;
+        });
+      }
     } catch (_) {}
   }
 
   Future<void> _disconnectBot() async {
+    final platformName = _connectedPlatform == 'whatsapp'
+        ? 'WhatsApp'
+        : 'Telegram';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -195,7 +210,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           style: GoogleFonts.inter(fontWeight: FontWeight.bold),
         ),
         content: Text(
-          'Setelah diputuskan, Iloo tidak bisa lagi membalas pesan Telegram kamu. Kamu bisa menghubungkan ulang kapan saja.',
+          'Setelah diputuskan, Iloo tidak bisa lagi membalas pesan $platformName kamu. Kamu bisa menghubungkan ulang kapan saja.',
           style: GoogleFonts.inter(
             fontSize: 14,
             color: AppColors.textSecondary,
@@ -229,6 +244,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         setState(() {
           _isBotConnected = false;
           _isDisconnecting = false;
+          _connectedPlatform = null;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -256,21 +272,52 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _generateOtp() async {
-    setState(() {
-      _isLoadingOtp = true;
-    });
+    setState(() => _isLoadingOtp = true);
     try {
-      final res = await ref.read(apiServiceProvider).getBotLink();
+      final res = await ref
+          .read(apiServiceProvider)
+          .getBotLink(platform: _selectedPlatform);
       setState(() {
         _otpToken = res['token']?.toString();
         _telegramLink = res['telegramLink']?.toString();
         _isLoadingOtp = false;
       });
       _showOtpDialog();
+    } on BotLinkException catch (e) {
+      setState(() => _isLoadingOtp = false);
+      if (mounted) {
+        final otherPlatform = e.connectedPlatform ?? 'platform lain';
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Text(
+              'Sudah Terhubung',
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+            ),
+            content: Text(
+              'Akun kamu sudah terhubung ke $otherPlatform. Putuskan koneksi dulu untuk menghubungkan ke platform lain.',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  'OK',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
     } catch (e) {
-      setState(() {
-        _isLoadingOtp = false;
-      });
+      setState(() => _isLoadingOtp = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -299,7 +346,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Gunakan kode di bawah untuk menautkan bot Telegram/WhatsApp:',
+                _selectedPlatform == 'telegram'
+                    ? 'Buka @glicoo_bot di Telegram, kirim "/start [kode]", atau klik tombol di bawah:'
+                    : 'Kirim pesan "OTP [kode]" ke nomor WhatsApp bot Glicoo:',
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   color: AppColors.textSecondary,
@@ -359,7 +408,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              if (_otpToken != null) ...[
+              if (_otpToken != null && _selectedPlatform == 'telegram') ...[
                 FilledButton.icon(
                   onPressed: () async {
                     final telegramUrl =
@@ -1817,7 +1866,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Akun kamu sudah terhubung dengan Iloo di Telegram. Kamu bisa mengobrol dan mencatat makanan langsung dari sana!',
+                      _connectedPlatform == 'whatsapp'
+                          ? 'Akun kamu sudah terhubung dengan Iloo di WhatsApp. Kamu bisa mengobrol dan mencatat makanan langsung dari sana!'
+                          : 'Akun kamu sudah terhubung dengan Iloo di Telegram. Kamu bisa mengobrol dan mencatat makanan langsung dari sana!',
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         color: AppColors.success,
@@ -1854,7 +1905,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ] else ...[
             // --- Status Belum Terhubung ---
             Text(
-              'Tekan tombol di bawah untuk mendapatkan kode verifikasi sementara. Salin kode tersebut dan kirimkan ke bot WhatsApp atau Telegram untuk menghubungkan akunmu dengan Pendamping AI. Kode berlaku selama 10 menit.',
+              'Pilih platform lalu dapatkan kode verifikasi untuk menghubungkan akun dengan Pendamping AI:',
               style: GoogleFonts.inter(
                 fontSize: 12,
                 color: AppColors.textSecondary,
@@ -1862,6 +1913,81 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 16),
+
+            // Platform Picker Chips
+            Row(
+              children: [
+                Expanded(
+                  child: ChoiceChip(
+                    label: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.telegram, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Telegram',
+                          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    selected: _selectedPlatform == 'telegram',
+                    onSelected: (selected) {
+                      if (selected)
+                        setState(() => _selectedPlatform = 'telegram');
+                    },
+                    selectedColor: const Color(
+                      0xFF0088FF,
+                    ).withValues(alpha: 0.15),
+                    checkmarkColor: const Color(0xFF0088FF),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: _selectedPlatform == 'telegram'
+                            ? const Color(0xFF0088FF)
+                            : const Color(0xFFE5E5EA),
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ChoiceChip(
+                    label: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.phone_android, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          'WhatsApp',
+                          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    selected: _selectedPlatform == 'whatsapp',
+                    onSelected: (selected) {
+                      if (selected)
+                        setState(() => _selectedPlatform = 'whatsapp');
+                    },
+                    selectedColor: const Color(
+                      0xFF25D366,
+                    ).withValues(alpha: 0.15),
+                    checkmarkColor: const Color(0xFF25D366),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: _selectedPlatform == 'whatsapp'
+                            ? const Color(0xFF25D366)
+                            : const Color(0xFFE5E5EA),
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
             FilledButton.icon(
               onPressed: _isLoadingOtp ? null : _generateOtp,
               icon: _isLoadingOtp

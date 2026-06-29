@@ -63,34 +63,32 @@ class _FindriscFocusScreenState extends State<FindriscFocusScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cat = widget.category ?? widget.data?.kategori ?? _loadedCategory ?? 'Sedang';
+    final cat =
+        widget.category ?? widget.data?.kategori ?? _loadedCategory ?? 'Sedang';
     final catLower = cat.toLowerCase();
 
     String title = 'Fokus';
     String description =
         'Kabar baiknya, sebagian besar faktor risiko ini masih bisa diperbaiki melalui kebiasaan sehari-hari.';
-    String svgAsset = 'assets/images/findrisc/sedang.svg';
+    // [WHY] Selalu pake glicoo_end.svg untuk semua kategori — permintaan user.
+    const String svgAsset = 'assets/images/findrisc/glicoo_end.svg';
 
     if (catLower.contains('sangat tinggi')) {
       title = 'Hadapi!';
       description =
           'Jangan khawatir, hasil ini bukan diagnosis diabetes. Namun, kondisi ini menunjukkan bahwa perubahan hidup dan pemantauan kesehatan perlu mulai dilakukan sejak sekarang.';
-      svgAsset = 'assets/images/findrisc/sangat-tinggi.svg';
     } else if (catLower.contains('tinggi')) {
       title = 'Pasti Bisa!';
       description =
           'Risiko ini masih dapat diturunkan melalui perubahan gaya hidup yang lebih sehat dan konsisten.';
-      svgAsset = 'assets/images/findrisc/tinggi.svg';
     } else if (catLower.contains('sedikit')) {
       title = 'Semangat!';
       description =
           'Kabar baiknya, perubahan kecil yang dilakukan secara konsisten dapat membantu menjaga kesehatan dan menurunkan risiko di kemudian hari.';
-      svgAsset = 'assets/images/findrisc/sedikit-meningkat.svg';
     } else if (catLower.contains('rendah')) {
       title = 'Pertahankan!';
       description =
           'Kondisi ini merupakan awal yang baik. Tetap pertahankan kebiasaan sehatmu agar risiko tetap rendah di masa mendatang.';
-      svgAsset = 'assets/images/findrisc/rendah.svg';
     }
 
     return Scaffold(

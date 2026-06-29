@@ -60,18 +60,14 @@ void main() async {
   );
 
   // 3. Init Workmanager background callback & task
-  await Workmanager().initialize(
-    callbackDispatcher,
-  );
+  await Workmanager().initialize(callbackDispatcher);
 
   await Workmanager().registerPeriodicTask(
     '1',
     kBackgroundSyncTaskName,
     frequency: const Duration(minutes: 15),
     existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
-    constraints: Constraints(
-      networkType: NetworkType.connected,
-    ),
+    constraints: Constraints(networkType: NetworkType.connected),
   );
 
   // 4. Build AuthRepository after Supabase is ready
@@ -135,6 +131,7 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
   bool _authHandled = false;
 
   // ── Data passing antar screen FINDRISC ──
+  int? _age;
   String? _ageGroup;
   double? _tinggiCm;
   double? _beratKg;
@@ -220,12 +217,15 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
       if (age != null && height != null && weight != null) {
         // Tandai sudah selesai secara lokal agar tidak perlu request ke server lagi
         await prefs.setBool('findrisc_done', true);
-        
+
         final riskScore = profile['risk_score'] ?? 0.0;
         await prefs.setInt('findrisc_score', (riskScore as num).toInt());
-        
+
         // Simpan default data agar UI profile tidak kosong
-        await prefs.setDouble('lingkar_pinggang_cm', (height as num).toDouble());
+        await prefs.setDouble(
+          'lingkar_pinggang_cm',
+          (height as num).toDouble(),
+        );
         return true;
       }
     } catch (e) {
@@ -245,6 +245,7 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
   /// Setelah user menyelesaikan FINDRISC step 1 (data fisik),
   /// simpan data fisik dan lanjut ke step 2.
   void _onFindriscStep1Complete(
+    int age,
     String ageGroup,
     double tinggiCm,
     double beratKg,
@@ -252,6 +253,7 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
   ) {
     if (!mounted) return;
     setState(() {
+      _age = age;
       _ageGroup = ageGroup;
       _tinggiCm = tinggiCm;
       _beratKg = beratKg;
@@ -288,39 +290,39 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
   /// simpan flag findrisc_done, lalu lanjut ke home.
   Future<void> _onFindriscFocusComplete() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     if (_findriscData != null) {
-      // Map age group to a representative integer
-      int age = 30;
-      if (_findriscData!.ageGroup == '45 - 54 tahun') {
-        age = 50;
-      } else if (_findriscData!.ageGroup == '55 - 64 tahun') {
-        age = 60;
-      } else if (_findriscData!.ageGroup == '> 64 tahun') {
-        age = 70;
-      }
+      // [ID] Pake umur asli dari input user, bukan mapping ageGroup
+      final age = _findriscData!.age;
 
       final hasFamilyHistory = _findriscData!.riwayatKeluargaDM != 'Tidak';
 
       // Tampilkan animated loading overlay
-      ref.read(loadingProvider.notifier).show(
-        title: 'Menyimpan Hasil...',
-        subtitle: 'Mengirim data ke server Glicoo',
-      );
+      ref
+          .read(loadingProvider.notifier)
+          .show(
+            title: 'Menyimpan Hasil...',
+            subtitle: 'Mengirim data ke server Glicoo',
+          );
 
       try {
-        await ref.read(apiServiceProvider).updateUserProfile(
-          age: age,
-          height: _findriscData!.tinggiCm,
-          weight: _findriscData!.beratKg,
-          hasFamilyHistory: hasFamilyHistory,
-        );
-        
+        await ref
+            .read(apiServiceProvider)
+            .updateUserProfile(
+              age: age,
+              height: _findriscData!.tinggiCm,
+              weight: _findriscData!.beratKg,
+              hasFamilyHistory: hasFamilyHistory,
+            );
+
         // Simpan flag findrisc_done secara lokal hanya jika sinkronisasi berhasil
         await prefs.setBool('findrisc_done', true);
         await prefs.setInt('findrisc_score', _findriscData!.totalSkor);
         await prefs.setString('findrisc_category', _findriscData!.kategori);
-        await prefs.setDouble('lingkar_pinggang_cm', _findriscData!.lingkarPinggangCm);
+        await prefs.setDouble(
+          'lingkar_pinggang_cm',
+          _findriscData!.lingkarPinggangCm,
+        );
 
         // Sembunyikan loading
         ref.read(loadingProvider.notifier).hide();
@@ -358,10 +360,7 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
               Expanded(
                 child: Text(
                   'Gagal Menyimpan Data',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
               ),
             ],
@@ -408,7 +407,10 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
               },
               child: const Text(
                 'Lewati & Masuk',
-                style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             FilledButton(
@@ -451,6 +453,7 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
             onComplete: _onFindriscStep1Complete,
           ),
           _FlowState.findriscStep2 => FindriscStep2Screen(
+            age: _age!,
             ageGroup: _ageGroup!,
             tinggiCm: _tinggiCm!,
             beratKg: _beratKg!,
@@ -504,7 +507,15 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
                   !_authHandled &&
                   (_state == _FlowState.auth || _state == _FlowState.splash)) {
                 _authHandled = true;
+                // [WHY] Tampilkan loading segera agar user ga lihat freeze
+                ref
+                    .read(loadingProvider.notifier)
+                    .show(
+                      title: 'Memproses...',
+                      subtitle: 'Mohon tunggu sebentar',
+                    );
                 _checkFindriscDone().then((done) {
+                  ref.read(loadingProvider.notifier).hide();
                   if (!mounted) return;
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (mounted) {

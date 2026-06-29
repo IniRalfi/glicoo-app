@@ -19,6 +19,7 @@
 /// Model data lengkap hasil kuesioner FINDRISC.
 class FindriscData {
   // ── Step 1 — Data Fisik ──
+  final int age;
   final String ageGroup;
   final double tinggiCm;
   final double beratKg;
@@ -32,6 +33,7 @@ class FindriscData {
   final String riwayatKeluargaDM;
 
   const FindriscData({
+    required this.age,
     required this.ageGroup,
     required this.tinggiCm,
     required this.beratKg,
