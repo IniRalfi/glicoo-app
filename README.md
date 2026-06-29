@@ -10,44 +10,65 @@
 
 ## ✨ Fitur Utama
 
-- 📱 **Mobile App** (Flutter) — Akses sensor HP (langkah, screen time, kamera)
-- 🌐 **Web Dashboard** (Next.js) — Monitoring data dan landing page
-- 🤖 **Agentic AI** — Intervensi proaktif via WhatsApp/Telegram
-- 🧠 **Explainable AI (XAI)** — Setiap saran disertai alasan jelas
-- 📊 **Metacognitive Tracking** — Pantau bias offloading & overconfidence
+- 📱 **Mobile App** (Flutter) — Monitoring aktivitas harian via sensor HP (langkah, screen time), FINDRISC risk assessment, dan in-app chatbot AI
+- 🤖 **Chatbot AI (Iloo)** — Asisten AI untuk konsultasi kesehatan dan intervensi perilaku, tersedia in-app dan via Telegram
+- 📊 **Tracking Real-time** — Pantau langkah kaki, durasi tidur, screen time, dan pencatat makanan AI
+- 🎯 **Gamifikasi Misi** — Misi harian dengan progress tracking dan skor kesehatan dinamis (0-100)
+- 🌐 **Landing Page** (Next.js) — Website untuk informasi produk dan download APK
 
 ---
 
 ## 🏗️ Arsitektur Sistem
 
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Mobile App    │────▶│   Backend API   │────▶│   AI Engine     │
-│    (Flutter)    │     │  (Elysia/Express)│     │   (n8n + LLM)   │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-         │                       │                        │
-         ▼                       ▼                        ▼
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Sensor HP     │     │   PostgreSQL    │     │ WhatsApp/Telegram│
-│ - Step Counter  │     │   (Supabase)    │     │   (User Chat)    │
-│ - Screen Time   │     └─────────────────┘     └─────────────────┘
-│ - Kamera        │
-└─────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                     Mobile App (Flutter)                 │
+│  • Sensor (Langkah, Screen Time)                        │
+│  • In-App Chatbot                                        │
+│  • FINDRISC Assessment                                   │
+│  • Gamifikasi Misi                                       │
+└──────────────────┬──────────────────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────────────────┐
+│              Backend API (Elysia.js + Prisma)           │
+│  • Auth & User Management (Supabase JWT)                │
+│  • Sensor Data Sync                                      │
+│  • Food Logging AI (Gemini)                             │
+│  • In-App Chat Endpoint                                  │
+│  • Telegram Bot Integration                             │
+│  • Proactive Reminders (Cron)                           │
+└──────────────────┬──────────────────────────────────────┘
+                   │
+      ┌────────────┼────────────┐
+      ▼            ▼            ▼
+┌──────────┐  ┌─────────┐  ┌──────────────┐
+│PostgreSQL│  │ Gemini  │  │Telegram Bot  │
+│(Supabase)│  │2.5 Flash│  │  @glicoo_bot │
+└──────────┘  └─────────┘  └──────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│           Landing Page (Next.js + Vercel)               │
+│  • Informasi Produk                                     │
+│  • Download APK                                          │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Komponen           | Teknologi                                     |
-| ------------------ | --------------------------------------------- |
-| **Mobile App**     | Flutter                                       |
-| **Backend API**    | Node.js + Elysia                              |
-| **Web Dashboard**  | Next.js + TailwindCSS                         |
-| **Database**       | PostgreSQL (Supabase / Neon)                  |
-| **AI Engine**      | n8n + Gemini API (dipisah)                    |
-| **Chat Interface** | Telegram Bot API / WhatsApp API               |
-| **Deployment**     | Vercel (Web), Railway (Backend), APK (Mobile) |
+| Komponen            | Teknologi                                 |
+| ------------------- | ----------------------------------------- |
+| **Mobile App**      | Flutter 3.x + Riverpod + Freezed          |
+| **Backend API**     | Elysia.js + Prisma ORM + Bun Runtime      |
+| **Landing Page**    | Next.js 14 App Router + TailwindCSS v4    |
+| **Database**        | PostgreSQL (Supabase)                     |
+| **AI**              | Gemini 2.5 Flash (Failover: OpenAI/Groq)  |
+| **Chat Platform**   | Telegram Bot API (in-app + external)      |
+| **Authentication**  | Supabase Auth (Google OAuth + Email/Pass) |
+| **Deployment**      | Vercel (Backend + Web), APK (Mobile)      |
+| **Background Jobs** | WorkManager (Android), Cron (Backend)     |
 
 ---
 
@@ -58,7 +79,7 @@ glicoo/
 ├── apps/
 │   ├── backend/          # Backend API (Elysia + Prisma)
 │   ├── mobile/           # Mobile App (Flutter)
-│   └── web/              # Web Dashboard (Next.js)
+│   └── web/              # Landing Page (Next.js)
 ├── packages/             # Shared packages (utils, configs, types)
 ├── docs/                 # Dokumentasi (API Spec, Arsitektur)
 ├── .gitignore
@@ -72,11 +93,11 @@ glicoo/
 
 ### Prerequisites
 
-- Node.js v18+
-- Flutter SDK
-- PostgreSQL
-- Android Studio / Xcode (untuk mobile)
-- API Key Gemini (untuk AI Engine)
+- **Bun** v1.0+ (untuk backend & workspaces)
+- **Flutter SDK** v3.x+ (untuk mobile)
+- **Android Studio** (untuk build APK)
+- **Supabase Account** (database + auth)
+- **Gemini API Key** (untuk AI chatbot)
 
 ### 1. Clone Repository
 
@@ -85,39 +106,47 @@ git clone https://github.com/iniralfi/glicoo.git
 cd glicoo
 ```
 
-### 2. Setup Backend
+### 2. Install Dependencies
+
+```bash
+bun install
+```
+
+### 3. Setup Backend
 
 ```bash
 cd apps/backend
 cp .env.example .env
-# isi konfigurasi database & API key di .env
-npm install
-npm run dev
-```
-
-### 3. Setup Web Dashboard
-
-```bash
-cd apps/web
-npm install
-npm run dev
+# Edit .env: isi DATABASE_URL, SUPABASE_URL, GEMINI_API_KEY, dll
+bun run db:migrate
+bun run dev
 ```
 
 ### 4. Setup Mobile App
 
 ```bash
 cd apps/mobile
+cp .env.example .env
+# Edit .env: isi BACKEND_URL, SUPABASE_URL, SUPABASE_ANON_KEY
 flutter pub get
 flutter run
+```
+
+### 5. Setup Landing Page (Opsional)
+
+```bash
+cd apps/web
+bun run dev
 ```
 
 ---
 
 ## 🔐 Keamanan & Privasi
 
-- AI Engine **dipisah** di repository privat (hanya API endpoint yang diekspos)
-- Semua data sensor disimpan di database dengan enkripsi
-- Tidak ada data medis sensitif yang disimpan (hanya pola perilaku)
+- **JWT Authentication** — Semua endpoint backend dilindungi Supabase JWT
+- **No Medical Data** — Aplikasi hanya menyimpan pola perilaku (langkah, screen time), bukan data medis sensitif
+- **Encrypted Database** — Data disimpan di Supabase PostgreSQL dengan enkripsi at-rest
+- **Rate Limiting** — Bot webhook dan AI endpoints dilindungi rate limiting
 
 ---
 
