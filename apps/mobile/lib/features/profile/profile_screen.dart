@@ -45,9 +45,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _bgSyncEnabled = true;
 
   // Local settings for FINDRISC & Custom Avatar
-  int _findriscScore = 13;
-  String _findriscCategory = 'Sedang';
-  double _waistCircumference = 98.0;
+  // [WHY] Initial defaults harus cocok dgn SharedPreferences defaults biar ga mismatch dgn Home
+  int _findriscScore = 0;
+  String _findriscCategory = 'Belum Tes';
+  double _waistCircumference = 0.0;
   String _avatarBgColor = '0xFFFFB700';
   String _avatarAssetPath = 'assets/images/bothub/pp_iloo.svg';
   String? _avatarFilePath;

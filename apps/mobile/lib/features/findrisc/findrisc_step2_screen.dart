@@ -26,6 +26,7 @@ import 'domain/findrisc_data.dart';
 class FindriscStep2Screen extends StatefulWidget {
   const FindriscStep2Screen({
     super.key,
+    required this.age,
     required this.ageGroup,
     required this.tinggiCm,
     required this.beratKg,
@@ -34,6 +35,7 @@ class FindriscStep2Screen extends StatefulWidget {
   });
 
   /// Data fisik dari step 1.
+  final int age;
   final String ageGroup;
   final double tinggiCm;
   final double beratKg;
@@ -61,6 +63,7 @@ class _FindriscStep2ScreenState extends State<FindriscStep2Screen> {
     if (!_isFormValid) return;
 
     final data = FindriscData(
+      age: widget.age,
       ageGroup: widget.ageGroup,
       tinggiCm: widget.tinggiCm,
       beratKg: widget.beratKg,
