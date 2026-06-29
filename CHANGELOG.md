@@ -7,7 +7,13 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan [S
 
 ## [Unreleased]
 
+---
+
+## [1.0.1] — 2026-06-29
+
 ### 🐛 Fixed
+
+#### Mobile (v1.0.1+3)
 
 - **Age field propagation fix** — Umur user yang diinput saat FINDRISC tidak lagi default ke 30 tahun untuk semua user < 45 tahun
   - Root cause: Flow FINDRISC hanya mengirim `ageGroup` (string range), bukan umur integer asli
@@ -29,6 +35,21 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan [S
   - Root cause: Profile screen menggunakan hardcoded default (score: 13, category: 'Sedang') yang berbeda dengan SharedPreferences (score: 0, category: 'Belum Tes')
   - Fix: Ubah field initializers di Profile screen untuk match SharedPreferences defaults
   - File: `profile_screen.dart`
+
+#### Backend (v0.1.1)
+
+- No changes (mobile-only bug fixes)
+
+### 📚 Documentation
+
+- **README.md** — Update arsitektur sistem untuk reflect realita project
+  - Web: Dashboard monitoring → Landing page + download APK
+  - AI: n8n external → Gemini integration langsung di backend
+  - Chat: WhatsApp/Telegram → Telegram only
+  - Tech stack: Detail lengkap (Flutter 3.x, Elysia.js, Prisma, Bun, Vercel)
+- **CHANGELOG.md** — Konsolidasi semua TODO & ISSUES ke satu file
+  - Merge: `ISSUES.md`, `TODO.md`, `BACKEND_TODO.md`, `MOBILE_TODO.md`
+  - Documentation: 12 resolved bugs + full development history
 
 ---
 
