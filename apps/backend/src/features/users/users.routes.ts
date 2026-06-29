@@ -99,6 +99,21 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
           riskScore = Math.round((points / 12) * 100);
         }
 
+        // [ID] Hitung risk category dari score
+        // [EN] Calculate risk category from score
+        let riskCategory = "Belum Tes";
+        if (riskScore > 0 && riskScore < 7) {
+          riskCategory = "Rendah";
+        } else if (riskScore < 12) {
+          riskCategory = "Sedikit Meningkat";
+        } else if (riskScore < 15) {
+          riskCategory = "Sedang";
+        } else if (riskScore < 20) {
+          riskCategory = "Tinggi";
+        } else if (riskScore >= 20) {
+          riskCategory = "Sangat Tinggi";
+        }
+
         // [ID] Bangun data object dinamis — hanya field yg dikirim
         //     Hindari explicit undefined yg bisa error di Prisma + driver adapter
         const updateData: Record<string, unknown> = {};
@@ -113,6 +128,7 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
         if (body.has_family_history !== undefined)
           updateData.has_family_history = body.has_family_history;
         updateData.risk_score = riskScore;
+        updateData.risk_category = riskCategory;
 
         const updatedUser = await prisma.user.update({
           where: { id: userId! },

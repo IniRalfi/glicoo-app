@@ -15,18 +15,20 @@ enum BotPlatform {
 }
 
 model User {
-  id                 String       @id @db.Uuid
-  name               String
-  phone_number       String?      @unique // @deprecated: Use bot_chat_id instead
-  bot_platform       BotPlatform? // Which bot platform user connected to
-  bot_chat_id        String? // Platform-specific chat identifier
-  age                Int?
-  weight             Float?
-  height             Float?
-  has_family_history Boolean?
-  risk_score         Float?       @default(0.0)
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  id                  String       @id @db.Uuid
+  name                String
+  phone_number        String?      @unique // @deprecated: Use bot_chat_id instead
+  bot_platform        BotPlatform? // Which bot platform user connected to
+  bot_chat_id         String? // Platform-specific chat identifier
+  age                 Int?
+  weight              Float?
+  height              Float?
+  has_family_history  Boolean?
+  risk_score          Float?       @default(0.0)
+  risk_category       String?      @default("Belum Tes") // "Rendah" | "Sedikit Meningkat" | "Sedang" | "Tinggi" | "Sangat Tinggi" | "Belum Tes"
+  waist_circumference Float? // Lingkar pinggang (cm)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 
   sensorLogs DailySensorLog[]
   foodLogs   FoodLog[]
