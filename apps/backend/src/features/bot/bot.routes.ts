@@ -377,11 +377,9 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
           return { ok: true };
         }
 
-        // [ID] Handle unknown commands
-        await sendWhatsAppMessage(
-          chatId,
-          'Halo! Terima kasih sudah menghubungi Glicoo.\n\nUntuk menghubungkan akun, gunakan fitur "Hubungkan Bot" di menu Profil aplikasi Glicoo.\n\nAda yang bisa kami bantu?'
-        );
+        // [ID] Handle regular chat messages (AI processing)
+        // Delegate to BotService for AI response & food logging
+        await BotService.handleWhatsAppMessage(chatId, text);
 
         return { ok: true };
       } catch (err) {
