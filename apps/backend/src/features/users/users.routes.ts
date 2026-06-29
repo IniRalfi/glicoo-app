@@ -103,7 +103,10 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
         //     Hindari explicit undefined yg bisa error di Prisma + driver adapter
         const updateData: Record<string, unknown> = {};
         if (body.name !== undefined) updateData.name = body.name;
-        if (body.phone_number !== undefined) updateData.phone_number = body.phone_number;
+        if (body.phone_number !== undefined) {
+          // Konversi empty string → null biar gak kena unique constraint violation
+          updateData.phone_number = body.phone_number === "" ? null : body.phone_number;
+        }
         if (body.age !== undefined) updateData.age = body.age;
         if (body.weight !== undefined) updateData.weight = body.weight;
         if (body.height !== undefined) updateData.height = body.height;
