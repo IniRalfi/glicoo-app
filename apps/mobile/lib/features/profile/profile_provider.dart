@@ -12,6 +12,7 @@
 // Impact:
 // Profile editing and display features.
 
+import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -84,7 +85,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
   Future<void> loadProfile() async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     final prefs = await SharedPreferences.getInstance();
     final currentUser = Supabase.instance.client.auth.currentUser;
     final email = currentUser?.email ?? '';
@@ -95,8 +96,10 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     final cachedAge = prefs.getInt(SyncManager.kPrefProfileAge) ?? 0;
     final cachedWeight = prefs.getDouble(SyncManager.kPrefProfileWeight) ?? 0.0;
     final cachedHeight = prefs.getDouble(SyncManager.kPrefProfileHeight) ?? 0.0;
-    final cachedFamilyHistory = prefs.getBool(SyncManager.kPrefProfileFamilyHistory) ?? false;
-    final cachedRisk = prefs.getDouble(SyncManager.kPrefProfileRiskScore) ?? 0.0;
+    final cachedFamilyHistory =
+        prefs.getBool(SyncManager.kPrefProfileFamilyHistory) ?? false;
+    final cachedRisk =
+        prefs.getDouble(SyncManager.kPrefProfileRiskScore) ?? 0.0;
 
     if (cachedName.isNotEmpty || cachedAge > 0) {
       state = ProfileState(
@@ -116,7 +119,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     try {
       if (await _syncManager.isOnline()) {
         final data = await _apiService.getUserProfile();
-        
+
         final name = data['name'] as String? ?? 'Pengguna Glicoo';
         final phone = data['phone_number'] as String? ?? '';
         final age = data['age'] as int? ?? 0;
@@ -151,7 +154,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         await prefs.setBool('glico_profile_pending_sync', false);
       }
     } catch (e) {
-      // Jika offline atau error, biarkan state menggunakan cache lokal dan jangan crash
+      debugPrint('[ProfileProvider] loadProfile API error (using cache): $e');
       state = state.copyWith(isLoading: false);
     }
   }
@@ -165,7 +168,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     required bool hasFamilyHistory,
   }) async {
     state = state.copyWith(isSaving: true, error: null);
-    
+
     // 1. Simpan ke local cache terlebih dahulu (Offline-First)
     await _syncManager.cacheProfileLocally(
       name: name,
@@ -198,7 +201,8 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
           hasFamilyHistory: hasFamilyHistory,
         );
 
-        final riskScore = (data['risk_score'] as num?)?.toDouble() ?? state.riskScore;
+        final riskScore =
+            (data['risk_score'] as num?)?.toDouble() ?? state.riskScore;
 
         state = state.copyWith(
           name: data['name'] as String? ?? name,
@@ -206,7 +210,8 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
           age: data['age'] as int? ?? age,
           weight: (data['weight'] as num?)?.toDouble() ?? weight,
           height: (data['height'] as num?)?.toDouble() ?? height,
-          hasFamilyHistory: data['has_family_history'] as bool? ?? hasFamilyHistory,
+          hasFamilyHistory:
+              data['has_family_history'] as bool? ?? hasFamilyHistory,
           riskScore: riskScore,
           isSaving: false,
         );
@@ -221,7 +226,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
           hasFamilyHistory: state.hasFamilyHistory,
           riskScore: riskScore,
         );
-        
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('glico_profile_pending_sync', false);
         return true;
@@ -231,15 +236,20 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         return true; // Berhasil disimpan lokal
       }
     } catch (e) {
-      // Jika terjadi error koneksi saat memanggil server, biarkan tersimpan lokal
-      state = state.copyWith(isSaving: false);
-      return true; 
+      debugPrint('[ProfileProvider] updateProfile API error: $e');
+      // Data tetap tersimpan lokal, tapi return false agar UI tahu ada masalah
+      state = state.copyWith(
+        isSaving: false,
+        error: 'Gagal menyimpan ke server: $e',
+      );
+      return false;
     }
   }
 }
 
-final profileNotifierProvider = StateNotifierProvider<ProfileNotifier, ProfileState>((ref) {
-  final apiService = ref.watch(apiServiceProvider);
-  final syncManager = ref.watch(syncManagerProvider);
-  return ProfileNotifier(apiService, syncManager);
-});
+final profileNotifierProvider =
+    StateNotifierProvider<ProfileNotifier, ProfileState>((ref) {
+      final apiService = ref.watch(apiServiceProvider);
+      final syncManager = ref.watch(syncManagerProvider);
+      return ProfileNotifier(apiService, syncManager);
+    });

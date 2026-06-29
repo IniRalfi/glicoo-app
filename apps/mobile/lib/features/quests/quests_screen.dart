@@ -133,7 +133,7 @@ final questListProvider = Provider<List<QuestItem>>((ref) {
           : 'Progress $dailyCalories / 2000 kkal',
       isCompleted: foodCompleted,
       progress: foodProgress,
-      iconPath: 'assets/images/misi/iloo_food.svg',
+      iconPath: 'assets/images/misi/food.svg',
       themeColor: const Color(0xFFCB30E0),
     ),
   ];
