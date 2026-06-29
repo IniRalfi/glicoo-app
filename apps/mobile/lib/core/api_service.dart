@@ -69,7 +69,10 @@ class ApiService {
   Future<void> disconnectBot() async {
     final url = Uri.parse('${EnvConfig.backendUrl}/api/v1/bot/disconnect');
     try {
-      final response = await _client.delete(url, headers: await _buildHeaders());
+      final response = await _client.delete(
+        url,
+        headers: await _buildHeaders(),
+      );
       if (response.statusCode != 200) {
         final errBody = jsonDecode(response.body) as Map<String, dynamic>;
         throw Exception(errBody['message'] ?? 'Failed to disconnect bot');
@@ -84,10 +87,7 @@ class ApiService {
   Future<Map<String, dynamic>> getBotLink() async {
     final url = Uri.parse('${EnvConfig.backendUrl}/api/v1/bot/link');
     try {
-      final response = await _client.get(
-        url,
-        headers: await _buildHeaders(),
-      );
+      final response = await _client.get(url, headers: await _buildHeaders());
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
@@ -136,9 +136,7 @@ class ApiService {
       final response = await _client.post(
         url,
         headers: await _buildHeaders(),
-        body: jsonEncode({
-          'description': description,
-        }),
+        body: jsonEncode({'description': description}),
       );
 
       if (response.statusCode == 200 || response.statusCode == 202) {
@@ -157,10 +155,7 @@ class ApiService {
   Future<Map<String, dynamic>> getUserProfile() async {
     final url = Uri.parse('${EnvConfig.backendUrl}/api/v1/users/profile');
     try {
-      final response = await _client.get(
-        url,
-        headers: await _buildHeaders(),
-      );
+      final response = await _client.get(url, headers: await _buildHeaders());
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
@@ -188,14 +183,16 @@ class ApiService {
       final response = await _client.patch(
         url,
         headers: await _buildHeaders(),
-        body: jsonEncode(<String, dynamic>{
-          'name': name,
-          'phone_number': phoneNumber,
-          'age': age,
-          'weight': weight,
-          'height': height,
-          'has_family_history': hasFamilyHistory,
-        }..removeWhere((key, value) => value == null)),
+        body: jsonEncode(
+          <String, dynamic>{
+            'name': name,
+            'phone_number': phoneNumber?.isEmpty == true ? null : phoneNumber,
+            'age': age,
+            'weight': weight,
+            'height': height,
+            'has_family_history': hasFamilyHistory,
+          }..removeWhere((key, value) => value == null),
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -211,16 +208,16 @@ class ApiService {
 
   /// [ID] Mengirim pesan ke in-app chatbot Elysia backend beserta konteks lokal.
   /// [EN] Sends chat message to Glico Elysia backend in-app chatbot along with local context.
-  Future<Map<String, dynamic>> sendChatMessage(String message, {Map<String, dynamic>? context}) async {
+  Future<Map<String, dynamic>> sendChatMessage(
+    String message, {
+    Map<String, dynamic>? context,
+  }) async {
     final url = Uri.parse('${EnvConfig.backendUrl}/api/v1/chat');
     try {
       final response = await _client.post(
         url,
         headers: await _buildHeaders(),
-        body: jsonEncode({
-          'message': message,
-          'context': context,
-        }),
+        body: jsonEncode({'message': message, 'context': context}),
       );
 
       if (response.statusCode == 200) {
@@ -234,4 +231,3 @@ class ApiService {
     }
   }
 }
-
