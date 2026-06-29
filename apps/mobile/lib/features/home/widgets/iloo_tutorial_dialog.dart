@@ -21,6 +21,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../navigation/bottom_nav_shell.dart';
 import '../providers/activity_provider.dart';
 
 class IlooTutorialDialog extends ConsumerStatefulWidget {
@@ -36,10 +37,8 @@ class _IlooTutorialDialogState extends ConsumerState<IlooTutorialDialog> {
   int _step = 1;
 
   Future<void> _completeTutorial(bool enableAi) async {
-    debugPrint('DEBUG: _completeTutorial called with enableAi = $enableAi');
     final prefs = await SharedPreferences.getInstance();
-    final success = await prefs.setBool('tutorial_iloo_done', true);
-    debugPrint('DEBUG: tutorial_iloo_done set to true, success = $success');
+    await prefs.setBool('tutorial_iloo_done', true);
     if (enableAi) {
       await prefs.setBool('ai_companion_active', true);
     }
@@ -47,6 +46,10 @@ class _IlooTutorialDialogState extends ConsumerState<IlooTutorialDialog> {
     ref.invalidate(tutorialSeenProvider);
     if (mounted) {
       Navigator.of(context).pop();
+      // Navigate ke Profile tab setelah enable AI
+      if (enableAi) {
+        ref.read(bottomNavIndexProvider.notifier).state = 3;
+      }
     }
   }
 
@@ -145,18 +148,8 @@ class _IlooTutorialDialogState extends ConsumerState<IlooTutorialDialog> {
             width: double.infinity,
             height: 52,
             child: OutlinedButton(
-              onPressed: () async {
-                // [FIX] Langsung set flag dan close dialog tanpa pindah ke step 3
-                debugPrint(
-                  'DEBUG: Nanti Saja pressed, closing dialog immediately',
-                );
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setBool('tutorial_iloo_done', true);
-                await prefs.setBool('ai_companion_active', false);
-                ref.invalidate(tutorialSeenProvider);
-                if (mounted) {
-                  Navigator.of(context).pop();
-                }
+              onPressed: () {
+                setState(() => _step = 3);
               },
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.textPrimary,

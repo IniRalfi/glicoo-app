@@ -65,14 +65,15 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
         const age = body.age !== undefined ? body.age : user.age;
         const weight = body.weight !== undefined ? body.weight : user.weight;
         const height = body.height !== undefined ? body.height : user.height;
-        const hasFamilyHistory = body.has_family_history !== undefined ? body.has_family_history : user.has_family_history;
+        const hasFamilyHistory =
+          body.has_family_history !== undefined ? body.has_family_history : user.has_family_history;
 
         let riskScore = user.risk_score || 0.0;
 
         if (age !== null && weight !== null && height !== null && hasFamilyHistory !== null) {
           // Kalkulasi FINDRISC Poin
           let points = 0;
-          
+
           // 1. Usia
           if (age < 45) points += 0;
           else if (age >= 45 && age <= 54) points += 2;
@@ -104,16 +105,26 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
             age: body.age !== undefined ? body.age : undefined,
             weight: body.weight !== undefined ? body.weight : undefined,
             height: body.height !== undefined ? body.height : undefined,
-            has_family_history: body.has_family_history !== undefined ? body.has_family_history : undefined,
+            has_family_history:
+              body.has_family_history !== undefined ? body.has_family_history : undefined,
             risk_score: riskScore,
           },
         });
 
         return updatedUser;
       } catch (err) {
-        console.error("Error updating user profile:", err);
+        console.error("==========================================");
+        console.error("ERROR updating user profile:");
+        console.error("userId:", userId);
+        console.error("body:", JSON.stringify(body, null, 2));
+        console.error("error:", err);
+        if (err instanceof Error) {
+          console.error("message:", err.message);
+          console.error("stack:", err.stack);
+        }
+        console.error("==========================================");
         set.status = 500;
-        return { message: "Internal server error" };
+        return { message: "Internal server error", detail: String(err) };
       }
     },
     {

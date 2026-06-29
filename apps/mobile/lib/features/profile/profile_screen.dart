@@ -1190,11 +1190,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       appBar: AppBar(
         title: Text(
           'Profil',
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w900,
-            fontSize: 28,
-            color: Colors.black,
-          ),
+          style: GoogleFonts.rammettoOne(fontSize: 28, color: Colors.black),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,

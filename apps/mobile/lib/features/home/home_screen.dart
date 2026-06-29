@@ -20,6 +20,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../auth/presentation/auth_provider.dart';
 import '../navigation/bottom_nav_shell.dart';
+import '../profile/profile_provider.dart';
 import 'providers/activity_provider.dart';
 import 'widgets/activity_cards.dart';
 import 'widgets/challenge_card.dart';
@@ -27,26 +28,41 @@ import 'widgets/food_log_card.dart';
 import 'widgets/iloo_tutorial_dialog.dart';
 
 /// Home dashboard screen.
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Tampilkan tutorial Iloo jika user belum pernah menyelesaikannya
-    ref.listen<AsyncValue<bool>>(tutorialSeenProvider, (prev, next) {
-      next.whenData((seen) {
-        if (!seen) {
-          final currentTab = ref.read(bottomNavIndexProvider);
-          if (currentTab == 0) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _showTutorialDialog(context, ref);
-            });
-          }
-        }
-      });
-    });
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
 
-    // [FIX] Listener kedua (bottomNavIndexProvider) DIHAPUS untuk mencegah double trigger
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  /// Mencegah double schedule dari 2 listener yg fire di frame yg sama.
+  bool _tutorialScheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Cek tutorial saat pertama render
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndShowTutorial();
+    });
+  }
+
+  void _checkAndShowTutorial() {
+    ref.read(tutorialSeenProvider).whenData((seen) {
+      if (!seen && ref.read(bottomNavIndexProvider) == 0) {
+        _tryScheduleTutorial();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Listener tab switch: kalo pindah ke tab 0, cek apakah tutorial perlu muncul
+    ref.listen<int>(bottomNavIndexProvider, (prev, next) {
+      if (next != 0) return;
+      _checkAndShowTutorial();
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -95,11 +111,20 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  void _showTutorialDialog(BuildContext context, WidgetRef ref) {
-    if (ref.read(tutorialDialogShowingProvider) ||
-        IlooTutorialDialog.isShowing) {
-      return;
-    }
+  void _tryScheduleTutorial() {
+    if (_tutorialScheduled) return;
+    _tutorialScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _tutorialScheduled = false;
+      _showTutorialDialog();
+    });
+  }
+
+  void _showTutorialDialog() {
+    if (!mounted) return;
+    final guard1 = ref.read(tutorialDialogShowingProvider);
+    final guard2 = IlooTutorialDialog.isShowing;
+    if (guard1 || guard2) return;
 
     ref.read(tutorialDialogShowingProvider.notifier).state = true;
     IlooTutorialDialog.isShowing = true;
@@ -124,7 +149,8 @@ class HomeScreen extends ConsumerWidget {
 class _HomeHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final name = ref.watch(userNameProvider);
+    final profileState = ref.watch(profileNotifierProvider);
+    final name = profileState.name.isNotEmpty ? profileState.name : 'Pemanasan';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -133,11 +159,7 @@ class _HomeHeader extends ConsumerWidget {
           children: [
             Text(
               'Hallo, $name!',
-              style: GoogleFonts.inter(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: Colors.black,
-              ),
+              style: GoogleFonts.rammettoOne(fontSize: 24, color: Colors.black),
             ),
             IconButton(
               icon: const Icon(Icons.logout, color: AppColors.error),
@@ -309,7 +331,7 @@ class _ScoreCard extends ConsumerWidget {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFFFFB700),
+                          color: Color(0xFFFFB700),
                         ),
                       ),
                     ],
@@ -322,64 +344,6 @@ class _ScoreCard extends ConsumerWidget {
       },
       loading: () => const SizedBox(height: 80),
       error: (e, _) => const SizedBox(height: 80),
-    );
-  }
-}
-
-class _StatRow extends ConsumerWidget {
-  const _StatRow({
-    required this.label,
-    required this.value,
-    this.useSvg = false,
-  });
-
-  final String label;
-  final String value;
-  final bool useSvg;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-            ),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (useSvg) ...[
-                Image.asset(
-                  'assets/images/home/kategori.svg',
-                  width: 22,
-                  height: 22,
-                  errorBuilder: (ctx, e, _) => const SizedBox(width: 22),
-                ),
-                const SizedBox(width: 8),
-              ],
-              Text(
-                value,
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }
