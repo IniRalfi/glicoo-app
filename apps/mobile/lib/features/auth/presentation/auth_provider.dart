@@ -90,15 +90,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Logout — juga clear flag findrisc_done agar user baru/berikutnya
-  /// tidak langsung skip FINDRISC questionnaire.
+  /// [ID] Logout — clear SEMUA data local storage agar user baru/ganti akun
+  /// tidak melihat data user sebelumnya (findrisc, activities, tutorial).
+  /// [EN] Logout — clear ALL local storage so new/switched user doesn't see
+  /// previous user's data (findrisc, activities, tutorial).
   Future<void> signOut() async {
     state = const AuthState.loading();
     try {
       await _repository.signOut();
-      // Clear FINDRISC flag on logout so next login shows intro again
+
+      // [ID] Clear SEMUA local storage saat logout/switch account
+      // [WHY] Bug: data findrisc_score, activities, tutorial tertinggal saat ganti akun
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('findrisc_done');
+      await prefs.clear(); // Clear ALL keys — most reliable way
+
+      // Alternative: Manual key removal (jika prefs.clear() terlalu agresif)
+      // await prefs.remove('findrisc_done');
+      // await prefs.remove('findrisc_score');
+      // await prefs.remove('findrisc_category');
+      // await prefs.remove('tutorial_iloo_done');
+      // await prefs.remove('glico_daily_steps');
+      // await prefs.remove('glico_daily_screen_minutes');
+      // await prefs.remove('glico_daily_sleep_minutes');
+      // await prefs.remove('glico_daily_calories');
+      // await prefs.remove('glico_last_sync_date');
+
       state = const AuthState.unauthenticated();
     } catch (e) {
       state = AuthState.error(message: _humanReadableError(e));
@@ -128,7 +144,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     dev.log('[AUTH_ERROR] $msg', name: 'auth_provider');
 
     if (msg.contains('GAGAL_GOOGLE')) {
-      if (msg.contains('Token otentikasi kosong') || msg.contains('idToken null')) {
+      if (msg.contains('Token otentikasi kosong') ||
+          msg.contains('idToken null')) {
         return 'Login Google gagal: idToken null — Web Client ID salah. ($_googleErrorDetail(msg))';
       }
       if (msg.contains('10') || msg.contains('DEVELOPER_ERROR')) {
@@ -137,7 +154,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (msg.contains('membatalkan')) {
         return 'Login Google dibatalkan.';
       }
-      if (msg.contains('network') || msg.contains('Network') ||
+      if (msg.contains('network') ||
+          msg.contains('Network') ||
           msg.contains('INTERNET')) {
         return 'Koneksi internet bermasalah. Coba lagi.';
       }
@@ -165,7 +183,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (start == -1) return msg;
     return msg.substring(start + 13).trim();
   }
-
 } // end AuthNotifier
 
 /// Provider state autentikasi.

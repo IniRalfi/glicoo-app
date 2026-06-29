@@ -166,27 +166,53 @@ export function verifyWebhookSignature(signature: string | undefined, body: stri
  * [ID] Handle incoming message dari OpenWA webhook
  * [EN] Handle incoming message from OpenWA webhook
  *
- * Format incoming:
- * {
- *   message: {
- *     from: "628123456789@c.us",
- *     body: "OTP 123456",
- *     timestamp: 1234567890
- *   }
- * }
+ * OpenWA webhook payload format bervariasi tergantung versi & config:
+ * Format 1: { message: { from: "...", body: "..." } }
+ * Format 2: { data: { key: { remoteJid: "..." }, message: { conversation: "..." } } }
+ * Format 3: { data: { from: "...", body: "..." } }
+ * Format 4: { messages: [{ from: "...", body: "..." }] }
  */
 export async function handleIncomingMessage(body: any): Promise<{
   ok: boolean;
   chatId?: string;
   text?: string;
 }> {
-  const message = body?.message;
-  if (!message?.from || !message?.body) {
+  // [ID] Log raw body untuk debugging
+  // [WHY] Format payload OpenWA bisa berbeda-beda, perlu lihat aslinya
+  console.log("[WhatsApp] Raw webhook payload:", JSON.stringify(body).slice(0, 500));
+
+  let chatId: string | undefined;
+  let text: string | undefined;
+
+  // Format 1: { message: { from: "...", body: "..." } }
+  if (body?.message?.from && body?.message?.body) {
+    chatId = body.message.from;
+    text = String(body.message.body).trim();
+    console.log("[WhatsApp] Parsed Format 1:", { chatId, text });
+  }
+  // Format 2: { data: { key: { remoteJid }, message: { conversation } } }
+  else if (body?.data?.key?.remoteJid && body?.data?.message?.conversation) {
+    chatId = body.data.key.remoteJid;
+    text = String(body.data.message.conversation).trim();
+    console.log("[WhatsApp] Parsed Format 2:", { chatId, text });
+  }
+  // Format 3: { data: { from: "...", body: "..." } }
+  else if (body?.data?.from && body?.data?.body) {
+    chatId = body.data.from;
+    text = String(body.data.body).trim();
+    console.log("[WhatsApp] Parsed Format 3:", { chatId, text });
+  }
+  // Format 4: { messages: [{ from: "...", body: "..." }] }
+  else if (body?.messages?.[0]?.from && body?.messages?.[0]?.body) {
+    chatId = body.messages[0].from;
+    text = String(body.messages[0].body).trim();
+    console.log("[WhatsApp] Parsed Format 4:", { chatId, text });
+  }
+  // Unknown format — log struktur untuk debug
+  else {
+    console.warn("[WhatsApp] Unknown payload format. Top-level keys:", Object.keys(body || {}));
     return { ok: false };
   }
-
-  const chatId = message.from;
-  const text = String(message.body).trim();
 
   return { ok: true, chatId, text };
 }

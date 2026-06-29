@@ -329,78 +329,114 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
+  /// [ID] Tampilkan dialog OTP dengan design baru sesuai screenshot (popup-aktivasi-ai)
+  /// [EN] Show OTP dialog with new design matching screenshot (popup-aktivasi-ai)
   void _showOtpDialog() {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
           ),
-          title: Text(
-            'Kode Verifikasi Iloo',
-            style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-          ),
+          contentPadding: const EdgeInsets.all(24),
+          actionsPadding: EdgeInsets.zero,
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Close button (top-left)
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, size: 24),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  const Spacer(),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Title
               Text(
-                _selectedPlatform == 'telegram'
-                    ? 'Buka @glicoo_bot di Telegram, kirim "/start [kode]", atau klik tombol di bawah:'
-                    : 'Kirim pesan "OTP [kode]" ke nomor WhatsApp bot Glicoo:',
+                'Aktifkan Pendamping AI',
                 style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
+
+              // Subtitle
+              Text(
+                'Salin kode di bawah, lalu kirimkan ke bot WhatsApp atau Telegram untuk menghubungkan akunmu dengan Iloo.',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+
+              // OTP Display + Copy Button
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF2F2F7),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
                   children: [
                     Text(
                       _otpToken ?? '------',
                       style: GoogleFonts.inter(
-                        fontSize: 32,
+                        fontSize: 36,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 4,
-                        color: AppColors.brand1,
+                        letterSpacing: 6,
+                        color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    TextButton.icon(
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
                       onPressed: () {
                         if (_otpToken != null) {
                           Clipboard.setData(ClipboardData(text: _otpToken!));
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Kode OTP berhasil disalin!'),
+                            SnackBar(
+                              content: Text(
+                                'Kode OTP berhasil disalin!',
+                                style: GoogleFonts.inter(),
+                              ),
+                              backgroundColor: AppColors.success,
                               behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 2),
                             ),
                           );
                         }
                       },
-                      icon: const Icon(
-                        Icons.copy_rounded,
-                        size: 16,
-                        color: Color(0xFF0088FF),
-                      ),
+                      icon: const Icon(Icons.content_copy, size: 18),
                       label: Text(
-                        'Salin Kode',
+                        'Salin',
                         style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF0088FF),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0088FF),
+                        side: const BorderSide(color: Color(0xFF0088FF)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
                         ),
                       ),
                     ),
@@ -408,7 +444,66 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              if (_otpToken != null && _selectedPlatform == 'telegram') ...[
+
+              // Timer (countdown)
+              Text(
+                'Kode kedaluwarsa dalam: 10:00 detik',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // WhatsApp Button (always show)
+              if (_otpToken != null) ...[
+                FilledButton.icon(
+                  onPressed: () async {
+                    // WhatsApp bot number: +62 896-7258-5765
+                    final whatsappUrl =
+                        'https://wa.me/6289672585765?text=OTP%20$_otpToken';
+                    final uri = Uri.parse(whatsappUrl);
+                    try {
+                      final success = await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
+                      if (!success) {
+                        await launchUrl(uri, mode: LaunchMode.platformDefault);
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Gagal membuka WhatsApp: $e'),
+                            backgroundColor: AppColors.error,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.chat, size: 20),
+                  label: Text(
+                    'Hubungkan ke WhatsApp',
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF25D366), // WhatsApp green
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    minimumSize: const Size(double.infinity, 52),
+                    elevation: 0,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Telegram Button
                 FilledButton.icon(
                   onPressed: () async {
                     final telegramUrl =
@@ -423,59 +518,39 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       if (!success) {
                         await launchUrl(uri, mode: LaunchMode.platformDefault);
                       }
-                    } catch (_) {
-                      // Fallback ke browser jika gagal membuka aplikasi eksternal
-                      try {
-                        await launchUrl(uri, mode: LaunchMode.platformDefault);
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Gagal membuka tautan Telegram: $e',
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Gagal membuka Telegram: $e'),
+                            backgroundColor: AppColors.error,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
                       }
                     }
                   },
-                  icon: const Icon(Icons.send_rounded, size: 18),
+                  icon: const Icon(Icons.send, size: 20),
                   label: Text(
                     'Hubungkan ke Telegram',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF0088FF),
+                    backgroundColor: const Color(0xFF0088FF), // Telegram blue
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    minimumSize: const Size(double.infinity, 44),
+                    minimumSize: const Size(double.infinity, 52),
+                    elevation: 0,
                   ),
                 ),
-                const SizedBox(height: 12),
               ],
-              Text(
-                'Kode ini berlaku selama 10 menit.',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                  color: AppColors.textSecondary,
-                ),
-              ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Tutup',
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
         );
       },
     );
@@ -1932,8 +2007,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                     selected: _selectedPlatform == 'telegram',
                     onSelected: (selected) {
-                      if (selected)
+                      if (selected) {
                         setState(() => _selectedPlatform = 'telegram');
+                      }
                     },
                     selectedColor: const Color(
                       0xFF0088FF,
@@ -1966,8 +2042,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                     selected: _selectedPlatform == 'whatsapp',
                     onSelected: (selected) {
-                      if (selected)
+                      if (selected) {
                         setState(() => _selectedPlatform = 'whatsapp');
+                      }
                     },
                     selectedColor: const Color(
                       0xFF25D366,
