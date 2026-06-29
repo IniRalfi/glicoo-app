@@ -56,3 +56,6 @@ coverage/
 # === MONOREPO SPECIFIC ===
 # Ignore all .gitkeep files (they're just for empty folder structure)
 # but keep them tracked if already committed
+
+commit-natural.sh
+README-COMMIT.md
