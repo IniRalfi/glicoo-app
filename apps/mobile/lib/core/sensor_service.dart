@@ -60,7 +60,8 @@ void callbackDispatcher() {
       final session = Supabase.instance.client.auth.currentSession;
       if (session != null) {
         final now = DateTime.now();
-        final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+        final dateStr =
+            '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
         // Panggil ApiService langsung untuk sinkronisasi
         final apiService = ApiService();
@@ -93,9 +94,12 @@ class SensorService with WidgetsBindingObserver {
 
   final Ref _ref;
   StreamSubscription<StepCount>? _stepSubscription;
-  static const EventChannel _screenChannel = EventChannel('com.glicoo.glico/screen_state');
+  static const EventChannel _screenChannel = EventChannel(
+    'com.glicoo.glico/screen_state',
+  );
   StreamSubscription? _screenSubscription;
   DateTime? _screenOnTime;
+  Timer? _screenTimeUpdateTimer;
 
   /// [ID]
   /// Menginisialisasi Workmanager untuk background execution.
@@ -103,9 +107,7 @@ class SensorService with WidgetsBindingObserver {
   /// [EN]
   /// Initializes Workmanager for background execution.
   Future<void> initWorkmanager() async {
-    await Workmanager().initialize(
-      callbackDispatcher,
-    );
+    await Workmanager().initialize(callbackDispatcher);
 
     // Registrasi periodic task (minimal 15 menit di Android)
     await Workmanager().registerPeriodicTask(
@@ -113,9 +115,7 @@ class SensorService with WidgetsBindingObserver {
       kBackgroundSyncTaskName,
       frequency: const Duration(minutes: 15),
       existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
-      constraints: Constraints(
-        networkType: NetworkType.connected,
-      ),
+      constraints: Constraints(networkType: NetworkType.connected),
     );
   }
 
@@ -136,20 +136,32 @@ class SensorService with WidgetsBindingObserver {
   ///
   /// [EN]
   /// Starts screen time listener & app active lifecycle.
+  /// [WHY] Tambah periodic update agar screen time tidak stale saat app foreground
   void initScreenTimeTracking() {
     WidgetsBinding.instance.addObserver(this);
     _screenOnTime = DateTime.now();
-    
+
     _screenSubscription?.cancel();
-    _screenSubscription = _screenChannel.receiveBroadcastStream().listen((event) {
-      if (event == 'screen_on') {
-        _screenOnTime = DateTime.now();
-      } else if (event == 'screen_off') {
-        _saveScreenTimeSession();
-      }
-    }, onError: (err) {
-      debugPrint('Screen state stream error: $err');
-    });
+    _screenSubscription = _screenChannel.receiveBroadcastStream().listen(
+      (event) {
+        if (event == 'screen_on') {
+          _screenOnTime = DateTime.now();
+        } else if (event == 'screen_off') {
+          _saveScreenTimeSession();
+        }
+      },
+      onError: (err) {
+        debugPrint('Screen state stream error: $err');
+      },
+    );
+
+    // [FIX] Periodic update screen time setiap 30 detik saat app foreground
+    // [WHY] Agar quest bisa detect progress realtime tanpa tunggu screen off
+    _screenTimeUpdateTimer?.cancel();
+    _screenTimeUpdateTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _updateScreenTimeWhileActive(),
+    );
   }
 
   /// [ID]
@@ -161,6 +173,7 @@ class SensorService with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _stepSubscription?.cancel();
     _screenSubscription?.cancel();
+    _screenTimeUpdateTimer?.cancel();
   }
 
   @override
@@ -169,10 +182,15 @@ class SensorService with WidgetsBindingObserver {
       _screenOnTime = DateTime.now();
       // Pemicu sync manual ke server begitu app dibuka kembali
       _ref.read(syncManagerProvider).syncPendingData().catchError((_) {});
-      _ref.read(apiServiceProvider).getBotLink().then((_) async {
-        await forceManualSync();
-      }).catchError((_) {});
-    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      _ref
+          .read(apiServiceProvider)
+          .getBotLink()
+          .then((_) async {
+            await forceManualSync();
+          })
+          .catchError((_) {});
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
       _saveScreenTimeSession();
     }
   }
@@ -188,7 +206,8 @@ class SensorService with WidgetsBindingObserver {
   Future<void> _onStepCountEvent(StepCount event) async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
-    final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final todayStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
     final lastSyncDate = prefs.getString(kPrefLastSyncDate) ?? '';
     int offset = prefs.getInt(kPrefLastBootStepsOffset) ?? -1;
@@ -214,17 +233,44 @@ class SensorService with WidgetsBindingObserver {
   Future<void> _saveScreenTimeSession() async {
     if (_screenOnTime == null) return;
     final prefs = await SharedPreferences.getInstance();
-    final currentScreenTimeSeconds = prefs.getInt('glico_daily_screen_time_seconds') ?? 0;
+    final currentScreenTimeSeconds =
+        prefs.getInt('glico_daily_screen_time_seconds') ?? 0;
     final diffSeconds = DateTime.now().difference(_screenOnTime!).inSeconds;
 
     if (diffSeconds > 0) {
       final newTotalSeconds = currentScreenTimeSeconds + diffSeconds;
       await prefs.setInt('glico_daily_screen_time_seconds', newTotalSeconds);
-      
+
       // Convert to minutes for legacy compat & server sync
       await prefs.setInt(kPrefTodayScreenTime, newTotalSeconds ~/ 60);
     }
     _screenOnTime = null;
+  }
+
+  /// [ID]
+  /// Update screen time saat app foreground (dipanggil periodic timer).
+  ///
+  /// [EN]
+  /// Update screen time while app is in foreground (called by periodic timer).
+  /// [WHY] Quest butuh data realtime, tidak bisa tunggu screen off
+  Future<void> _updateScreenTimeWhileActive() async {
+    if (_screenOnTime == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final currentScreenTimeSeconds =
+        prefs.getInt('glico_daily_screen_time_seconds') ?? 0;
+    final diffSeconds = DateTime.now().difference(_screenOnTime!).inSeconds;
+
+    if (diffSeconds > 0) {
+      final newTotalSeconds = currentScreenTimeSeconds + diffSeconds;
+      await prefs.setInt('glico_daily_screen_time_seconds', newTotalSeconds);
+
+      // Convert to minutes untuk UI & quest trigger
+      final minutes = newTotalSeconds ~/ 60;
+      await prefs.setInt(kPrefTodayScreenTime, minutes);
+
+      // Reset offset waktu screen-on biar tidak double-count
+      _screenOnTime = DateTime.now();
+    }
   }
 
   /// [ID]
@@ -238,14 +284,17 @@ class SensorService with WidgetsBindingObserver {
     final screenTime = prefs.getInt(kPrefTodayScreenTime) ?? 0;
 
     final now = DateTime.now();
-    final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final dateStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
     try {
-      await _ref.read(apiServiceProvider).syncSensors(
-        date: dateStr,
-        stepCount: steps,
-        screenTimeMinutes: screenTime,
-      );
+      await _ref
+          .read(apiServiceProvider)
+          .syncSensors(
+            date: dateStr,
+            stepCount: steps,
+            screenTimeMinutes: screenTime,
+          );
     } catch (e) {
       debugPrint('Manual sensor sync failed: $e');
     }

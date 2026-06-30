@@ -313,6 +313,8 @@ class _AppEntryPointState extends ConsumerState<_AppEntryPoint> {
               height: _findriscData!.tinggiCm,
               weight: _findriscData!.beratKg,
               hasFamilyHistory: hasFamilyHistory,
+              riskScore: _findriscData!.totalSkor,
+              riskCategory: _findriscData!.kategori,
             );
 
         // Simpan flag findrisc_done secara lokal hanya jika sinkronisasi berhasil

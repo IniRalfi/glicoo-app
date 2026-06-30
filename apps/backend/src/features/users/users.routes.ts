@@ -61,58 +61,13 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
           });
         }
 
-        // [ID] Hitung skor risiko FINDRISC sederhana jika parameter relevan dikirim
-        const findriscAge = body.age ?? user.age;
-        const findriscWeight = body.weight ?? user.weight;
-        const findriscHeight = body.height ?? user.height;
-        const findriscFamilyHistory = body.has_family_history ?? user.has_family_history;
-
-        let riskScore = user.risk_score ?? 0.0;
-
-        if (
-          findriscAge != null &&
-          findriscWeight != null &&
-          findriscHeight != null &&
-          findriscFamilyHistory != null
-        ) {
-          let points = 0;
-
-          // 1. Usia
-          if (findriscAge < 45) points += 0;
-          else if (findriscAge >= 45 && findriscAge <= 54) points += 2;
-          else if (findriscAge >= 55 && findriscAge <= 64) points += 3;
-          else points += 4;
-
-          // 2. BMI
-          const heightMeters = findriscHeight / 100;
-          if (heightMeters > 0) {
-            const bmi = findriscWeight / (heightMeters * heightMeters);
-            if (bmi < 25) points += 0;
-            else if (bmi >= 25 && bmi < 30) points += 1;
-            else points += 3;
-          }
-
-          // 3. Riwayat Keluarga
-          if (findriscFamilyHistory) points += 5;
-
-          // Normalisasi poin 0-12 → skala 0-100%
-          riskScore = Math.round((points / 12) * 100);
-        }
-
-        // [ID] Hitung risk category dari score
-        // [EN] Calculate risk category from score
-        let riskCategory = "Belum Tes";
-        if (riskScore > 0 && riskScore < 7) {
-          riskCategory = "Rendah";
-        } else if (riskScore < 12) {
-          riskCategory = "Sedikit Meningkat";
-        } else if (riskScore < 15) {
-          riskCategory = "Sedang";
-        } else if (riskScore < 20) {
-          riskCategory = "Tinggi";
-        } else if (riskScore >= 20) {
-          riskCategory = "Sangat Tinggi";
-        }
+        // [ID] Backend TIDAK menghitung FINDRISC karena data tidak lengkap (hanya 4/8 variabel).
+        // [EN] Backend does NOT calculate FINDRISC because data is incomplete (only 4/8 variables).
+        // [WHY] FINDRISC butuh 8 variabel lengkap (usia, IMT, lingkar pinggang, aktivitas fisik,
+        //       konsumsi sayur, obat hipertensi, riwayat gula darah, riwayat keluarga DM).
+        //       Backend hanya punya 4 (usia, tinggi, berat, riwayat keluarga).
+        //       Mobile Flutter sudah hitung lengkap 8 variabel via findrisc_data.dart.
+        //       Backend sekarang MENERIMA hasil perhitungan dari mobile dan menyimpannya.
 
         // [ID] Bangun data object dinamis — hanya field yg dikirim
         //     Hindari explicit undefined yg bisa error di Prisma + driver adapter
@@ -127,8 +82,10 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
         if (body.height !== undefined) updateData.height = body.height;
         if (body.has_family_history !== undefined)
           updateData.has_family_history = body.has_family_history;
-        updateData.risk_score = riskScore;
-        updateData.risk_category = riskCategory;
+
+        // [ID] Terima hasil FINDRISC dari mobile (yang sudah hitung lengkap 8 variabel)
+        if (body.risk_score !== undefined) updateData.risk_score = body.risk_score;
+        if (body.risk_category !== undefined) updateData.risk_category = body.risk_category;
 
         const updatedUser = await prisma.user.update({
           where: { id: userId! },
@@ -160,10 +117,12 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
         weight: t.Optional(t.Number({ minimum: 0, maximum: 500 })),
         height: t.Optional(t.Number({ minimum: 0, maximum: 300 })),
         has_family_history: t.Optional(t.Boolean()),
+        risk_score: t.Optional(t.Integer({ minimum: 0, maximum: 26 })),
+        risk_category: t.Optional(t.String()),
       }),
       detail: {
         tags: ["users"],
-        summary: "Update user profile and recalculate FINDRISC risk score",
+        summary: "Update user profile with FINDRISC results from mobile",
       },
     }
   );

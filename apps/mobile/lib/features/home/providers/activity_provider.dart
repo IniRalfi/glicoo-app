@@ -183,20 +183,14 @@ class ActivityDataNotifier extends StateNotifier<ActivityData> {
     );
   }
 
-  /// [ID] Update screen time langsung tanpa reload
-  /// [EN] Update screen time directly without reload
-  void updateScreenTime(int minutes) {
+  /// [ID] Update screen time dan simpan ke SharedPreferences
+  /// [EN] Update screen time and save to SharedPreferences
+  /// [WHY] Persist data agar tidak hilang saat loadDailyValues() polling
+  Future<void> updateScreenTime(int minutes) async {
     if (!mounted) return;
-    state = ActivityData(
-      steps: state.steps,
-      stepsGoal: state.stepsGoal,
-      sleepMinutes: state.sleepMinutes,
-      screenTimeMinutes: minutes,
-      dailyCalories: state.dailyCalories,
-      stepsHistory: state.stepsHistory,
-      sleepHistory: state.sleepHistory,
-      screenTimeHistory: state.screenTimeHistory,
-    );
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('glico_daily_screen_time', minutes);
+    await loadDailyValues();
   }
 
   @override
