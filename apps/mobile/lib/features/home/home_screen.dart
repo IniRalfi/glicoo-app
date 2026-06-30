@@ -18,7 +18,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../auth/presentation/auth_provider.dart';
 import '../navigation/bottom_nav_shell.dart';
 import '../profile/profile_provider.dart';
 import 'providers/activity_provider.dart';

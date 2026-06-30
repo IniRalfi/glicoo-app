@@ -372,7 +372,7 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
 
           await sendWhatsAppMessage(
             chatId,
-            "✅ *Selamat! Akun Glicoo berhasil terhubung dengan WhatsApp.*\n\nKamu akan menerima:\n- 📊 Pengingat pengisian data harian\n- 🏃 Tips aktivitas fisik\n- 🍎 Saran pola makan\n- 💤 Pengingat tidur\n\nGunakan /help untuk bantuan."
+            `Selamat Kak *${linkToken.user.name}*! 🎉\n\nAkun Glicoo kamu berhasil terhubung dengan WhatsApp. Mulai sekarang, Iloo akan memantau gizi makanan dan kesehatan harianmu secara interaktif. Cobain ketik apa saja yang kamu makan sekarang! 🥗`
           );
 
           return { ok: true };

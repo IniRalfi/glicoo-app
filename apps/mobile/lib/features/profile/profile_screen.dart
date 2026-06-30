@@ -595,11 +595,40 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       },
     );
 
-    // [ID] Reload ProfileState setelah dialog ditutup untuk update status koneksi
-    // [EN] Reload ProfileState after dialog closes to update connection status
+    // [ID] Polling untuk check apakah user sudah connect di bot
+    // [EN] Poll to check if user has connected via bot
+    // [WHY] User mungkin sudah kirim OTP di WhatsApp/Telegram tapi belum close dialog
     if (mounted) {
-      await ref.read(profileNotifierProvider.notifier).loadProfile();
-      await _loadBotStatus();
+      // Poll setiap 2 detik selama max 30 detik (15 attempts)
+      int attempts = 0;
+      const maxAttempts = 15;
+
+      while (attempts < maxAttempts && mounted) {
+        await Future.delayed(const Duration(seconds: 2));
+
+        // Reload profile dari API
+        await ref.read(profileNotifierProvider.notifier).loadProfile();
+        await _loadBotStatus();
+
+        // Jika sudah connected, break loop
+        if (_isBotConnected) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('✅ Bot berhasil terhubung!'),
+                backgroundColor: AppColors.success,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+          }
+          break;
+        }
+
+        attempts++;
+      }
     }
   }
 
@@ -1790,11 +1819,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ),
                             const Spacer(),
                             Text(
-                              'Belum terhubung',
+                              profileState.botPlatform?.toUpperCase() ==
+                                      'WHATSAPP'
+                                  ? 'Terhubung'
+                                  : 'Belum terhubung',
                               style: GoogleFonts.inter(
                                 fontSize: 13,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
+                                color:
+                                    profileState.botPlatform?.toUpperCase() ==
+                                        'WHATSAPP'
+                                    ? const Color(0xFF34C759)
+                                    : AppColors.textSecondary,
+                                fontWeight:
+                                    profileState.botPlatform?.toUpperCase() ==
+                                        'WHATSAPP'
+                                    ? FontWeight.bold
+                                    : FontWeight.w500,
                               ),
                             ),
                           ],
@@ -1834,15 +1874,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ),
                             const Spacer(),
                             Text(
-                              profileState.phoneNumber.isNotEmpty
+                              profileState.botPlatform?.toUpperCase() ==
+                                      'TELEGRAM'
                                   ? 'Terhubung'
                                   : 'Belum terhubung',
                               style: GoogleFonts.inter(
                                 fontSize: 13,
-                                color: profileState.phoneNumber.isNotEmpty
+                                color:
+                                    profileState.botPlatform?.toUpperCase() ==
+                                        'TELEGRAM'
                                     ? const Color(0xFF34C759)
                                     : AppColors.textSecondary,
-                                fontWeight: FontWeight.bold,
+                                fontWeight:
+                                    profileState.botPlatform?.toUpperCase() ==
+                                        'TELEGRAM'
+                                    ? FontWeight.bold
+                                    : FontWeight.w500,
                               ),
                             ),
                           ],
