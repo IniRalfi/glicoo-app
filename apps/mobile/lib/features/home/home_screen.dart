@@ -67,44 +67,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _HomeHeader(),
-              const SizedBox(height: 24),
-              _RiskCard(),
-              const SizedBox(height: 12),
-              _ScoreCard(),
-              const SizedBox(height: 16),
-              const FoodLogCard(),
-              const SizedBox(height: 24),
-              Text(
-                'Aktivitas Harian',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black,
+        child: RefreshIndicator(
+          onRefresh: () async {
+            // Refresh profile data (termasuk risk score & category)
+            await ref.read(profileNotifierProvider.notifier).loadProfile();
+            // Refresh activity data
+            ref.invalidate(activityDataProvider);
+            ref.invalidate(findriscDataProvider);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _HomeHeader(),
+                const SizedBox(height: 24),
+                _RiskCard(),
+                const SizedBox(height: 12),
+                _ScoreCard(),
+                const SizedBox(height: 16),
+                const FoodLogCard(),
+                const SizedBox(height: 24),
+                Text(
+                  'Aktivitas Harian',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              const ActivityCards(),
-              const SizedBox(height: 24),
-              Text(
-                'Tantangan Hari Ini',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black,
+                const SizedBox(height: 12),
+                const ActivityCards(),
+                const SizedBox(height: 24),
+                Text(
+                  'Tantangan Hari Ini',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              const ChallengeCard(),
-              const SizedBox(height: 24),
-              const MoreQuestsButton(),
-              const SizedBox(height: 90),
-            ],
+                const SizedBox(height: 12),
+                const ChallengeCard(),
+                const SizedBox(height: 24),
+                const MoreQuestsButton(),
+                const SizedBox(height: 90),
+              ],
+            ),
           ),
         ),
       ),
@@ -154,25 +164,11 @@ class _HomeHeader extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Flexible(
-              child: Text(
-                'Hallo, $name!',
-                style: GoogleFonts.rammettoOne(
-                  fontSize: 24,
-                  color: Colors.black,
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.logout, color: AppColors.error),
-              onPressed: () => ref.read(authProvider.notifier).signOut(),
-            ),
-          ],
+        Text(
+          'Halo, $name!',
+          style: GoogleFonts.rammettoOne(fontSize: 24, color: Colors.black),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
         ),
         const SizedBox(height: 4),
         Text(

@@ -200,20 +200,27 @@ class QuestsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 24),
-              _buildAchievementBanner(ref),
-              const SizedBox(height: 24),
-              _buildFilterTabs(ref, activeFilter),
-              const SizedBox(height: 20),
-              _buildQuestList(context, filteredQuests),
-              const SizedBox(height: 90), // Jarak untuk floating bottom bar
-            ],
+        child: RefreshIndicator(
+          onRefresh: () async {
+            // Refresh activity data untuk update quest progress
+            ref.invalidate(activityDataProvider);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(),
+                const SizedBox(height: 24),
+                _buildAchievementBanner(ref),
+                const SizedBox(height: 24),
+                _buildFilterTabs(ref, activeFilter),
+                const SizedBox(height: 20),
+                _buildQuestList(context, filteredQuests),
+                const SizedBox(height: 90), // Jarak untuk floating bottom bar
+              ],
+            ),
           ),
         ),
       ),

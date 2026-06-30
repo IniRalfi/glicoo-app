@@ -138,6 +138,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         final height = (data['height'] as num?)?.toDouble() ?? 0.0;
         final hasFamilyHistory = data['has_family_history'] as bool? ?? false;
         final riskScore = (data['risk_score'] as num?)?.toDouble() ?? 0.0;
+        final riskCategory = data['risk_category'] as String? ?? 'Belum Tes';
         final botChatId = data['bot_chat_id'] as String?;
         final botPlatform = data['bot_platform'] as String?;
 
@@ -165,6 +166,11 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
           hasFamilyHistory: hasFamilyHistory,
           riskScore: riskScore,
         );
+
+        // [FIX] Cache risk_category untuk findriscDataProvider
+        await prefs.setInt('findrisc_score', riskScore.toInt());
+        await prefs.setString('findrisc_category', riskCategory);
+
         // Tandai sudah sinkron
         await prefs.setBool('glico_profile_pending_sync', false);
       }
@@ -218,6 +224,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
         final riskScore =
             (data['risk_score'] as num?)?.toDouble() ?? state.riskScore;
+        final riskCategory = data['risk_category'] as String? ?? 'Belum Tes';
 
         state = state.copyWith(
           name: data['name'] as String? ?? name,
@@ -243,6 +250,9 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         );
 
         final prefs = await SharedPreferences.getInstance();
+        // [FIX] Cache risk_category untuk findriscDataProvider
+        await prefs.setInt('findrisc_score', riskScore.toInt());
+        await prefs.setString('findrisc_category', riskCategory);
         await prefs.setBool('glico_profile_pending_sync', false);
         return true;
       } else {
