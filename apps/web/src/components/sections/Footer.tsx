@@ -14,12 +14,16 @@ import { IMAGES } from "@/lib/cloudinary-images";
  * 3x large star icon pinned at the very bottom of footer (absolute to footer)
  */
 
+import { useIsMobile, getMotionProps } from "@/lib/hooks";
+
 /* Ukuran star dari IMAGES atau default 80px */
 /* Resolusi yang diminta ke CDN — harus >= ukuran render CSS terbesar */
 const STAR_W = (IMAGES.footer.star.width ?? 80) * 10;
 const STAR_H = (IMAGES.footer.star.height ?? 80) * 10;
 
 export default function Footer() {
+  const isMobile = useIsMobile();
+
   return (
     /**
      * overflow-visible agar bintang yang nempel di bawah tidak terpotong.
@@ -42,10 +46,12 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between gap-10">
             {/* ─── LEFT: Logo + Team Info + Copyright ─── */}
             <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              {...getMotionProps(isMobile, {
+                initial: { opacity: 0, y: 24 },
+                whileInView: { opacity: 1, y: 0 },
+                viewport: { once: true },
+                transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+              })}
               className="flex flex-col gap-1"
             >
               <CloudinaryImage
@@ -69,10 +75,12 @@ export default function Footer() {
 
             {/* ─── RIGHT: Kontak Tim ─── */}
             <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+              {...getMotionProps(isMobile, {
+                initial: { opacity: 0, y: 24 },
+                whileInView: { opacity: 1, y: 0 },
+                viewport: { once: true },
+                transition: { duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] },
+              })}
               className="flex flex-col items-start md:items-end gap-1"
             >
               <h3 className="text-white mb-2 text-xl md:text-2xl font-bold">Kontak Tim</h3>
@@ -88,8 +96,10 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-white text-base md:text-lg font-medium"
-                  whileHover={{ opacity: 0.75, x: -4 }}
-                  transition={{ duration: 0.2 }}
+                  {...getMotionProps(isMobile, {
+                    whileHover: { opacity: 0.75, x: -4 },
+                    transition: { duration: 0.2 },
+                  })}
                 >
                   {label}
                 </motion.a>
@@ -103,10 +113,12 @@ export default function Footer() {
       <motion.div
         className="absolute left-1/2 -translate-x-1/2 z-20"
         style={{ bottom: 0 }}
-        initial={{ opacity: 0, scale: 0.6, y: 50 }}
-        whileInView={{ opacity: 1, scale: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 1.2, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        {...getMotionProps(isMobile, {
+          initial: { opacity: 0, scale: 0.6, y: 50 },
+          whileInView: { opacity: 1, scale: 1, y: 0 },
+          viewport: { once: true },
+          transition: { duration: 1.2, delay: 0.4, ease: [0.16, 1, 0.3, 1] },
+        })}
       >
         <CloudinaryImage
           src={IMAGES.footer.star.url}

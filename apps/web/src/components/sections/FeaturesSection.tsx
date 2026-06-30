@@ -18,6 +18,8 @@ import { IMAGES } from "@/lib/cloudinary-images";
  * 3. Telegram Card: Phone screenshot (cropped) + text
  */
 
+import { useIsMobile, getMotionProps } from "@/lib/hooks";
+
 const featureImages = [
   { key: "monitoring", data: IMAGES.features.monitoring },
   { key: "food", data: IMAGES.features.food },
@@ -38,29 +40,34 @@ const cardVariants: Variants = {
     opacity: 1,
     y: 0,
     scale: 1,
-    // WHY: cubicBezier string → valid Easing type, bare number[] bukan
     transition: { duration: 0.65, ease: "easeOut" },
   },
 };
 
 export default function FeaturesSection() {
+  const isMobile = useIsMobile();
+
   return (
     <section className="relative w-full py-20 bg-background px-6 md:px-16">
       <div className="max-w-4xl mx-auto space-y-24">
         {/* ─── Part 1: Features Grid 2x2 ─── */}
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.1 }}
+          {...getMotionProps(isMobile, {
+            variants: containerVariants,
+            initial: "hidden",
+            whileInView: "visible",
+            viewport: { once: true, amount: 0.1 },
+          })}
         >
           {featureImages.map((feature) => (
             <motion.div
               key={feature.key}
-              variants={cardVariants}
               className="w-full"
-              whileHover={{ y: -6, transition: { duration: 0.3, ease: "easeOut" } }}
+              {...getMotionProps(isMobile, {
+                variants: cardVariants,
+                whileHover: { y: -6, transition: { duration: 0.3, ease: "easeOut" } },
+              })}
             >
               <CloudinaryImage
                 src={feature.data.url}
@@ -80,10 +87,12 @@ export default function FeaturesSection() {
           {/* Image Left */}
           <motion.div
             className="w-full md:w-[35%]"
-            initial={{ opacity: 0, x: -40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            {...getMotionProps(isMobile, {
+              initial: { opacity: 0, x: -40 },
+              whileInView: { opacity: 1, x: 0 },
+              viewport: { once: true, amount: 0.3 },
+              transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] },
+            })}
           >
             <CloudinaryImage
               src={IMAGES.features2.iloo.url}
@@ -99,37 +108,45 @@ export default function FeaturesSection() {
           {/* Text Right */}
           <motion.div
             className="w-full md:w-1/2 space-y-3"
-            initial={{ opacity: 0, x: 40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            {...getMotionProps(isMobile, {
+              initial: { opacity: 0, x: 40 },
+              whileInView: { opacity: 1, x: 0 },
+              viewport: { once: true, amount: 0.3 },
+              transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] },
+            })}
           >
             <motion.div
               className="text-sm md:text-base font-bold text-primary"
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              {...getMotionProps(isMobile, {
+                initial: { opacity: 0, y: 10 },
+                whileInView: { opacity: 1, y: 0 },
+                viewport: { once: true },
+                transition: { duration: 0.5, delay: 0.2 },
+              })}
             >
               Agentic AI
             </motion.div>
 
             <motion.h2
               className="font-display text-3xl md:text-4xl text-foreground leading-tight"
-              initial={{ opacity: 0, y: 14 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+              {...getMotionProps(isMobile, {
+                initial: { opacity: 0, y: 14 },
+                whileInView: { opacity: 1, y: 0 },
+                viewport: { once: true },
+                transition: { duration: 0.6, delay: 0.3 },
+              })}
             >
               Pendamping yang Memahami Kebiasaanmu.
             </motion.h2>
 
             <motion.p
               className="text-sm md:text-base text-muted-foreground leading-relaxed"
-              initial={{ opacity: 0, y: 14 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.4 }}
+              {...getMotionProps(isMobile, {
+                initial: { opacity: 0, y: 14 },
+                whileInView: { opacity: 1, y: 0 },
+                viewport: { once: true },
+                transition: { duration: 0.6, delay: 0.4 },
+              })}
             >
               Iloo adalah AI companion yang membantu kamu membangun kebiasaan sehat secara
               konsisten. Dengan pendekatan metacognitive, Iloo tidak hanya memberi saran, tapi
@@ -138,10 +155,12 @@ export default function FeaturesSection() {
 
             <motion.ul
               className="space-y-2"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
+              {...getMotionProps(isMobile, {
+                variants: containerVariants,
+                initial: "hidden",
+                whileInView: "visible",
+                viewport: { once: true, amount: 0.2 },
+              })}
             >
               {[
                 "Pengingat yang proaktif",
@@ -154,10 +173,12 @@ export default function FeaturesSection() {
                 <motion.li
                   key={item}
                   className="flex items-start gap-2"
-                  variants={{
-                    hidden: { opacity: 0, x: -12 },
-                    visible: { opacity: 1, x: 0, transition: { duration: 0.45, ease: "easeOut" } },
-                  }}
+                  {...getMotionProps(isMobile, {
+                    variants: {
+                      hidden: { opacity: 0, x: -12 },
+                      visible: { opacity: 1, x: 0, transition: { duration: 0.45, ease: "easeOut" } },
+                    },
+                  })}
                 >
                   <span className="text-primary text-lg font-bold mt-0.5">✓</span>
                   <span className="text-primary font-bold text-sm md:text-base">{item}</span>
@@ -169,10 +190,12 @@ export default function FeaturesSection() {
 
         {/* ─── Part 3: Telegram Integration Card ─── */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+          {...getMotionProps(isMobile, {
+            initial: { opacity: 0, y: 40 },
+            whileInView: { opacity: 1, y: 0 },
+            viewport: { once: true, amount: 0.2 },
+            transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] },
+          })}
           className="w-full max-w-[1200px] mx-auto"
         >
           <div
@@ -183,10 +206,12 @@ export default function FeaturesSection() {
               {/* Image — mobile: full width dengan max-height, desktop: fixed width column */}
               <motion.div
                 className="w-full md:w-[37%] md:h-full overflow-hidden flex-shrink-0 flex items-end md:items-center pl-0 md:pl-8"
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                {...getMotionProps(isMobile, {
+                  initial: { opacity: 0, x: -30 },
+                  whileInView: { opacity: 1, x: 0 },
+                  viewport: { once: true },
+                  transition: { duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] },
+                })}
               >
                 <CloudinaryImage
                   src={IMAGES.features2.telegramPhone.url}
@@ -202,10 +227,12 @@ export default function FeaturesSection() {
               {/* Text Right - Centered Vertically */}
               <motion.div
                 className="flex-1 px-6 md:px-10 py-8 flex items-center justify-center"
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                {...getMotionProps(isMobile, {
+                  initial: { opacity: 0, x: 30 },
+                  whileInView: { opacity: 1, x: 0 },
+                  viewport: { once: true },
+                  transition: { duration: 0.8, delay: 0.35, ease: [0.16, 1, 0.3, 1] },
+                })}
               >
                 <div className="w-full max-w-2xl space-y-3 text-center">
                   <h3 className="font-display text-2xl md:text-3xl text-foreground leading-tight">
@@ -214,7 +241,7 @@ export default function FeaturesSection() {
 
                   <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
                     Tidak perlu membuka aplikasi setiap saat. Iloo akan tetap mendampingimu melalui
-                    WhatsApp atau Telegram.
+                    WhatsApp or Telegram.
                   </p>
                 </div>
               </motion.div>

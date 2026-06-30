@@ -13,6 +13,8 @@ import { IMAGES } from "@/lib/cloudinary-images";
  * Download Page — Glicoo APK download page
  */
 
+import { useIsMobile, getMotionProps } from "@/lib/hooks";
+
 const APP_VERSION = "1.0.1";
 const APP_SIZE = "63 MB";
 const LAST_UPDATED = "30 Juni 2026";
@@ -48,6 +50,8 @@ const changelog = [
 ];
 
 export default function DownloadPage() {
+  const isMobile = useIsMobile();
+
   return (
     <main className="min-h-screen bg-background overflow-x-hidden">
 
@@ -62,9 +66,11 @@ export default function DownloadPage() {
         <div className="w-[90%] md:w-[80%] mx-auto px-4">
           {/* Top: Badge */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            {...getMotionProps(isMobile, {
+              initial: { opacity: 0, y: 20 },
+              animate: { opacity: 1, y: 0 },
+              transition: { duration: 0.6, ease: "easeOut" },
+            })}
             className="mb-8"
           >
             <span className="text-primary font-bold text-sm uppercase tracking-wider">
@@ -77,18 +83,22 @@ export default function DownloadPage() {
             {/* LEFT: Text */}
             <div className="flex flex-col gap-5">
               <motion.h1
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
+                {...getMotionProps(isMobile, {
+                  initial: { opacity: 0, y: 24 },
+                  animate: { opacity: 1, y: 0 },
+                  transition: { duration: 0.7, delay: 0.1, ease: "easeOut" },
+                })}
                 className="font-display text-5xl md:text-6xl text-foreground leading-tight"
               >
                 Unduh <span className="text-primary">Glicoo</span>
               </motion.h1>
 
               <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+                {...getMotionProps(isMobile, {
+                  initial: { opacity: 0, y: 20 },
+                  animate: { opacity: 1, y: 0 },
+                  transition: { duration: 0.7, delay: 0.2, ease: "easeOut" },
+                })}
                 className="text-muted-foreground text-base md:text-lg leading-relaxed"
               >
                 Mulai perjalanan hidup sehat bersama Iloo, AI companion yang
@@ -97,9 +107,11 @@ export default function DownloadPage() {
 
               {/* Meta chips */}
               <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+                {...getMotionProps(isMobile, {
+                  initial: { opacity: 0, y: 16 },
+                  animate: { opacity: 1, y: 0 },
+                  transition: { duration: 0.6, delay: 0.3, ease: "easeOut" },
+                })}
                 className="flex flex-wrap gap-3"
               >
                 {[
@@ -118,9 +130,11 @@ export default function DownloadPage() {
 
               {/* Buttons */}
               <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
+                {...getMotionProps(isMobile, {
+                  initial: { opacity: 0, y: 16 },
+                  animate: { opacity: 1, y: 0 },
+                  transition: { duration: 0.6, delay: 0.4, ease: "easeOut" },
+                })}
                 className="flex flex-col sm:flex-row gap-3 pt-1"
               >
                 <motion.a
@@ -128,8 +142,10 @@ export default function DownloadPage() {
                   download
                   className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-2xl text-white font-bold text-sm md:text-base"
                   style={{ backgroundColor: "#1a1a1a", fontFamily: "'Rammetto One', serif" }}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
+                  {...getMotionProps(isMobile, {
+                    whileHover: { scale: 1.03 },
+                    whileTap: { scale: 0.97 },
+                  })}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -139,7 +155,12 @@ export default function DownloadPage() {
                   Unduh APK
                 </motion.a>
 
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                <motion.div
+                  {...getMotionProps(isMobile, {
+                    whileHover: { scale: 1.02 },
+                    whileTap: { scale: 0.97 },
+                  })}
+                >
                   <Link
                     href="/"
                     className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-sm md:text-base font-semibold border-2 border-border text-foreground hover:border-primary hover:text-primary transition-colors"
@@ -150,9 +171,11 @@ export default function DownloadPage() {
               </motion.div>
 
               <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.55 }}
+                {...getMotionProps(isMobile, {
+                  initial: { opacity: 0 },
+                  animate: { opacity: 1 },
+                  transition: { duration: 0.5, delay: 0.55 },
+                })}
                 className="text-xs text-muted-foreground"
               >
                 Diperbarui: {LAST_UPDATED} · Gratis selamanya
@@ -161,9 +184,11 @@ export default function DownloadPage() {
 
             {/* RIGHT: Mascot */}
             <motion.div
-              initial={{ opacity: 0, y: 30, scale: 0.92 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.9, delay: 0.25, ease: "easeOut" }}
+              {...getMotionProps(isMobile, {
+                initial: { opacity: 0, y: 30, scale: 0.92 },
+                animate: { opacity: 1, y: 0, scale: 1 },
+                transition: { duration: 0.9, delay: 0.25, ease: "easeOut" },
+              })}
               className="flex justify-center md:justify-end"
             >
               <CloudinaryImage
@@ -184,10 +209,12 @@ export default function DownloadPage() {
       <section className="w-full py-16 bg-background">
         <div className="w-[90%] md:w-[80%] mx-auto px-4">
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            {...getMotionProps(isMobile, {
+              initial: { opacity: 0, y: 24 },
+              whileInView: { opacity: 1, y: 0 },
+              viewport: { once: true },
+              transition: { duration: 0.6, ease: "easeOut" },
+            })}
             className="mb-10"
           >
             <h2 className="font-display text-2xl md:text-3xl text-foreground">
@@ -202,10 +229,12 @@ export default function DownloadPage() {
             {steps.map((step, i) => (
               <motion.div
                 key={step.number}
-                initial={{ opacity: 0, y: 28 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: i * 0.1, ease: "easeOut" }}
+                {...getMotionProps(isMobile, {
+                  initial: { opacity: 0, y: 28 },
+                  whileInView: { opacity: 1, y: 0 },
+                  viewport: { once: true },
+                  transition: { duration: 0.6, delay: i * 0.1, ease: "easeOut" },
+                })}
                 className="p-6 rounded-2xl border border-border bg-white hover:border-primary transition-colors group cursor-default"
               >
                 <span className="font-display text-6xl font-bold block mb-4" style={{ color: "#eeeeee" }}>
@@ -227,10 +256,12 @@ export default function DownloadPage() {
       <section className="w-full py-16 bg-[#FAFAFA]">
         <div className="w-[90%] md:w-[80%] mx-auto px-4">
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            {...getMotionProps(isMobile, {
+              initial: { opacity: 0, y: 24 },
+              whileInView: { opacity: 1, y: 0 },
+              viewport: { once: true },
+              transition: { duration: 0.6, ease: "easeOut" },
+            })}
             className="mb-10"
           >
             <h2 className="font-display text-2xl md:text-3xl text-foreground">
@@ -242,10 +273,12 @@ export default function DownloadPage() {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            {...getMotionProps(isMobile, {
+              initial: { opacity: 0, y: 24 },
+              whileInView: { opacity: 1, y: 0 },
+              viewport: { once: true },
+              transition: { duration: 0.6, ease: "easeOut" },
+            })}
             className="p-6 md:p-8 rounded-2xl bg-white border border-border"
           >
             {/* Header */}
@@ -288,10 +321,12 @@ export default function DownloadPage() {
       <section className="w-full py-16 bg-background">
         <div className="w-[90%] md:w-[80%] mx-auto px-4">
           <motion.div
-            initial={{ opacity: 0, y: 32, scale: 0.97 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            {...getMotionProps(isMobile, {
+              initial: { opacity: 0, y: 32, scale: 0.97 },
+              whileInView: { opacity: 1, y: 0, scale: 1 },
+              viewport: { once: true },
+              transition: { duration: 0.8, ease: "easeOut" },
+            })}
             className="rounded-3xl p-10 md:p-14 text-center flex flex-col items-center gap-5"
             style={{ background: "linear-gradient(135deg, #ff7b00 0%, #ffb700 100%)" }}
           >
@@ -306,8 +341,10 @@ export default function DownloadPage() {
               download
               className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-bold text-sm md:text-base"
               style={{ backgroundColor: "#fff", color: "#1a1a1a", fontFamily: "'Rammetto One', serif" }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.97 }}
+              {...getMotionProps(isMobile, {
+                whileHover: { scale: 1.05 },
+                whileTap: { scale: 0.97 },
+              })}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
