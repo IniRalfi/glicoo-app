@@ -15,14 +15,17 @@
   --color-brand-10: #ffea00;
 
   /* ─── Semantic aliases ─── */
-  /* Named after intent, not implementation, so renaming a hex doesn't cascade everywhere */
   --color-primary: #ffb700;
-  --color-background: #fffbf5;
+  --color-background: #ffffff;
   --color-surface: #ffffff;
   --color-surface-muted: #fff5e6;
-  --color-border-brand: #ffe8b3;
+  --color-border: #ffe8b3;
   --color-foreground: #1a1a1a;
   --color-muted-foreground: #666666;
+  --color-subtitle-gray: #9ea2ae;
+  --color-placeholder-gray: #6d717f;
+  --color-link-gray: #8f8f8f;
+  --color-link-blue: #0095ff;
   --color-error: #e53935;
   --color-success: #43a047;
 
@@ -30,10 +33,61 @@
   /* Mirrors AppTypography.dart: Rammetto One (display) + Inter (body) */
   --font-display: var(--font-rammetto-one), serif;
   --font-body: var(--font-inter), sans-serif;
+
+  /* ─── Spacing scale (px to rem) ─── */
+  --spacing-xs: 0.25rem; /* 4px */
+  --spacing-sm: 0.5rem; /* 8px */
+  --spacing-md: 0.75rem; /* 12px */
+  --spacing-lg: 1rem; /* 16px */
+  --spacing-xl: 1.5rem; /* 24px */
+  --spacing-xxl: 2rem; /* 32px */
+
+  /* ─── Border radius ─── */
+  --radius-card: 1rem; /* 16px */
+  --radius-button: 62.5rem; /* 999px - pill */
+  --radius-chip: 0.5rem; /* 8px */
 }
 
-/* ─── Custom dot pattern — lebih rapat & jelas ─── */
+/* ─── Base styles ─── */
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-body);
+}
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ─── Global Layout & Breakout Utilities ─── */
+:root {
+  --global-width: 90%;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --global-width: 80%;
+  }
+}
+
+.global-width-container {
+  width: var(--global-width);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.full-bleed {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+
+/* ─── Utility classes ─── */
 .bg-dot-pattern {
-  background-image: radial-gradient(rgba(0, 0, 0, 0.12) 1.2px, transparent 1.2px);
-  background-size: 16px 16px;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
