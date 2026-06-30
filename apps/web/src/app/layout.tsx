@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Rammetto_One } from "next/font/google";
 import "./globals.css";
 import SmoothScrollProvider from "@/components/SmoothScrollProvider";
+import MotionConfigProvider from "@/components/MotionConfigProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -63,10 +64,12 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="min-h-full flex flex-col bg-background font-body text-foreground overflow-x-hidden" suppressHydrationWarning>
-        {/* Lenis smooth scroll — aktif untuk pengalaman scroll buttery smooth */}
-        <SmoothScrollProvider>
-          {children}
-        </SmoothScrollProvider>
+        <MotionConfigProvider>
+          {/* Lenis smooth scroll — aktif untuk pengalaman scroll buttery smooth */}
+          <SmoothScrollProvider>
+            {children}
+          </SmoothScrollProvider>
+        </MotionConfigProvider>
       </body>
     </html>
   );
