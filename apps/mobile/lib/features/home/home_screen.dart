@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../navigation/bottom_nav_shell.dart';
@@ -41,18 +42,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Cek tutorial saat pertama render
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // [ID] Init tutorialDoneProvider dari SharedPreferences biar sinkron
+    // [EN] Init tutorialDoneProvider from SharedPreferences for sync check
+    // [WHY] Hindari race condition FutureProvider setelah invalidate()
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      final done = prefs.getBool('tutorial_iloo_done') ?? false;
+      ref.read(tutorialDoneProvider.notifier).state = done;
       _checkAndShowTutorial();
     });
   }
 
   void _checkAndShowTutorial() {
-    ref.read(tutorialSeenProvider).whenData((seen) {
-      if (!seen && ref.read(bottomNavIndexProvider) == 0) {
-        _tryScheduleTutorial();
-      }
-    });
+    // [ID] Pake tutorialDoneProvider sync — zero race condition
+    // [EN] Use sync tutorialDoneProvider — no race condition
+    if (!ref.read(tutorialDoneProvider) &&
+        ref.read(bottomNavIndexProvider) == 0) {
+      _tryScheduleTutorial();
+    }
   }
 
   @override
@@ -129,6 +136,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
+  /// [ID] Mark tutorial sebagai dismissed (X button tanpa complete)
+  /// [EN] Mark tutorial as dismissed (X button without complete)
+  /// [WHY] Cegah tutorial muncul lagi setelah di-dismiss tanpa complete
+  Future<void> _markTutorialDismissed() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('tutorial_iloo_done', true);
+    ref.read(tutorialDoneProvider.notifier).state = true;
+  }
+
   void _showTutorialDialog() {
     if (!mounted) return;
     final guard1 = ref.read(tutorialDialogShowingProvider);
@@ -148,6 +164,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ).then((_) {
       ref.read(tutorialDialogShowingProvider.notifier).state = false;
       IlooTutorialDialog.isShowing = false;
+      // [FIX] X button dismiss tanpa _completeTutorial — tetap mark done
+      // [EN] X button dismiss without _completeTutorial — still mark done
+      if (!ref.read(tutorialDoneProvider)) {
+        _markTutorialDismissed();
+      }
     });
   }
 }

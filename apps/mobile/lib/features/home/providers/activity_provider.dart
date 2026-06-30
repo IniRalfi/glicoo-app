@@ -227,10 +227,16 @@ final userNameProvider = Provider<String>((ref) {
 });
 
 /// Provider untuk mendeteksi apakah user sudah menyelesaikan tutorial Iloo.
+/// [WHY] FutureProvider — initial load dari SharedPreferences.
 final tutorialSeenProvider = FutureProvider<bool>((ref) async {
   final prefs = await SharedPreferences.getInstance();
   return prefs.getBool('tutorial_iloo_done') ?? false;
 });
+
+/// Synchronous provider untuk status tutorial Iloo.
+/// [WHY] Hindari race condition FutureProvider setelah invalidate().
+/// [TRADEOFF] Butuh inisialisasi manual di initState + sinkronisasi manual.
+final tutorialDoneProvider = StateProvider<bool>((ref) => false);
 
 /// Provider untuk mendeteksi apakah dialog tutorial sedang terbuka.
 final tutorialDialogShowingProvider = StateProvider<bool>((ref) => false);

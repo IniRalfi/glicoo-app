@@ -42,8 +42,10 @@ class _IlooTutorialDialogState extends ConsumerState<IlooTutorialDialog> {
     if (enableAi) {
       await prefs.setBool('ai_companion_active', true);
     }
-    // Refresh provider agar dialog tidak dipanggil lagi
-    ref.invalidate(tutorialSeenProvider);
+    // [ID] Set sync provider langsung — zero race condition
+    // [EN] Set sync provider immediately — zero race condition
+    // [WHY] Hindari jeda async di FutureProvider setelah invalidate()
+    ref.read(tutorialDoneProvider.notifier).state = true;
     if (mounted) {
       Navigator.of(context).pop();
       // Navigate ke Profile tab setelah enable AI
