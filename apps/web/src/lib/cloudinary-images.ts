@@ -86,7 +86,7 @@ export const IMAGES = {
       height: 600,
     },
     telegramPhone: {
-      url: "https://res.cloudinary.com/ddyad5ucm/image/upload/v1782793492/Frame_2467_ojmope.svg",
+      url: "https://res.cloudinary.com/ddyad5ucm/image/upload/v1782826048/Frame_2467_1_pgsi88.svg",
       description: "Telegram Integration Preview",
       width: 600,
       height: 800,
