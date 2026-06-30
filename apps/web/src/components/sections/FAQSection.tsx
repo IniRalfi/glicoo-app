@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
  * Blue + icon (#0095FF) turns to - on expand
  */
 
+import { useIsMobile, getMotionProps } from "@/lib/hooks";
+
 interface FAQItem {
   question: string;
   answer: string;
@@ -47,21 +49,20 @@ const faqs: FAQItem[] = [
   },
 ];
 
-function PlusIcon({ open }: { open: boolean }) {
+function PlusIcon({ open, isMobile }: { open: boolean; isMobile: boolean }) {
   return (
     <div className="relative w-6 h-6 flex-shrink-0">
       {/* Horizontal line (always visible) */}
       <span
-        className={cn(
-          "absolute top-1/2 left-0 w-full h-0.5 -translate-y-1/2 rounded-full transition-colors duration-300",
-          open ? "bg-[#0095FF]" : "bg-[#0095FF]"
-        )}
+        className="absolute top-1/2 left-0 w-full h-0.5 -translate-y-1/2 rounded-full bg-[#0095FF]"
       />
       {/* Vertical line (rotates on open → minus) */}
-      <motion.span
-        className="absolute top-0 left-1/2 w-0.5 h-full -translate-x-1/2 rounded-full bg-[#0095FF]"
-        animate={{ rotate: open ? 90 : 0, opacity: open ? 0 : 1 }}
-        transition={{ duration: 0.25, ease: "easeInOut" }}
+      <span
+        className={cn(
+          "absolute top-0 left-1/2 w-0.5 h-full -translate-x-1/2 rounded-full bg-[#0095FF] origin-center",
+          isMobile ? "" : "transition-all duration-200 ease-out",
+          open ? "rotate-90 opacity-0" : "rotate-0 opacity-100"
+        )}
       />
     </div>
   );
@@ -69,6 +70,7 @@ function PlusIcon({ open }: { open: boolean }) {
 
 export default function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const isMobile = useIsMobile();
 
   const toggleFAQ = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
@@ -80,10 +82,12 @@ export default function FAQSection() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-16">
           {/* Title - Left Column */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            {...getMotionProps(isMobile, {
+              initial: { opacity: 0, x: -30 },
+              whileInView: { opacity: 1, x: 0 },
+              viewport: { once: true, amount: 0.3 },
+              transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+            })}
             className="md:col-span-4 text-center md:text-left"
           >
             <h2 className="font-display text-2xl md:text-3xl lg:text-4xl text-foreground leading-tight md:sticky md:top-8">
@@ -96,18 +100,22 @@ export default function FAQSection() {
             {faqs.map((faq, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.1 }}
-                transition={{ duration: 0.55, delay: index * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                {...getMotionProps(isMobile, {
+                  initial: { opacity: 0, y: 20 },
+                  whileInView: { opacity: 1, y: 0 },
+                  viewport: { once: true, amount: 0.1 },
+                  transition: { duration: 0.55, delay: index * 0.08, ease: [0.16, 1, 0.3, 1] },
+                })}
               >
                 {/* Question Button */}
                 <motion.button
                   onClick={() => toggleFAQ(index)}
                   className="w-full flex items-start gap-4 text-left group"
-                  whileTap={{ scale: 0.99 }}
+                  {...getMotionProps(isMobile, {
+                    whileTap: { scale: 0.99 },
+                  })}
                 >
-                  <PlusIcon open={openIndex === index} />
+                  <PlusIcon open={openIndex === index} isMobile={isMobile} />
                   <span className="font-semibold text-base md:text-lg text-foreground leading-snug pt-0.5 group-hover:text-primary transition-colors duration-200">
                     {faq.question}
                   </span>
@@ -117,17 +125,21 @@ export default function FAQSection() {
                 <AnimatePresence initial={false}>
                   {openIndex === index && (
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                      {...getMotionProps(isMobile, {
+                        initial: { height: 0, opacity: 0 },
+                        animate: { height: "auto", opacity: 1 },
+                        exit: { height: 0, opacity: 0 },
+                        transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+                      })}
                       className="overflow-hidden"
                     >
                       <motion.div
-                        initial={{ y: -8 }}
-                        animate={{ y: 0 }}
-                        exit={{ y: -8 }}
-                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        {...getMotionProps(isMobile, {
+                          initial: { y: -8 },
+                          animate: { y: 0 },
+                          exit: { y: -8 },
+                          transition: { duration: 0.3, ease: "easeOut" },
+                        })}
                         className="pl-10 pr-4 pb-4 pt-2 text-muted-foreground text-sm md:text-base leading-relaxed"
                       >
                         {faq.answer}

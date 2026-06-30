@@ -5,6 +5,8 @@ import Link from "next/link";
 import CloudinaryImage from "@/components/CloudinaryImage";
 import { IMAGES } from "@/lib/cloudinary-images";
 
+import { useIsMobile, getMotionProps } from "@/lib/hooks";
+
 /**
  * [ID]
  * Hero Section - Section pembuka landing page Glicoo
@@ -15,28 +17,36 @@ import { IMAGES } from "@/lib/cloudinary-images";
  * Layout: Text on top (centered) + Full-width image below
  */
 export default function HeroSection() {
+  const isMobile = useIsMobile();
+
   return (
     <section className="full-bleed relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background pt-12 pb-8">
       {/* Text Content - Center Top */}
       <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+        {...getMotionProps(isMobile, {
+          initial: { opacity: 0, y: 40 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] },
+        })}
         className="text-center space-y-4 mb-10 max-w-3xl px-6 md:px-16 global-width-container"
       >
         <motion.h1
           className="font-display text-3xl md:text-4xl lg:text-5xl leading-tight"
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          {...getMotionProps(isMobile, {
+            initial: { opacity: 0, y: 24 },
+            animate: { opacity: 1, y: 0 },
+            transition: { duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] },
+          })}
         >
           <span className="text-foreground">Kebiasaan Sehat</span>
           <br />
           <motion.span
             className="text-primary"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+            {...getMotionProps(isMobile, {
+              initial: { opacity: 0, scale: 0.95 },
+              animate: { opacity: 1, scale: 1 },
+              transition: { duration: 0.6, delay: 0.3, ease: "easeOut" },
+            })}
           >
             Hidup Hebat
           </motion.span>
@@ -44,19 +54,23 @@ export default function HeroSection() {
 
         <motion.p
           className="text-muted-foreground text-sm md:text-base lg:text-lg"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.4, ease: "easeOut" }}
+          {...getMotionProps(isMobile, {
+            initial: { opacity: 0, y: 16 },
+            animate: { opacity: 1, y: 0 },
+            transition: { duration: 0.7, delay: 0.4, ease: "easeOut" },
+          })}
         >
           Agentic AI untuk Pencegahan Diabetes Melitus Tipe 2
         </motion.p>
 
         <motion.div
-          initial={{ opacity: 0, y: 16, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.55, ease: "easeOut" }}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.97 }}
+          {...getMotionProps(isMobile, {
+            initial: { opacity: 0, y: 16, scale: 0.95 },
+            animate: { opacity: 1, y: 0, scale: 1 },
+            transition: { duration: 0.6, delay: 0.55, ease: "easeOut" },
+            whileHover: { scale: 1.04 },
+            whileTap: { scale: 0.97 },
+          })}
         >
           <Link
             href="/download"
@@ -77,9 +91,11 @@ export default function HeroSection() {
 
       {/* Hero Image - Full Width Below */}
       <motion.div
-        initial={{ opacity: 0, y: 50, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 1.1, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        {...getMotionProps(isMobile, {
+          initial: { opacity: 0, y: 50, scale: 0.98 },
+          animate: { opacity: 1, y: 0, scale: 1 },
+          transition: { duration: 1.1, delay: 0.35, ease: [0.16, 1, 0.3, 1] },
+        })}
         className="w-full"
       >
         <CloudinaryImage
