@@ -22,6 +22,15 @@ export const metadata: Metadata = {
     "Cegah Diabetes Sejak Dini dengan AI yang Ada di Saku Anda. Glicoo adalah aplikasi mobile berbasis Agentic AI untuk deteksi dini Diabetes Melitus Tipe 2.",
   keywords: ["diabetes", "kesehatan", "AI", "mobile app", "pencegahan diabetes", "glicoo"],
   authors: [{ name: "Glicoo Team" }],
+  manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: "/apple-icon.png",
+  },
   openGraph: {
     title: "Glicoo — Cegah Diabetes Sejak Dini",
     description: "Cegah Diabetes Sejak Dini dengan AI yang Ada di Saku Anda.",
@@ -53,7 +62,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className="min-h-full flex flex-col bg-background font-body text-foreground overflow-x-hidden">
+      <body className="min-h-full flex flex-col bg-background font-body text-foreground overflow-x-hidden" suppressHydrationWarning>
         {/* Lenis smooth scroll — aktif untuk pengalaman scroll buttery smooth */}
         <SmoothScrollProvider>
           {children}

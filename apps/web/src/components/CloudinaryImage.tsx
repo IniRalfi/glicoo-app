@@ -69,6 +69,28 @@ export default function CloudinaryImage({
     ? src
     : `${CLOUDINARY_BASE_URL}/f_auto,q_${quality},w_${width},h_${height},c_fill,g_auto/${src}`;
 
+  const isSvg = src.toLowerCase().includes(".svg");
+
+  if (isSvg) {
+    return (
+      <img
+        src={cloudinaryUrl}
+        alt={alt}
+        width={width}
+        height={height}
+        style={{ height: "auto" }}
+        className={cn(
+          objectFit === "cover" && "object-cover",
+          objectFit === "contain" && "object-contain",
+          objectFit === "fill" && "object-fill",
+          objectFit === "none" && "object-none",
+          objectFit === "scale-down" && "object-scale-down",
+          className
+        )}
+      />
+    );
+  }
+
   return (
     <Image
       src={cloudinaryUrl}
@@ -77,6 +99,7 @@ export default function CloudinaryImage({
       height={height}
       quality={quality}
       priority={priority}
+      style={{ height: "auto" }}
       className={cn(
         "duration-700 ease-in-out",
         isLoading ? "scale-105 blur-lg grayscale" : "scale-100 blur-0 grayscale-0",
