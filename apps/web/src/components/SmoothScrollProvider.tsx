@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, ReactNode } from "react";
+import { useEffect, useState, ReactNode } from "react";
 import Lenis from "lenis";
 
 /**
@@ -13,11 +13,15 @@ import Lenis from "lenis";
  * Provides buttery smooth scroll experience
  */
 export default function SmoothScrollProvider({ children }: { children: ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    // Disable Lenis smooth scroll on mobile devices to prevent touch scroll crashes/momentum lag
-    if (typeof window !== "undefined" && window.innerWidth < 768) {
-      return;
-    }
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (window.innerWidth < 768) return;
 
     const lenis = new Lenis({
       duration: 1.2,
@@ -39,7 +43,7 @@ export default function SmoothScrollProvider({ children }: { children: ReactNode
       cancelAnimationFrame(frameId);
       lenis.destroy();
     };
-  }, []);
+  }, [mounted]);
 
   return <>{children}</>;
 }

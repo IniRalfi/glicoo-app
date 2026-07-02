@@ -20,9 +20,9 @@ export default function HomePage() {
         <HeroSection />
         <FeaturesSection />
         <FAQSection />
-        <CTASection />
-        <Footer />
       </div>
+      <CTASection />
+      <Footer />
     </main>
   );
 }

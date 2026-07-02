@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-    const response = await fetch(`${apiUrl}/admin/hit`, {
+    const response = await fetch(`${apiUrl}/api/v1/admin/hit`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

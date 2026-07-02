@@ -56,8 +56,12 @@ export default function AdminDashboard() {
   const [password, setPassword] = useState<string>("");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [inputPassword, setInputPassword] = useState<string>("");
+  // WHY: sessionStorage tidak tersedia di server. Render null sampai client
+  // hydrated agar SSR dan client tree identik → hindari hydration mismatch.
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     const stored = sessionStorage.getItem("admin_password");
     if (stored) {
       setPassword(stored);
@@ -122,10 +126,15 @@ export default function AdminDashboard() {
     return parts.join(" ");
   };
 
+  if (!isMounted) return null;
+
   if (!isAuthenticated) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center p-6">
-        <div className="w-full max-w-md bg-[#FFF9E6] border-2 border-[#FFEBC2] p-8 rounded-3xl space-y-6">
+        <div
+          className="w-full max-w-[400px] shrink-0 bg-[#FFF9E6] border-2 border-[#FFEBC2] p-8 rounded-3xl space-y-6"
+          style={{ minWidth: "280px" }}
+        >
           <div className="space-y-2 text-center">
             <h1 className="font-display text-2xl text-foreground">
               Glicoo <span className="text-primary">Console</span>

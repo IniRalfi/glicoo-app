@@ -4,16 +4,23 @@ import { NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const adminApiKey = process.env.BACKEND_ADMIN_API_KEY || "dpu9g9djN8o6ik4YR5LP58G";
-    const clientPassword = request.headers.get("x-admin-password");
+    const adminApiKey = process.env.BACKEND_ADMIN_API_KEY;
+    if (!adminApiKey) {
+      console.error("[ADMIN_PROXY] BACKEND_ADMIN_API_KEY is not set");
+      return NextResponse.json(
+        { error: "Admin endpoint unavailable: server misconfiguration" },
+        { status: 503 }
+      );
+    }
 
+    const clientPassword = request.headers.get("x-admin-password");
     if (!clientPassword || clientPassword !== adminApiKey) {
       return NextResponse.json({ error: "Unauthorized: Invalid admin password" }, { status: 401 });
     }
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-    const response = await fetch(`${apiUrl}/admin/stats`, {
+    const response = await fetch(`${apiUrl}/api/v1/admin/stats`, {
       method: "GET",
       headers: {
         "x-api-key": adminApiKey,
