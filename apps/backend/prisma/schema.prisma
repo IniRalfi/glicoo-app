@@ -91,3 +91,11 @@ model BotLinkToken {
 
   @@map("bot_link_tokens")
 }
+
+model WebMetric {
+  key        String   @id // "page_views" | "apk_downloads"
+  count      Int      @default(0)
+  updated_at DateTime @updatedAt
+
+  @@map("web_metrics")
+}

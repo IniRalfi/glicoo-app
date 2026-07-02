@@ -16,8 +16,24 @@ import { useIsMobile, getMotionProps } from "@/lib/hooks";
  * Hero Section - Glicoo landing page opener
  * Layout: Text on top (centered) + Full-width image below
  */
+import { useEffect } from "react";
+import { trackMetric } from "@/lib/utils";
+
+/**
+ * [ID]
+ * Hero Section - Section pembuka landing page Glicoo
+ * Layout: Tulisan di atas (center) + Gambar full-width di bawah
+ *
+ * [EN]
+ * Hero Section - Glicoo landing page opener
+ * Layout: Text on top (centered) + Full-width image below
+ */
 export default function HeroSection() {
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    trackMetric("page_views");
+  }, []);
 
   return (
     <section className="full-bleed relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background pt-12 pb-8">

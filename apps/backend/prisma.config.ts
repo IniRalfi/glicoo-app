@@ -9,6 +9,7 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: env("DATABASE_URL"),
+    // Gunakan DIRECT_URL (port 5432) jika tersedia untuk menghindari hang/macet pada pooler port 6543 saat db push
+    url: env("DIRECT_URL") || env("DATABASE_URL"),
   },
 });
