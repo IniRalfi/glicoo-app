@@ -1,0 +1,3 @@
+#!/bin/sh
+# Pre-commit hook to verify types before commit.
+bun run typecheck

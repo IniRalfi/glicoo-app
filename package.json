@@ -15,10 +15,22 @@
     "typecheck": "tsc -b",
     "db:generate": "bun --cwd apps/backend db:generate",
     "db:push": "bun --cwd apps/backend db:push",
-    "db:studio": "bun --cwd apps/backend db:studio"
+    "db:studio": "bun --cwd apps/backend db:studio",
+    "prepare": "husky",
+    "cz": "cz"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.0",
+    "@commitlint/config-conventional": "^21.2.0",
+    "commitizen": "^4.3.2",
+    "cz-conventional-changelog": "^3.3.0",
+    "husky": "^9.1.7",
     "typescript": "^5"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   },
   "trustedDependencies": [
     "sharp",
