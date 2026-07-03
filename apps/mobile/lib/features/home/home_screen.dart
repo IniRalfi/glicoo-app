@@ -28,7 +28,6 @@ import 'widgets/activity_cards.dart';
 import 'widgets/challenge_card.dart';
 import 'widgets/food_log_card.dart';
 import 'widgets/iloo_tutorial_dialog.dart';
-import '../../core/sensor_service.dart';
 
 /// Home dashboard screen.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -71,13 +70,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.listen<int>(bottomNavIndexProvider, (prev, next) {
       if (next != 0) return;
       _checkAndShowTutorial();
-    });
-
-    // Listen permission usage
-    ref.listen<bool>(usagePermissionNeededProvider, (prev, next) {
-      if (next == true) {
-        _showUsagePermissionDialog();
-      }
     });
 
     return Scaffold(
@@ -180,57 +172,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _markTutorialDismissed();
       }
     });
-  }
-
-  void _showUsagePermissionDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(
-            'Izin Waktu Layar',
-            style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-          ),
-          content: Text(
-            'Glicoo butuh izin "Usage Data Access" (Akses Data Penggunaan) untuk melacak Screen Time kamu secara akurat.\n\nSetelah klik Lanjut, kamu akan diarahkan ke Pengaturan. Tolong cari aplikasi Glicoo dan aktifkan izinnya ya!',
-            style: GoogleFonts.inter(),
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                // Abaikan, tp state masih true (akan ditanya lagi pas reload klo blm diizinin)
-                Navigator.of(context).pop();
-                ref.read(usagePermissionNeededProvider.notifier).state = false;
-              },
-              child: Text(
-                'Nanti Saja',
-                style: GoogleFonts.inter(color: Colors.grey),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-                ref.read(sensorServiceProvider).openUsageSettings();
-              },
-              child: Text(
-                'Lanjut',
-                style: GoogleFonts.inter(color: Colors.white),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 }
 

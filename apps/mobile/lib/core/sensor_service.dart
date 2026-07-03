@@ -1,7 +1,7 @@
 // sensor_service.dart
 //
 // Purpose:
-// Mengelola perekaman langkah kaki (Pedometer) dan screen time secara real-time di foreground
+// Mengelola perekaman langkah kaki (Pedometer) dan screen time secara real-time,
 // serta registrasi Workmanager untuk background synchronization ke Elysia backend.
 //
 // Used By:
@@ -83,10 +83,6 @@ void callbackDispatcher() {
   });
 }
 
-/// [ID] Provider state jika butuh permission usage
-/// [EN] State provider if usage permission is needed
-final usagePermissionNeededProvider = StateProvider<bool>((ref) => false);
-
 /// [ID] Provider utama untuk mengontrol SensorService
 /// [EN] Main provider to control SensorService
 final sensorServiceProvider = Provider<SensorService>((ref) {
@@ -98,9 +94,12 @@ class SensorService with WidgetsBindingObserver {
 
   final Ref _ref;
   StreamSubscription<StepCount>? _stepSubscription;
-  static const MethodChannel _usageChannel = MethodChannel(
-    'com.glicoo.glico/usage_stats',
+
+  // WHY: channel name matches MainActivity.kt SCREEN_TIME_CHANNEL
+  static const MethodChannel _screenTimeChannel = MethodChannel(
+    'com.glicoo.glico/screen_time',
   );
+
   Timer? _screenTimeUpdateTimer;
 
   /// [ID]
@@ -134,51 +133,22 @@ class SensorService with WidgetsBindingObserver {
   }
 
   /// [ID]
-  /// Memulai pendengar screen time & app active lifecycle.
+  /// Memulai polling screen time dari native ScreenTimeReceiver.
   ///
   /// [EN]
-  /// Starts screen time listener & app active lifecycle.
-  /// [WHY] Polling dari native UsageStatsManager agar screen time 100% akurat
+  /// Starts polling screen time from the native ScreenTimeReceiver.
+  /// [WHY] Polling tetap diperlukan agar UI quest terupdate realtime
+  ///        tanpa menunggu event SCREEN_OFF berikutnya.
   void initScreenTimeTracking() {
     WidgetsBinding.instance.addObserver(this);
 
-    // Cek permission terlebih dahulu
-    _checkAndRequestUsagePermission();
-
-    // Polling screen time tiap 30 detik
     _screenTimeUpdateTimer?.cancel();
     _screenTimeUpdateTimer = Timer.periodic(
       const Duration(seconds: 30),
-      (_) => _updateScreenTimeWhileActive(),
+      (_) => _updateScreenTime(),
     );
 
-    // Panggil sekali di awal
-    _updateScreenTimeWhileActive();
-  }
-
-  Future<void> _checkAndRequestUsagePermission() async {
-    try {
-      final hasPermission =
-          await _usageChannel.invokeMethod<bool>('checkUsagePermission') ??
-          false;
-      if (!hasPermission) {
-        // Jangan langsung lempar intent, beritahu UI buat nampilin popup
-        _ref.read(usagePermissionNeededProvider.notifier).state = true;
-      }
-    } catch (e) {
-      debugPrint('Error checking usage permission: $e');
-    }
-  }
-
-  /// [ID] Dipanggil dari UI pas user klik "Izinkan" di popup
-  /// [EN] Called from UI when user clicks "Allow" on popup
-  Future<void> openUsageSettings() async {
-    try {
-      await _usageChannel.invokeMethod('requestUsagePermission');
-      _ref.read(usagePermissionNeededProvider.notifier).state = false;
-    } catch (e) {
-      debugPrint('Error opening usage settings: $e');
-    }
+    _updateScreenTime();
   }
 
   /// [ID]
@@ -197,19 +167,10 @@ class SensorService with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       // Pemicu sync manual ke server begitu app dibuka kembali
       _ref.read(syncManagerProvider).syncPendingData().catchError((_) {});
-      _ref
-          .read(apiServiceProvider)
-          .getBotLink()
-          .then((_) async {
-            await forceManualSync();
-          })
-          .catchError((_) {});
-
-      // Update screen time saat resume
-      _updateScreenTimeWhileActive();
+      _updateScreenTime();
     } else if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
-      _updateScreenTimeWhileActive();
+      _updateScreenTime();
     }
   }
 
@@ -235,7 +196,6 @@ class SensorService with WidgetsBindingObserver {
       offset = event.steps;
       await prefs.setInt(kPrefLastBootStepsOffset, offset);
       await prefs.setString(kPrefLastSyncDate, todayStr);
-      await prefs.setInt('glico_daily_screen_time_seconds', 0);
       await prefs.setInt(kPrefTodayScreenTime, 0);
     }
 
@@ -249,25 +209,19 @@ class SensorService with WidgetsBindingObserver {
   }
 
   /// [ID]
-  /// Update screen time saat app foreground (dipanggil periodic timer).
+  /// Ambil screen time hari ini dari native (detik), simpan ke SharedPreferences.
   ///
   /// [EN]
-  /// Update screen time while app is in foreground (called by periodic timer).
-  /// [WHY] Quest butuh data realtime, tidak bisa tunggu screen off. Ambil dari native.
-  Future<void> _updateScreenTimeWhileActive() async {
+  /// Fetch today's screen time from native (seconds), persist to SharedPreferences.
+  /// [WHY] ScreenTimeReceiver.kt akumulasi di SharedPreferences-nya sendiri (glico_screen_time);
+  ///        nilai ini disalin ke kPrefTodayScreenTime (menit) untuk sync ke backend.
+  Future<void> _updateScreenTime() async {
     try {
-      final hasPermission =
-          await _usageChannel.invokeMethod<bool>('checkUsagePermission') ??
-          false;
-      if (!hasPermission) return;
-
-      final milliseconds =
-          await _usageChannel.invokeMethod<int>('getTodayScreenTime') ?? 0;
-      final newTotalSeconds = milliseconds ~/ 1000;
-      final minutes = newTotalSeconds ~/ 60;
+      final seconds =
+          await _screenTimeChannel.invokeMethod<int>('getScreenTimeToday') ?? 0;
+      final minutes = seconds ~/ 60;
 
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('glico_daily_screen_time_seconds', newTotalSeconds);
       await prefs.setInt(kPrefTodayScreenTime, minutes);
     } catch (e) {
       debugPrint('Error getting screen time from native: $e');

@@ -34,8 +34,8 @@ Menyimpan agregasi harian. Logika _checkpoint_ pagi/siang ditangani oleh _backen
 - **user_id**: UUID
 - **description**: String (Contoh: "Makan siang pakai nasi padang rendang dan es teh manis")
 - **logged_at**: DateTime
-- **estimated_calories**: Int? (Diisi otomatis oleh AI n8n)
-- **estimated_sugar_grams**: Float? (Diisi otomatis oleh AI n8n)
+- **estimated_calories**: Int? (Diisi otomatis oleh AI backend)
+- **estimated_sugar_grams**: Float? (Diisi otomatis oleh AI backend)
 - **ai_feedback**: String? (Komentar XAI terhadap makanan tersebut)
 
 ### 4. `InterventionChat` (Log Percakapan AI & Metacognitive)
@@ -56,5 +56,5 @@ Menyimpan riwayat chat WhatsApp/Telegram agar AI memiliki memori dan bisa dipant
 Karena menggunakan Supabase, patuhi aturan akses ini:
 
 - **Mobile App (via Backend)**: Backend memvalidasi JWT dari Supabase Auth, hanya dapat membaca/menulis data milik `user_id` yang cocok.
-- **AI Engine (n8n)**: Menggunakan Service Role Key (Admin) untuk menarik history chat dan memberikan update skor makanan.
+- **AI Engine (Backend Elysia)**: Menggunakan Service Role Key (Admin) untuk menarik history chat dan memberikan update skor makanan.
 - **Web Dashboard**: Admin (Panitia/Dokter) memiliki akses baca ke seluruh tabel agregasi (tanpa melihat PII / nama spesifik jika anonim).

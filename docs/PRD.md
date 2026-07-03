@@ -23,7 +23,7 @@ Sebagai MVP untuk kompetisi, kesuksesan Glico diukur melalui metrik teknis dan p
 
 1. **Peningkatan Aktivitas:** Persentase pengguna yang mengalami peningkatan rata-rata langkah kaki harian setelah intervensi bot.
 2. **Engagement Log Makanan:** Pengguna secara konsisten melaporkan makanan mereka (minimal 1 kali sehari) karena proses input berbasis teks yang mudah.
-3. **Performa Sistem:** AI Agent (n8n + Gemini) mampu merespons log makanan pengguna dalam waktu kurang dari 5 detik.
+3. **Performa Sistem:** AI Agent (Gemini via Backend Elysia) mampu merespons log makanan pengguna dalam waktu kurang dari 5 detik.
 4. **Metrik Kesehatan:** Penurunan tren _screen time_ di jam rawan tidur (setelah pukul 21:00) yang terukur melalui sensor aplikasi.
 
 ## 4. 🚧 Batasan Produk (Out of Scope / Non-Goals)
