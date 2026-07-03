@@ -100,13 +100,15 @@ class ApiService {
     String platform = 'telegram',
   }) async {
     final url = Uri.parse(
-      '${EnvConfig.backendUrl}/api/v1/bot/link?platform=$platform',
+      '${EnvConfig.backendUrl}/api/v1/bot/connection?target=$platform',
     );
     try {
       final response = await _client.get(url, headers: await _buildHeaders());
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        // [WHY] Backend wraps response in { status, data } envelope
+        return (body['data'] as Map<String, dynamic>?) ?? body;
       } else if (response.statusCode == 409) {
         // [WHY] Exclusive connection conflict
         final errBody = jsonDecode(response.body) as Map<String, dynamic>;

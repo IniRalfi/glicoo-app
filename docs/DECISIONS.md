@@ -24,26 +24,24 @@ Dokumen ini mencatat keputusan teknologi utama untuk proyek Glico/Gluco. Jika AI
 
 ## Decision 004: Mengintegrasikan AI Agent & Bot (Telegram/WhatsApp) ke Backend Utama
 
-- **Status:** Diubah (Menggantikan pemisahan n8n)
+- **Status:** Diterima
 - **Alasan:**
-  1. **Kesederhanaan & Realistis:** Menghindari kompleksitas belajar dan memantau platform *no-code* tambahan (n8n) bagi tim pengembang.
-  2. **Efisiensi Runtime Bun:** Menggunakan runtime Bun yang mendukung pemrosesan asinkronus (*non-blocking*), sehingga pemanggilan API Gemini dan Telegram Bot dapat berjalan di latar belakang tanpa menghambat respon utama server Elysia.
-- **Tradeoff:** Logika chatbot dan penjadwalan (*cron*) didefinisikan langsung dalam kode TypeScript backend, yang membutuhkan *re-deploy* jika terdapat perubahan prompt/logika percakapan.
+  1. **Kesederhanaan & Realistis:** AI Agent (Gemini SDK) dan Bot Interface (Telegram/WhatsApp via OpenWA) diintegrasikan langsung di dalam backend Elysia secara asinkronus, meminimalkan kompleksitas infrastruktur.
+  2. **Efisiensi Runtime Bun:** Menggunakan runtime Bun yang mendukung pemrosesan asinkronus (_non-blocking_), sehingga pemanggilan API Gemini dan Telegram/WhatsApp Bot dapat berjalan di latar belakang tanpa menghambat respon utama server Elysia.
+- **Tradeoff:** Logika chatbot dan penjadwalan (_cron_) didefinisikan langsung dalam kode TypeScript backend, yang membutuhkan _re-deploy_ jika terdapat perubahan prompt/logika percakapan.
 
 ## Decision 005: Multi-Provider LLM & Fallback Mechanism (Failover)
 
 - **Status:** Diterima
-- **Alasan:** Menjamin keandalan (*availability*) AI Agent agar sistem tetap responsif jika salah satu penyedia LLM (seperti Gemini) mengalami kegagalan, *rate limit*, atau *service outage*.
-- **Desain:** Membuat layer abstrak `AIService` di backend Elysia. Sistem akan mencoba mengeksekusi LLM utama (misal: Gemini). Jika gagal, sistem secara otomatis menangkap *error* (*fallback*) dan mengalihkan *request* ke penyedia cadangan (seperti Groq, OpenAI, atau Anthropic) yang dikonfigurasi melalui API Key di `.env`.
+- **Alasan:** Menjamin keandalan (_availability_) AI Agent agar sistem tetap responsif jika salah satu penyedia LLM (seperti Gemini) mengalami kegagalan, _rate limit_, atau _service outage_.
+- **Desain:** Membuat layer abstrak `AIService` di backend Elysia. Sistem akan mencoba mengeksekusi LLM utama (misal: Gemini). Jika gagal, sistem secara otomatis menangkap _error_ (_fallback_) dan mengalihkan _request_ ke penyedia cadangan (seperti Groq, OpenAI, atau Anthropic) yang dikonfigurasi melalui API Key di `.env`.
 
 ## Decision 006: Web Admin Monitoring Dashboard
 
 - **Status:** Diterima
 - **Alasan:** Menyediakan antarmuka bagi panitia/admin untuk memantau status kesehatan sistem, performa AI, serta statistik penggunaan user secara langsung tanpa harus mengakses database secara mentah.
 - **Metrik Utama:**
-  1. *Health Monitor*: Server uptime, status koneksi Supabase, latensi endpoint.
-  2. *AI Performance*: Status provider aktif, total token, rasio kegagalan/sukses API AI, rata-rata waktu respon AI.
-  3. *User Stats*: Total user terdaftar, DAU (Daily Active User), persentase user terhubung ke Bot Telegram/WA.
-  4. *Aggregated Sensor & Logs*: Total langkah mingguan, rata-rata *screen time*, dan total *food logs* tercatat.
-
-
+  1. _Health Monitor_: Server uptime, status koneksi Supabase, latensi endpoint.
+  2. _AI Performance_: Status provider aktif, total token, rasio kegagalan/sukses API AI, rata-rata waktu respon AI.
+  3. _User Stats_: Total user terdaftar, DAU (Daily Active User), persentase user terhubung ke Bot Telegram/WA.
+  4. _Aggregated Sensor & Logs_: Total langkah mingguan, rata-rata _screen time_, dan total _food logs_ tercatat.

@@ -448,7 +448,7 @@ Format commit message untuk seluruh kontributor Glico.
 | `web`     | Next.js Dashboard                  |
 | `db`      | Database migration / schema        |
 | `api`     | Endpoint API                       |
-| `ai`      | AI Engine (n8n / LLM)              |
+| `ai`      | AI Engine (Gemini / LLM)           |
 | `sensor`  | Sensor Service (step, screen time) |
 | `auth`    | Authentication / JWT               |
 | `docs`    | Dokumentasi                        |

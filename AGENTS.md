@@ -379,19 +379,17 @@ best practice
 
 ## 20. Architecture Boundaries (Crucial)
 
-- **AI Agent & Bot Integration:** AI Agent (Gemini) dan Bot Interface (Telegram/WhatsApp) diintegrasikan langsung di dalam backend Elysia.js secara asinkronus (non-blocking) untuk meminimalkan kompleksitas infrastruktur (menggantikan n8n).
+- **AI Agent & Bot Integration:** AI Agent (Gemini) dan Bot Interface (Telegram/WhatsApp via OpenWA) diintegrasikan langsung di dalam backend Elysia.js secara asinkronus (non-blocking) untuk meminimalkan kompleksitas infrastruktur.
 - Elysia bertugas mengelola perizinan, sinkronisasi data sensor, menerima webhook bot, mengeksekusi prompt LLM/Gemini SDK secara asinkronus, serta mengirim pesan balasan dan pesan proaktif kembali ke platform chat.
-
 
 # 📚 DOCUMENTATION INDEX
 
 Sebelum mengeksekusi tugas, baca file dokumentasi berikut sesuai konteks yang sedang dikerjakan:
 
 - `docs/ROADMAP.md` -> Untuk melihat target fase pengembangan (baca ini saat bingung tugas selanjutnya).
-- `docs/TODO.md` -> Untuk melihat task mikro harian (Current Sprint).
 - `docs/MONOREPO_MAP.md` -> Untuk memahami arsitektur folder dan batas import antar aplikasi.
 - `docs/DATABASE_SCHEMA.md` -> WAJIB dibaca saat membuat atau mengubah fitur backend/database.
-- `docs/API_CONTRACTS.md` -> WAJIB dibaca saat menghubungkan Flutter ke Elysia atau n8n.
+- `docs/API_CONTRACTS.md` -> WAJIB dibaca saat menghubungkan Flutter ke Elysia.
 - `docs/USER_FLOWS.md` & `docs/PRD.md` -> WAJIB dibaca saat mendesain UI/UX atau logika alur navigasi.
 - `docs/DECISIONS.md` -> Untuk mengetahui alasan pemilihan tech stack (jangan sarankan stack lain).
-- `docs/AI_AGENT_PROMPTS.md` -> Untuk referensi prompt Gemini dan alur chatbot n8n.
+- `docs/AI_AGENT_PROMPTS.md` -> Untuk referensi prompt Gemini dan alur chatbot.

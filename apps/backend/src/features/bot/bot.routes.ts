@@ -137,10 +137,10 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
     }
   )
 
-  // [ID] Webhook WhatsApp — terima pesan dari integrasi n8n/WWebJS
-  // [EN] WhatsApp webhook — receive messages from n8n/WWebJS integration
+  // [ID] Webhook WhatsApp — terima pesan dari OpenWA
+  // [EN] WhatsApp webhook — receive messages from OpenWA
   .post(
-    "/webhook-wa",
+    "/webhook/whatsapp",
     async ({ body, headers, set }) => {
       try {
         const waAuthToken = process.env.WHATSAPP_WEBHOOK_SECRET;
@@ -167,7 +167,7 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
       detail: {
         tags: ["bot"],
         summary: "WhatsApp Webhook Endpoint",
-        description: "Receives messages from WhatsApp via n8n/WWebJS integration.",
+        description: "Receives messages from WhatsApp via OpenWA.",
       },
     }
   );

@@ -1,84 +1,53 @@
 package com.glicoo.glicoo_mobile
 
-import android.app.AppOpsManager
-import android.app.usage.UsageStatsManager
-import android.content.Context
-import android.content.Intent
-import android.os.Build
-import android.os.Process
-import android.provider.Settings
+import android.content.IntentFilter
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import java.util.Calendar
 
 class MainActivity : FlutterActivity() {
-    private val METHOD_CHANNEL = "com.glicoo.glico/usage_stats"
+    private val SCREEN_TIME_CHANNEL = "com.glicoo.glico/screen_time"
+
+    // WHY: receiver must be registered in code (not manifest) for SCREEN_ON/SCREEN_OFF —
+    // those broadcasts are not delivered to manifest-declared receivers since API 26.
+    private val screenTimeReceiver = ScreenTimeReceiver()
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, METHOD_CHANNEL).setMethodCallHandler { call, result ->
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            SCREEN_TIME_CHANNEL,
+        ).setMethodCallHandler { call, result ->
             when (call.method) {
-                "checkUsagePermission" -> {
-                    result.success(hasUsageStatsPermission())
-                }
-                "requestUsagePermission" -> {
-                    startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-                    result.success(null)
-                }
-                "getTodayScreenTime" -> {
-                    val time = getTodayUsageTime()
-                    result.success(time)
+                "getScreenTimeToday" -> {
+                    val seconds = ScreenTimeReceiver.getTodaySeconds(this)
+                    result.success(seconds)
                 }
                 else -> result.notImplemented()
             }
         }
     }
 
-    private fun hasUsageStatsPermission(): Boolean {
-        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            appOps.unsafeCheckOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                Process.myUid(), packageName
-            )
-        } else {
-            appOps.checkOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                Process.myUid(), packageName
-            )
+    override fun onResume() {
+        super.onResume()
+        val filter = IntentFilter().apply {
+            addAction(android.content.Intent.ACTION_SCREEN_ON)
+            addAction(android.content.Intent.ACTION_SCREEN_OFF)
         }
-        return mode == AppOpsManager.MODE_ALLOWED
+        registerReceiver(screenTimeReceiver, filter)
+
+        // WHY: app resuming = screen is on; seed the timestamp so live-elapsed works
+        // even if the very first SCREEN_ON broadcast was missed before receiver registered.
+        ScreenTimeReceiver.handleScreenOn(this)
     }
 
-    private fun getTodayUsageTime(): Long {
-        if (!hasUsageStatsPermission()) return 0
-
-        val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-        val cal = Calendar.getInstance()
-        cal.set(Calendar.HOUR_OF_DAY, 0)
-        cal.set(Calendar.MINUTE, 0)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
-        
-        val beginTime = cal.timeInMillis
-        val endTime = System.currentTimeMillis()
-
-        val stats = usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_DAILY,
-            beginTime,
-            endTime
-        )
-
-        var totalTime: Long = 0
-        stats?.forEach { usageStats ->
-            if (usageStats.packageName == packageName) {
-                totalTime += usageStats.totalTimeInForeground
-            }
+    override fun onPause() {
+        super.onPause()
+        try {
+            unregisterReceiver(screenTimeReceiver)
+        } catch (_: IllegalArgumentException) {
+            // receiver was never registered — safe to ignore
         }
-        
-        // Return milliseconds
-        return totalTime
     }
 }
