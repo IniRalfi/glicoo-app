@@ -159,8 +159,6 @@ class ActivityDataNotifier extends StateNotifier<ActivityData> {
   }
 
   void _startTimer() {
-    // [FIX] Increase polling interval dari 2 detik ke 15 detik untuk battery efficiency
-    // TODO: Refactor ke push-based pattern dari sensor service untuk real-time update
     _timer = Timer.periodic(
       const Duration(seconds: 15),
       (_) => loadDailyValues(),

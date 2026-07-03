@@ -126,146 +126,155 @@ export class BotService {
     }
 
     const chatId = message.chat.id.toString();
-    const text = message.text.trim();
 
-    // 1. Tangani alur verifikasi token (/start <TOKEN>)
-    if (text.startsWith("/start")) {
-      const parts = text.split(" ");
-      const token = parts[1]?.trim();
+    // Prevent double processing on Telegram retry timeouts
+    if (this.processingChats.has(chatId)) {
+      console.warn(`[BOT] Telegram User ${chatId} is already being processed. Ignoring retry.`);
+      return;
+    }
+    this.processingChats.add(chatId);
 
-      if (!token) {
-        await this.sendTelegramMessage(
-          chatId,
-          "Selamat datang di Glicoo Bot! 🤖\n\n" +
-            "Untuk menghubungkan akun Anda dengan bot ini:\n" +
-            "1. Buka aplikasi *Glicoo* di HP kamu\n" +
-            "2. Masuk ke menu *Profil* → bagian *Asisten AI*\n" +
-            "3. Tap tombol *Hubungkan ke Telegram*\n" +
-            "4. Kamu akan otomatis kembali ke sini dengan akun terhubung! ✅"
-        );
-        return;
-      }
+    try {
+      const text = message.text.trim();
 
-      // Validasi token OTP di database
-      const linkToken = await prisma.botLinkToken.findUnique({
-        where: { token: token },
-        include: { user: true },
-      });
+      // 1. Tangani alur verifikasi token (/start <TOKEN>)
+      if (text.startsWith("/start")) {
+        const parts = text.split(" ");
+        const token = parts[1]?.trim();
 
-      if (!linkToken) {
-        await this.sendTelegramMessage(
-          chatId,
-          "Maaf Kak, token OTP tidak valid. Silakan generate ulang token di aplikasi Glicoo. ❌"
-        );
-        return;
-      }
+        if (!token) {
+          await this.sendTelegramMessage(
+            chatId,
+            "Selamat datang di Glicoo Bot! 🤖\n\n" +
+              "Untuk menghubungkan akun Anda dengan bot ini:\n" +
+              "1. Buka aplikasi *Glicoo* di HP kamu\n" +
+              "2. Masuk ke menu *Profil* → bagian *Asisten AI*\n" +
+              "3. Tap tombol *Hubungkan ke Telegram*\n" +
+              "4. Kamu akan otomatis kembali ke sini dengan akun terhubung! ✅"
+          );
+          return;
+        }
 
-      if (linkToken.expires_at < new Date()) {
+        // Validasi token OTP di database
+        const linkToken = await prisma.botLinkToken.findUnique({
+          where: { token: token },
+          include: { user: true },
+        });
+
+        if (!linkToken) {
+          await this.sendTelegramMessage(
+            chatId,
+            "Maaf Kak, token OTP tidak valid. Silakan generate ulang token di aplikasi Glicoo. ❌"
+          );
+          return;
+        }
+
+        if (linkToken.expires_at < new Date()) {
+          await prisma.botLinkToken.delete({ where: { id: linkToken.id } });
+          await this.sendTelegramMessage(
+            chatId,
+            "Maaf Kak, token OTP sudah kedaluwarsa. Silakan ambil token baru di aplikasi Glicoo. ❌"
+          );
+          return;
+        }
+
+        // [ID] Hubungkan user dengan Telegram chat ID
+        const updatedUser = await prisma.user.update({
+          where: { id: linkToken.user_id },
+          data: {
+            phone_number: chatId, // backward compatibility
+            bot_chat_id: chatId,
+            bot_platform: "TELEGRAM",
+          },
+        });
+
+        console.log("[TELEGRAM OTP] User updated:", {
+          userId: updatedUser.id,
+          botPlatform: updatedUser.bot_platform,
+          botChatId: updatedUser.bot_chat_id,
+        });
+
+        // Bersihkan token
         await prisma.botLinkToken.delete({ where: { id: linkToken.id } });
+
         await this.sendTelegramMessage(
           chatId,
-          "Maaf Kak, token OTP sudah kedaluwarsa. Silakan ambil token baru di aplikasi Glicoo. ❌"
+          `Selamat Kak *${linkToken.user.name}*! 🎉\n\nAkun Glicoo kamu berhasil terhubung dengan Telegram. Mulai sekarang, Iloo akan memantau gizi makanan dan kesehatan harianmu secara interaktif. Cobain ketik apa saja yang kamu makan sekarang! 🥗`
         );
         return;
       }
 
-      // [ID] Hubungkan user dengan Telegram chat ID
-      const updatedUser = await prisma.user.update({
-        where: { id: linkToken.user_id },
+      // 2. Tangani chat percakapan umum & log makanan proaktif
+      // Cari user berdasarkan chat ID (phone_number)
+      const user = await prisma.user.findUnique({
+        where: { phone_number: chatId },
+      });
+
+      if (!user) {
+        await this.sendTelegramMessage(
+          chatId,
+          "Akun Telegram kamu belum terhubung dengan aplikasi Glicoo. Silakan hubungkan terlebih dahulu di menu *Bot Hub* di dalam aplikasi Glicoo ya! 🔗"
+        );
+        return;
+      }
+
+      // Simpan pesan dari User ke InterventionChat
+      await prisma.interventionChat.create({
         data: {
-          phone_number: chatId, // backward compatibility
-          bot_chat_id: chatId,
-          bot_platform: "TELEGRAM",
+          user_id: user.id,
+          message: text,
+          sender_type: "USER",
+          intervention_moment: "MEAL_TIME",
         },
       });
 
-      console.log("[TELEGRAM OTP] User updated:", {
-        userId: updatedUser.id,
-        botPlatform: updatedUser.bot_platform,
-        botChatId: updatedUser.bot_chat_id,
+      // [ID] Kirim chat action 'typing' di awal agar user langsung tahu bot aktif merespon,
+      // lalu jaga agar tetap aktif selama pemrosesan AI (via keepTypingWhile).
+      await this.sendChatAction(chatId, "typing");
+
+      // Ambil riwayat percakapan sebelumnya untuk memberikan konteks ke AI
+      const recentChats = await prisma.interventionChat.findMany({
+        where: { user_id: user.id },
+        orderBy: { created_at: "desc" },
+        take: 7, // Ambil 7 pesan terakhir termasuk yang baru saja disimpan
       });
 
-      // Bersihkan token
-      await prisma.botLinkToken.delete({ where: { id: linkToken.id } });
+      recentChats.reverse();
 
-      await this.sendTelegramMessage(
-        chatId,
-        `Selamat Kak *${linkToken.user.name}*! 🎉\n\nAkun Glicoo kamu berhasil terhubung dengan Telegram. Mulai sekarang, Iloo akan memantau gizi makanan dan kesehatan harianmu secara interaktif. Cobain ketik apa saja yang kamu makan sekarang! 🥗`
-      );
-      return;
-    }
+      const formattedHistory = recentChats
+        .map((c) => {
+          const role = c.sender_type === "USER" ? "Pengguna" : "Iloo";
+          return `${role}: ${c.message}`;
+        })
+        .join("\n");
 
-    // 2. Tangani chat percakapan umum & log makanan proaktif
-    // Cari user berdasarkan chat ID (phone_number)
-    const user = await prisma.user.findUnique({
-      where: { phone_number: chatId },
-    });
-
-    if (!user) {
-      await this.sendTelegramMessage(
-        chatId,
-        "Akun Telegram kamu belum terhubung dengan aplikasi Glicoo. Silakan hubungkan terlebih dahulu di menu *Bot Hub* di dalam aplikasi Glicoo ya! 🔗"
-      );
-      return;
-    }
-
-    // Simpan pesan dari User ke InterventionChat
-    await prisma.interventionChat.create({
-      data: {
-        user_id: user.id,
-        message: text,
-        sender_type: "USER",
-        intervention_moment: "MEAL_TIME",
-      },
-    });
-
-    // [ID] Kirim chat action 'typing' di awal agar user langsung tahu bot aktif merespon,
-    // lalu jaga agar tetap aktif selama pemrosesan AI (via keepTypingWhile).
-    await this.sendChatAction(chatId, "typing");
-
-    // Ambil riwayat percakapan sebelumnya untuk memberikan konteks ke AI
-    const recentChats = await prisma.interventionChat.findMany({
-      where: { user_id: user.id },
-      orderBy: { created_at: "desc" },
-      take: 7, // Ambil 7 pesan terakhir termasuk yang baru saja disimpan
-    });
-
-    recentChats.reverse();
-
-    const formattedHistory = recentChats
-      .map((c) => {
-        const role = c.sender_type === "USER" ? "Pengguna" : "Iloo";
-        return `${role}: ${c.message}`;
-      })
-      .join("\n");
-
-    // Prompt AI untuk membedakan makanan vs obrolan biasa
-    const schema = {
-      type: "object",
-      properties: {
-        is_food: {
-          type: "boolean",
-          description:
-            "Apakah pesan terakhir ini menceritakan atau menanyakan tentang aktivitas makan/minum/kalori/gizi pengguna?",
+      // Prompt AI untuk membedakan makanan vs obrolan biasa
+      const schema = {
+        type: "object",
+        properties: {
+          is_food: {
+            type: "boolean",
+            description:
+              "Apakah pesan terakhir ini menceritakan atau menanyakan tentang aktivitas makan/minum/kalori/gizi pengguna?",
+          },
+          estimated_calories: {
+            type: "integer",
+            description: "Estimasi kalori makanan (null jika bukan makanan)",
+          },
+          estimated_sugar_grams: {
+            type: "number",
+            description: "Estimasi kandungan gula makanan dalam gram (null jika bukan makanan)",
+          },
+          ai_feedback: {
+            type: "string",
+            description:
+              "Pesan balasan ramah, Socratic, maksimal 2-3 kalimat, dan menyisipkan emoji.",
+          },
         },
-        estimated_calories: {
-          type: "integer",
-          description: "Estimasi kalori makanan (null jika bukan makanan)",
-        },
-        estimated_sugar_grams: {
-          type: "number",
-          description: "Estimasi kandungan gula makanan dalam gram (null jika bukan makanan)",
-        },
-        ai_feedback: {
-          type: "string",
-          description:
-            "Pesan balasan ramah, Socratic, maksimal 2-3 kalimat, dan menyisipkan emoji.",
-        },
-      },
-      required: ["is_food", "estimated_calories", "estimated_sugar_grams", "ai_feedback"],
-    };
+        required: ["is_food", "estimated_calories", "estimated_sugar_grams", "ai_feedback"],
+      };
 
-    const systemInstruction = `
+      const systemInstruction = `
       Kamu adalah Iloo, sahabat virtual pendeteksi risiko Diabetes Tipe 2 di aplikasi Glicoo.
       Gaya bahasamu santai, menggunakan bahasa Indonesia sehari-hari ("Kamu", "Kak"), dan lengkapi dengan sedikit emoji. Jangan menggurui atau menggunakan bahasa medis kaku.
       Tugasmu adalah membalas pesan pengguna berdasarkan riwayat chat yang diberikan.
@@ -275,52 +284,57 @@ export class BotService {
       Jika pesan terakhir tidak terkait makanan/minuman, balaslah seperti sahabat yang peduli kesehatan mereka dan tetapkan is_food = false, serta estimated_calories = null dan estimated_sugar_grams = null.
     `;
 
-    const prompt = `Berikut adalah riwayat percakapan terakhir:\n${formattedHistory}\n\nAnalisis pesan terakhir dari Pengguna dan tentukan nilai JSON yang sesuai berdasarkan riwayat tersebut.`;
+      const prompt = `Berikut adalah riwayat percakapan terakhir:\n${formattedHistory}\n\nAnalisis pesan terakhir dari Pengguna dan tentukan nilai JSON yang sesuai berdasarkan riwayat tersebut.`;
 
-    try {
-      // [ID] Bungkus pemanggilan AI dengan typing indicator agar bot terus aktif
-      // terlihat selama pemrosesan (mencegah kesan "offline").
-      const aiResponse = await this.keepTypingWhile(
-        chatId,
-        aiService.generateJSON<{
-          is_food: boolean;
-          estimated_calories: number | null;
-          estimated_sugar_grams: number | null;
-          ai_feedback: string;
-        }>(prompt, schema, systemInstruction)
-      );
+      try {
+        // [ID] Bungkus pemanggilan AI dengan typing indicator agar bot terus aktif
+        // terlihat selama pemrosesan (mencegah kesan "offline").
+        const aiResponse = await this.keepTypingWhile(
+          chatId,
+          aiService.generateJSON<{
+            is_food: boolean;
+            estimated_calories: number | null;
+            estimated_sugar_grams: number | null;
+            ai_feedback: string;
+          }>(prompt, schema, systemInstruction)
+        );
 
-      // Jika menceritakan makanan, simpan ke database FoodLog agar sinkron dengan aplikasi Mobile!
-      if (aiResponse.is_food) {
-        await prisma.foodLog.create({
+        // Jika menceritakan makanan, simpan ke database FoodLog agar sinkron dengan aplikasi Mobile!
+        if (aiResponse.is_food) {
+          await prisma.foodLog.create({
+            data: {
+              user_id: user.id,
+              description: text,
+              estimated_calories: aiResponse.estimated_calories,
+              estimated_sugar_grams: aiResponse.estimated_sugar_grams,
+              ai_feedback: aiResponse.ai_feedback,
+            },
+          });
+        }
+
+        // Simpan balasan AI ke database InterventionChat
+        await prisma.interventionChat.create({
           data: {
             user_id: user.id,
-            description: text,
-            estimated_calories: aiResponse.estimated_calories,
-            estimated_sugar_grams: aiResponse.estimated_sugar_grams,
-            ai_feedback: aiResponse.ai_feedback,
+            message: aiResponse.ai_feedback,
+            sender_type: "AI_AGENT",
+            intervention_moment: aiResponse.is_food ? "MEAL_TIME" : "NONE",
           },
         });
+
+        // Kirim balik ke Telegram
+        await this.sendTelegramMessage(chatId, aiResponse.ai_feedback);
+      } catch (err) {
+        console.error("[BOT] Gagal memproses respon AI:", err);
+        await this.sendTelegramMessage(
+          chatId,
+          "Maaf Kak, aku lagi pusing nih (gangguan koneksi AI). Nanti chat aku lagi ya! ⏳"
+        );
       }
-
-      // Simpan balasan AI ke database InterventionChat
-      await prisma.interventionChat.create({
-        data: {
-          user_id: user.id,
-          message: aiResponse.ai_feedback,
-          sender_type: "AI_AGENT",
-          intervention_moment: aiResponse.is_food ? "MEAL_TIME" : "NONE",
-        },
-      });
-
-      // Kirim balik ke Telegram
-      await this.sendTelegramMessage(chatId, aiResponse.ai_feedback);
     } catch (err) {
-      console.error("[BOT] Gagal memproses respon AI:", err);
-      await this.sendTelegramMessage(
-        chatId,
-        "Maaf Kak, aku lagi pusing nih (gangguan koneksi AI). Nanti chat aku lagi ya! ⏳"
-      );
+      console.error("[BOT] Unhandled error in Telegram webhook:", err);
+    } finally {
+      this.processingChats.delete(chatId);
     }
   }
 
@@ -333,76 +347,87 @@ export class BotService {
    * Processes WhatsApp webhook from OpenWA.
    * Similar to handleTelegramWebhook but uses sendWhatsAppMessage + lookup via bot_chat_id.
    */
-  static async handleWhatsAppMessage(chatId: string, text: string): Promise<void> {
-    // [WHY] Cari user via bot_chat_id karena WA format chatId = "43448023433464@lid"
-    const user = await prisma.user.findFirst({
-      where: { bot_chat_id: chatId },
-    });
+  // [ID] Memory lock untuk mencegah double processing dari webhook retry
+  private static processingChats = new Set<string>();
 
-    if (!user) {
-      await sendWhatsAppMessage(
-        chatId,
-        "Halo! Akun WhatsApp kamu belum terhubung dengan aplikasi Glicoo. Silakan hubungkan di menu Profil → Asisten AI ya! 🔗"
-      );
+  static async handleWhatsAppMessage(chatId: string, text: string): Promise<void> {
+    if (this.processingChats.has(chatId)) {
+      console.warn(`[BOT] User ${chatId} is already being processed. Ignoring retry.`);
       return;
     }
 
-    // Simpan pesan user ke InterventionChat
-    await prisma.interventionChat.create({
-      data: {
-        user_id: user.id,
-        message: text,
-        sender_type: "USER",
-        intervention_moment: "MEAL_TIME",
-      },
-    });
+    this.processingChats.add(chatId);
 
-    // [ID] Kirim typing indicator biar user tau bot lagi proses
-    await sendTypingIndicator(chatId);
+    try {
+      // [WHY] Cari user via bot_chat_id karena WA format chatId = "43448023433464@lid"
+      const user = await prisma.user.findFirst({
+        where: { bot_chat_id: chatId },
+      });
 
-    // Ambil riwayat percakapan untuk konteks AI
-    const recentChats = await prisma.interventionChat.findMany({
-      where: { user_id: user.id },
-      orderBy: { created_at: "desc" },
-      take: 7,
-    });
+      if (!user) {
+        await sendWhatsAppMessage(
+          chatId,
+          "Halo! Akun WhatsApp kamu belum terhubung dengan aplikasi Glicoo. Silakan hubungkan di menu Profil → Asisten AI ya! 🔗"
+        );
+        return;
+      }
 
-    recentChats.reverse();
-
-    const formattedHistory = recentChats
-      .map((c) => {
-        const role = c.sender_type === "USER" ? "Pengguna" : "Iloo";
-        return `${role}: ${c.message}`;
-      })
-      .join("\n");
-
-    // Schema & prompt AI (sama dengan Telegram)
-    const schema = {
-      type: "object",
-      properties: {
-        is_food: {
-          type: "boolean",
-          description:
-            "Apakah pesan terakhir ini menceritakan atau menanyakan tentang aktivitas makan/minum/kalori/gizi pengguna?",
+      // Simpan pesan user ke InterventionChat
+      await prisma.interventionChat.create({
+        data: {
+          user_id: user.id,
+          message: text,
+          sender_type: "USER",
+          intervention_moment: "MEAL_TIME",
         },
-        estimated_calories: {
-          type: "integer",
-          description: "Estimasi kalori makanan (null jika bukan makanan)",
-        },
-        estimated_sugar_grams: {
-          type: "number",
-          description: "Estimasi kandungan gula makanan dalam gram (null jika bukan makanan)",
-        },
-        ai_feedback: {
-          type: "string",
-          description:
-            "Pesan balasan ramah, Socratic, maksimal 2-3 kalimat, dan menyisipkan emoji.",
-        },
-      },
-      required: ["is_food", "estimated_calories", "estimated_sugar_grams", "ai_feedback"],
-    };
+      });
 
-    const systemInstruction = `
+      // [ID] Kirim typing indicator biar user tau bot lagi proses
+      await sendTypingIndicator(chatId);
+
+      // Ambil riwayat percakapan untuk konteks AI
+      const recentChats = await prisma.interventionChat.findMany({
+        where: { user_id: user.id },
+        orderBy: { created_at: "desc" },
+        take: 7,
+      });
+
+      recentChats.reverse();
+
+      const formattedHistory = recentChats
+        .map((c) => {
+          const role = c.sender_type === "USER" ? "Pengguna" : "Iloo";
+          return `${role}: ${c.message}`;
+        })
+        .join("\n");
+
+      // Schema & prompt AI (sama dengan Telegram)
+      const schema = {
+        type: "object",
+        properties: {
+          is_food: {
+            type: "boolean",
+            description:
+              "Apakah pesan terakhir ini menceritakan atau menanyakan tentang aktivitas makan/minum/kalori/gizi pengguna?",
+          },
+          estimated_calories: {
+            type: "integer",
+            description: "Estimasi kalori makanan (null jika bukan makanan)",
+          },
+          estimated_sugar_grams: {
+            type: "number",
+            description: "Estimasi kandungan gula makanan dalam gram (null jika bukan makanan)",
+          },
+          ai_feedback: {
+            type: "string",
+            description:
+              "Pesan balasan ramah, Socratic, maksimal 2-3 kalimat, dan menyisipkan emoji.",
+          },
+        },
+        required: ["is_food", "estimated_calories", "estimated_sugar_grams", "ai_feedback"],
+      };
+
+      const systemInstruction = `
       Kamu adalah Iloo, sahabat virtual pendeteksi risiko Diabetes Tipe 2 di aplikasi Glicoo.
       Gaya bahasamu santai, menggunakan bahasa Indonesia sehari-hari ("Kamu", "Kak"), dan lengkapi dengan sedikit emoji. Jangan menggurui atau menggunakan bahasa medis kaku.
       Tugasmu adalah membalas pesan pengguna berdasarkan riwayat chat yang diberikan.
@@ -411,9 +436,8 @@ export class BotService {
       Jika pesan terakhir tidak terkait makanan/minuman, balaslah seperti sahabat yang peduli kesehatan, tetapkan is_food = false, estimated_calories = null, estimated_sugar_grams = null.
     `;
 
-    const prompt = `Berikut adalah riwayat percakapan terakhir:\n${formattedHistory}\n\nAnalisis pesan terakhir dari Pengguna dan tentukan nilai JSON yang sesuai.`;
+      const prompt = `Berikut adalah riwayat percakapan terakhir:\n${formattedHistory}\n\nAnalisis pesan terakhir dari Pengguna dan tentukan nilai JSON yang sesuai.`;
 
-    try {
       const aiResponse = await aiService.generateJSON<{
         is_food: boolean;
         estimated_calories: number | null;
@@ -450,6 +474,8 @@ export class BotService {
         chatId,
         "Maaf Kak, aku lagi pusing nih (gangguan koneksi AI). Nanti chat aku lagi ya! ⏳"
       );
+    } finally {
+      this.processingChats.delete(chatId);
     }
   }
 }

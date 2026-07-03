@@ -119,13 +119,13 @@ export function startScheduler(): void {
   }
 
   // 1. Pengingat Pagi (Setiap hari pukul 08:00 pagi)
-  new Cron("0 8 * * *", sendMorningReminders);
+  new Cron("0 8 * * *", { timezone: "Asia/Jakarta" }, sendMorningReminders);
 
   // 2. Cek Aktivitas Langkah Sore (Setiap hari pukul 15:00 sore)
-  new Cron("0 15 * * *", sendAfternoonReminders);
+  new Cron("0 15 * * *", { timezone: "Asia/Jakarta" }, sendAfternoonReminders);
 
   // 3. Pengingat Istirahat Malam (Setiap hari pukul 21:00 malam)
-  new Cron("0 21 * * *", sendEveningReminders);
+  new Cron("0 21 * * *", { timezone: "Asia/Jakarta" }, sendEveningReminders);
 
   console.log("[SCHEDULER] Cron scheduler lokal berhasil dijalankan.");
 }
