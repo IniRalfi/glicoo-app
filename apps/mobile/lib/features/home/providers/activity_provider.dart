@@ -2,12 +2,14 @@
 //
 // Purpose:
 // → Model data aktivitas harian + provider state management-nya.
+//   Provider FINDRISC → findrisc_provider.dart
+//   Provider tutorial & username → tutorial_provider.dart
 //
 // Used By:
 // → home_screen.dart, quests_screen.dart, food_log_bottom_sheet.dart
 //
 // Depends On:
-// → shared_preferences, hooks_riverpod, supabase_flutter
+// → shared_preferences, hooks_riverpod
 //
 // Impact:
 // → Semua fitur yang membaca langkah, tidur, screen time, kalori harian.
@@ -16,7 +18,6 @@ import 'dart:async';
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Data model untuk aktivitas harian.
 class ActivityData {
@@ -159,8 +160,6 @@ class ActivityDataNotifier extends StateNotifier<ActivityData> {
   }
 
   void _startTimer() {
-    // [FIX] Increase polling interval dari 2 detik ke 15 detik untuk battery efficiency
-    // TODO: Refactor ke push-based pattern dari sensor service untuk real-time update
     _timer = Timer.periodic(
       const Duration(seconds: 15),
       (_) => loadDailyValues(),
@@ -183,20 +182,14 @@ class ActivityDataNotifier extends StateNotifier<ActivityData> {
     );
   }
 
-  /// [ID] Update screen time langsung tanpa reload
-  /// [EN] Update screen time directly without reload
-  void updateScreenTime(int minutes) {
+  /// [ID] Update screen time dan simpan ke SharedPreferences
+  /// [EN] Update screen time and save to SharedPreferences
+  /// [WHY] Persist data agar tidak hilang saat loadDailyValues() polling
+  Future<void> updateScreenTime(int minutes) async {
     if (!mounted) return;
-    state = ActivityData(
-      steps: state.steps,
-      stepsGoal: state.stepsGoal,
-      sleepMinutes: state.sleepMinutes,
-      screenTimeMinutes: minutes,
-      dailyCalories: state.dailyCalories,
-      stepsHistory: state.stepsHistory,
-      sleepHistory: state.sleepHistory,
-      screenTimeHistory: state.screenTimeHistory,
-    );
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('glico_daily_screen_time', minutes);
+    await loadDailyValues();
   }
 
   @override
@@ -210,33 +203,3 @@ final activityDataProvider =
     StateNotifierProvider<ActivityDataNotifier, ActivityData>((ref) {
       return ActivityDataNotifier();
     });
-
-/// Provider untuk mengambil data FINDRISC terbaru dari SharedPreferences.
-final findriscDataProvider = FutureProvider<Map<String, dynamic>>((ref) async {
-  final prefs = await SharedPreferences.getInstance();
-  final score = prefs.getInt('findrisc_score') ?? 0;
-  final category = prefs.getString('findrisc_category') ?? 'Belum Tes';
-  return {'score': score, 'category': category};
-});
-
-/// Provider untuk mengambil nama user dari Supabase.
-final userNameProvider = Provider<String>((ref) {
-  final user = Supabase.instance.client.auth.currentUser;
-  final name = user?.userMetadata?['name'] ?? user?.userMetadata?['full_name'];
-  return name ?? 'Pemanasan';
-});
-
-/// Provider untuk mendeteksi apakah user sudah menyelesaikan tutorial Iloo.
-/// [WHY] FutureProvider — initial load dari SharedPreferences.
-final tutorialSeenProvider = FutureProvider<bool>((ref) async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getBool('tutorial_iloo_done') ?? false;
-});
-
-/// Synchronous provider untuk status tutorial Iloo.
-/// [WHY] Hindari race condition FutureProvider setelah invalidate().
-/// [TRADEOFF] Butuh inisialisasi manual di initState + sinkronisasi manual.
-final tutorialDoneProvider = StateProvider<bool>((ref) => false);
-
-/// Provider untuk mendeteksi apakah dialog tutorial sedang terbuka.
-final tutorialDialogShowingProvider = StateProvider<bool>((ref) => false);

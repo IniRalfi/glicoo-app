@@ -201,6 +201,8 @@ class ApiService {
     double? weight,
     double? height,
     bool? hasFamilyHistory,
+    int? riskScore,
+    String? riskCategory,
   }) async {
     final url = Uri.parse('${EnvConfig.backendUrl}/api/v1/users/profile');
     try {
@@ -215,6 +217,8 @@ class ApiService {
             'weight': weight,
             'height': height,
             'has_family_history': hasFamilyHistory,
+            'risk_score': riskScore,
+            'risk_category': riskCategory,
           }..removeWhere((key, value) => value == null),
         ),
       );

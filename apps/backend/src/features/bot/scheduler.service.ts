@@ -1,11 +1,29 @@
+/**
+ * Purpose:
+ * → Menjalankan cron job terjadwal untuk pengiriman reminder harian kepada user
+ *    yang sudah menghubungkan akun Glico ke Telegram/WhatsApp.
+ *
+ * Used By:
+ * → index.ts (app entry), cron.routes.ts (HTTP trigger serverless)
+ *
+ * Depends On:
+ * → croner, prisma, TelegramService, whatsapp.service
+ *
+ * Impact:
+ * → Pengiriman pesan pagi, sore (cek langkah), dan malam ke semua user bot.
+ */
+
 import { Cron } from "croner";
+
 import { prisma } from "../../core/db";
-import { BotService } from "./bot.service";
 import { sendWhatsAppMessage } from "./whatsapp.service";
 
 /**
- * [ID] Kirim reminder ke user via platform yang terhubung
- * [EN] Send reminder to user via connected platform
+ * [ID]
+ * Mengirim pesan ke user berdasarkan platform bot yang terhubung (Telegram/WhatsApp).
+ *
+ * [EN]
+ * Sends a message to a user based on their connected bot platform (Telegram/WhatsApp).
  */
 async function sendMessageToUser(
   chatId: string,
@@ -18,12 +36,22 @@ async function sendMessageToUser(
   }
 
   if (platform === "TELEGRAM") {
-    await BotService.sendTelegramMessage(chatId, message);
+    const { TelegramService } = await import("./telegram.service");
+    await TelegramService.sendMessage(chatId, message);
   } else if (platform === "WHATSAPP") {
     await sendWhatsAppMessage(chatId, message);
   }
 }
 
+/**
+ * [ID]
+ * Mengirim pengingat pagi kepada semua user bot yang terhubung.
+ * Dipanggil oleh cron job jam 08:00 WIB atau HTTP trigger Vercel Cron.
+ *
+ * [EN]
+ * Sends morning reminders to all connected bot users.
+ * Called by the 08:00 WIB cron job or Vercel Cron HTTP trigger.
+ */
 export async function sendMorningReminders(): Promise<void> {
   const timestamp = new Date().toISOString();
   console.log(`[SCHEDULER] ⏰ sendMorningReminders() dipanggil pada ${timestamp}`);
@@ -47,9 +75,21 @@ export async function sendMorningReminders(): Promise<void> {
   }
 }
 
+/**
+ * [ID]
+ * Mengirim pengingat sore kepada user yang langkah kakinya masih < 3000 langkah.
+ * Dipanggil oleh cron job jam 15:00 WIB atau HTTP trigger Vercel Cron.
+ *
+ * [EN]
+ * Sends afternoon reminders to users whose step count is still below 3000.
+ * Called by the 15:00 WIB cron job or Vercel Cron HTTP trigger.
+ */
 export async function sendAfternoonReminders(): Promise<void> {
   const timestamp = new Date().toISOString();
   console.log(`[SCHEDULER] ⏰ sendAfternoonReminders() dipanggil pada ${timestamp}`);
+
+  const MIN_STEPS = 3000;
+
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -72,7 +112,7 @@ export async function sendAfternoonReminders(): Promise<void> {
     for (const user of users) {
       const stepCount = user.sensorLogs[0]?.step_count || 0;
       console.log(`[SCHEDULER] User ${user.name}: ${stepCount} langkah`);
-      if (stepCount < 3000) {
+      if (stepCount < MIN_STEPS) {
         const message = `Halo Kak *${user.name}*! 👋 Langkah kakimu hari ini baru tercatat *${stepCount}* langkah. Yuk sempatkan jalan santai sore sebentar biar badan segar dan sirkulasi gula darah tetap terjaga! 🚶‍♂️🏃‍♂️`;
         await sendMessageToUser(user.bot_chat_id!, user.bot_platform, message);
         sentCount++;
@@ -86,6 +126,15 @@ export async function sendAfternoonReminders(): Promise<void> {
   }
 }
 
+/**
+ * [ID]
+ * Mengirim pengingat malam (screen time & tidur) kepada semua user bot yang terhubung.
+ * Dipanggil oleh cron job jam 21:00 WIB atau HTTP trigger Vercel Cron.
+ *
+ * [EN]
+ * Sends evening reminders (screen time & sleep) to all connected bot users.
+ * Called by the 21:00 WIB cron job or Vercel Cron HTTP trigger.
+ */
 export async function sendEveningReminders(): Promise<void> {
   const timestamp = new Date().toISOString();
   console.log(`[SCHEDULER] ⏰ sendEveningReminders() dipanggil pada ${timestamp}`);
@@ -109,6 +158,13 @@ export async function sendEveningReminders(): Promise<void> {
   }
 }
 
+/**
+ * [ID]
+ * Mendaftarkan semua cron job lokal. Tidak berjalan di environment serverless (Vercel).
+ *
+ * [EN]
+ * Registers all local cron jobs. Does not run in serverless environments (Vercel).
+ */
 export function startScheduler(): void {
   // Hanya jalankan cron in-memory jika bukan di serverless environment
   if (process.env.NODE_ENV === "production" && process.env.IS_VERCEL) {
@@ -119,13 +175,13 @@ export function startScheduler(): void {
   }
 
   // 1. Pengingat Pagi (Setiap hari pukul 08:00 pagi)
-  new Cron("0 8 * * *", sendMorningReminders);
+  new Cron("0 8 * * *", { timezone: "Asia/Jakarta" }, sendMorningReminders);
 
   // 2. Cek Aktivitas Langkah Sore (Setiap hari pukul 15:00 sore)
-  new Cron("0 15 * * *", sendAfternoonReminders);
+  new Cron("0 15 * * *", { timezone: "Asia/Jakarta" }, sendAfternoonReminders);
 
   // 3. Pengingat Istirahat Malam (Setiap hari pukul 21:00 malam)
-  new Cron("0 21 * * *", sendEveningReminders);
+  new Cron("0 21 * * *", { timezone: "Asia/Jakarta" }, sendEveningReminders);
 
   console.log("[SCHEDULER] Cron scheduler lokal berhasil dijalankan.");
 }

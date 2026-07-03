@@ -60,7 +60,8 @@ void callbackDispatcher() {
       final session = Supabase.instance.client.auth.currentSession;
       if (session != null) {
         final now = DateTime.now();
-        final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+        final dateStr =
+            '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
         // Panggil ApiService langsung untuk sinkronisasi
         final apiService = ApiService();
@@ -82,6 +83,10 @@ void callbackDispatcher() {
   });
 }
 
+/// [ID] Provider state jika butuh permission usage
+/// [EN] State provider if usage permission is needed
+final usagePermissionNeededProvider = StateProvider<bool>((ref) => false);
+
 /// [ID] Provider utama untuk mengontrol SensorService
 /// [EN] Main provider to control SensorService
 final sensorServiceProvider = Provider<SensorService>((ref) {
@@ -93,9 +98,10 @@ class SensorService with WidgetsBindingObserver {
 
   final Ref _ref;
   StreamSubscription<StepCount>? _stepSubscription;
-  static const EventChannel _screenChannel = EventChannel('com.glicoo.glico/screen_state');
-  StreamSubscription? _screenSubscription;
-  DateTime? _screenOnTime;
+  static const MethodChannel _usageChannel = MethodChannel(
+    'com.glicoo.glico/usage_stats',
+  );
+  Timer? _screenTimeUpdateTimer;
 
   /// [ID]
   /// Menginisialisasi Workmanager untuk background execution.
@@ -103,9 +109,7 @@ class SensorService with WidgetsBindingObserver {
   /// [EN]
   /// Initializes Workmanager for background execution.
   Future<void> initWorkmanager() async {
-    await Workmanager().initialize(
-      callbackDispatcher,
-    );
+    await Workmanager().initialize(callbackDispatcher);
 
     // Registrasi periodic task (minimal 15 menit di Android)
     await Workmanager().registerPeriodicTask(
@@ -113,9 +117,7 @@ class SensorService with WidgetsBindingObserver {
       kBackgroundSyncTaskName,
       frequency: const Duration(minutes: 15),
       existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
-      constraints: Constraints(
-        networkType: NetworkType.connected,
-      ),
+      constraints: Constraints(networkType: NetworkType.connected),
     );
   }
 
@@ -136,20 +138,47 @@ class SensorService with WidgetsBindingObserver {
   ///
   /// [EN]
   /// Starts screen time listener & app active lifecycle.
+  /// [WHY] Polling dari native UsageStatsManager agar screen time 100% akurat
   void initScreenTimeTracking() {
     WidgetsBinding.instance.addObserver(this);
-    _screenOnTime = DateTime.now();
-    
-    _screenSubscription?.cancel();
-    _screenSubscription = _screenChannel.receiveBroadcastStream().listen((event) {
-      if (event == 'screen_on') {
-        _screenOnTime = DateTime.now();
-      } else if (event == 'screen_off') {
-        _saveScreenTimeSession();
+
+    // Cek permission terlebih dahulu
+    _checkAndRequestUsagePermission();
+
+    // Polling screen time tiap 30 detik
+    _screenTimeUpdateTimer?.cancel();
+    _screenTimeUpdateTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _updateScreenTimeWhileActive(),
+    );
+
+    // Panggil sekali di awal
+    _updateScreenTimeWhileActive();
+  }
+
+  Future<void> _checkAndRequestUsagePermission() async {
+    try {
+      final hasPermission =
+          await _usageChannel.invokeMethod<bool>('checkUsagePermission') ??
+          false;
+      if (!hasPermission) {
+        // Jangan langsung lempar intent, beritahu UI buat nampilin popup
+        _ref.read(usagePermissionNeededProvider.notifier).state = true;
       }
-    }, onError: (err) {
-      debugPrint('Screen state stream error: $err');
-    });
+    } catch (e) {
+      debugPrint('Error checking usage permission: $e');
+    }
+  }
+
+  /// [ID] Dipanggil dari UI pas user klik "Izinkan" di popup
+  /// [EN] Called from UI when user clicks "Allow" on popup
+  Future<void> openUsageSettings() async {
+    try {
+      await _usageChannel.invokeMethod('requestUsagePermission');
+      _ref.read(usagePermissionNeededProvider.notifier).state = false;
+    } catch (e) {
+      debugPrint('Error opening usage settings: $e');
+    }
   }
 
   /// [ID]
@@ -160,20 +189,27 @@ class SensorService with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _stepSubscription?.cancel();
-    _screenSubscription?.cancel();
+    _screenTimeUpdateTimer?.cancel();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _screenOnTime = DateTime.now();
       // Pemicu sync manual ke server begitu app dibuka kembali
       _ref.read(syncManagerProvider).syncPendingData().catchError((_) {});
-      _ref.read(apiServiceProvider).getBotLink().then((_) async {
-        await forceManualSync();
-      }).catchError((_) {});
-    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
-      _saveScreenTimeSession();
+      _ref
+          .read(apiServiceProvider)
+          .getBotLink()
+          .then((_) async {
+            await forceManualSync();
+          })
+          .catchError((_) {});
+
+      // Update screen time saat resume
+      _updateScreenTimeWhileActive();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _updateScreenTimeWhileActive();
     }
   }
 
@@ -188,7 +224,8 @@ class SensorService with WidgetsBindingObserver {
   Future<void> _onStepCountEvent(StepCount event) async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
-    final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final todayStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
     final lastSyncDate = prefs.getString(kPrefLastSyncDate) ?? '';
     int offset = prefs.getInt(kPrefLastBootStepsOffset) ?? -1;
@@ -211,20 +248,30 @@ class SensorService with WidgetsBindingObserver {
     debugPrint('Pedometer error: $error');
   }
 
-  Future<void> _saveScreenTimeSession() async {
-    if (_screenOnTime == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    final currentScreenTimeSeconds = prefs.getInt('glico_daily_screen_time_seconds') ?? 0;
-    final diffSeconds = DateTime.now().difference(_screenOnTime!).inSeconds;
+  /// [ID]
+  /// Update screen time saat app foreground (dipanggil periodic timer).
+  ///
+  /// [EN]
+  /// Update screen time while app is in foreground (called by periodic timer).
+  /// [WHY] Quest butuh data realtime, tidak bisa tunggu screen off. Ambil dari native.
+  Future<void> _updateScreenTimeWhileActive() async {
+    try {
+      final hasPermission =
+          await _usageChannel.invokeMethod<bool>('checkUsagePermission') ??
+          false;
+      if (!hasPermission) return;
 
-    if (diffSeconds > 0) {
-      final newTotalSeconds = currentScreenTimeSeconds + diffSeconds;
+      final milliseconds =
+          await _usageChannel.invokeMethod<int>('getTodayScreenTime') ?? 0;
+      final newTotalSeconds = milliseconds ~/ 1000;
+      final minutes = newTotalSeconds ~/ 60;
+
+      final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('glico_daily_screen_time_seconds', newTotalSeconds);
-      
-      // Convert to minutes for legacy compat & server sync
-      await prefs.setInt(kPrefTodayScreenTime, newTotalSeconds ~/ 60);
+      await prefs.setInt(kPrefTodayScreenTime, minutes);
+    } catch (e) {
+      debugPrint('Error getting screen time from native: $e');
     }
-    _screenOnTime = null;
   }
 
   /// [ID]
@@ -238,14 +285,17 @@ class SensorService with WidgetsBindingObserver {
     final screenTime = prefs.getInt(kPrefTodayScreenTime) ?? 0;
 
     final now = DateTime.now();
-    final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final dateStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
     try {
-      await _ref.read(apiServiceProvider).syncSensors(
-        date: dateStr,
-        stepCount: steps,
-        screenTimeMinutes: screenTime,
-      );
+      await _ref
+          .read(apiServiceProvider)
+          .syncSensors(
+            date: dateStr,
+            stepCount: steps,
+            screenTimeMinutes: screenTime,
+          );
     } catch (e) {
       debugPrint('Manual sensor sync failed: $e');
     }

@@ -5,7 +5,7 @@ import { aiService } from "../ai/ai.service";
 /**
  * Purpose:
  * Router untuk fitur Administrasi & Monitoring Glico Dashboard.
- * Menyediakan metrik performa AI (failover, latensi), status kesehatan database,
+ * Menyediakan metrik performa AI, status kesehatan database,
  * serta statistik agregasi data user (DAU, log makanan, total langkah) secara real-time.
  *
  * Used By:
@@ -17,17 +17,21 @@ import { aiService } from "../ai/ai.service";
  * Impact:
  * Menyediakan data krusial untuk divisualisasikan pada halaman Web Admin Dashboard Next.js.
  */
+
+// Fallback in-memory metrics in case of any database read failures
+let inMemoryPageViews = 0;
+let inMemoryApkDownloads = 0;
+
 export const adminRoutes = new Elysia({ prefix: "/admin" })
   .get(
     "/stats",
     async ({ headers, set }) => {
       try {
-        // [SECURITY] Admin key MUST be set in env. No hardcoded fallback.
         const adminApiKey = process.env.BACKEND_ADMIN_API_KEY;
         const requestApiKey = headers["x-api-key"];
 
         if (!adminApiKey) {
-          console.error("[ADMIN] BACKEND_ADMIN_API_KEY is not set in environment variables!");
+          console.error("[ADMIN] BACKEND_ADMIN_API_KEY is not set!");
           set.status = 503;
           return { message: "Admin endpoint unavailable: server misconfiguration" };
         }
@@ -37,7 +41,7 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
           return { message: "Unauthorized: Invalid admin API Key" };
         }
 
-        // 2. Cek status koneksi Database Supabase
+        // Cek status database
         let databaseConnected = false;
         try {
           await prisma.$queryRaw`SELECT 1`;
@@ -46,11 +50,12 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
           console.error("[ADMIN] Database connection failed check:", e);
         }
 
-        // 3. Ambil data stats AI dari in-memory Service
+        // Ambil data stats AI
         const aiStatsRaw = aiService.getStats();
-        const averageLatency = aiStatsRaw.callsCount > 0 
-          ? Math.round(aiStatsRaw.totalLatencyMs / aiStatsRaw.callsCount) 
-          : 0;
+        const averageLatency =
+          aiStatsRaw.callsCount > 0
+            ? Math.round(aiStatsRaw.totalLatencyMs / aiStatsRaw.callsCount)
+            : 0;
 
         const aiStats = {
           active_provider: aiStatsRaw.activeProvider,
@@ -60,48 +65,57 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
           average_latency_ms: averageLatency,
         };
 
-        // 4. Kalkulasi metrik hari ini (Daily Active Users & Langkah Kaki)
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
 
-        // DAU: User yang melakukan sinkronisasi pedometer hari ini
-        const dauCount = await prisma.dailySensorLog.count({
-          where: {
-            date: {
-              gte: todayStart,
-            },
-          },
-        });
+        let dauCount = 0;
+        let totalStepsToday = 0;
+        let totalUsers = 0;
+        let totalLinkedUsers = 0;
+        let totalFoodLogs = 0;
+        let totalChats = 0;
 
-        // Total akumulasi langkah kaki semua pengguna hari ini
-        const stepsAggregate = await prisma.dailySensorLog.aggregate({
-          where: {
-            date: {
-              gte: todayStart,
-            },
-          },
-          _sum: {
-            step_count: true,
-          },
-        });
+        if (databaseConnected) {
+          try {
+            dauCount = await prisma.dailySensorLog.count({
+              where: { date: { gte: todayStart } },
+            });
 
-        const totalStepsToday = stepsAggregate._sum.step_count || 0;
+            const stepsAggregate = await prisma.dailySensorLog.aggregate({
+              where: { date: { gte: todayStart } },
+              _sum: { step_count: true },
+            });
+            totalStepsToday = stepsAggregate._sum.step_count || 0;
 
-        // 5. Agregasi data pengguna
-        const totalUsers = await prisma.user.count();
-        const totalLinkedUsers = await prisma.user.count({
-          where: {
-            phone_number: {
-              not: null,
-            },
-          },
-        });
+            totalUsers = await prisma.user.count();
+            totalLinkedUsers = await prisma.user.count({
+              where: { phone_number: { not: null } },
+            });
 
-        // 6. Agregasi aktivitas sistem
-        const totalFoodLogs = await prisma.foodLog.count();
-        const totalChats = await prisma.interventionChat.count();
+            totalFoodLogs = await prisma.foodLog.count();
+            totalChats = await prisma.interventionChat.count();
+          } catch (dbErr) {
+            console.error("[ADMIN] Failed querying some core tables:", dbErr);
+          }
+        }
 
-        // 7. Satukan semua metrik
+        // Read Web Metrics dari table web_metrics
+        let pageViews = inMemoryPageViews;
+        let apkDownloads = inMemoryApkDownloads;
+
+        if (databaseConnected) {
+          try {
+            const metrics = await prisma.webMetric.findMany();
+            const viewsOpt = metrics.find((m) => m.key === "page_views");
+            const downloadsOpt = metrics.find((m) => m.key === "apk_downloads");
+
+            if (viewsOpt) pageViews = viewsOpt.count;
+            if (downloadsOpt) apkDownloads = downloadsOpt.count;
+          } catch (e) {
+            console.warn("[ADMIN] web_metrics table query failed, using in-memory fallbacks.");
+          }
+        }
+
         return {
           health: {
             status: databaseConnected ? "healthy" : "degraded",
@@ -118,6 +132,10 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
             total_food_logs_recorded: totalFoodLogs,
             total_chats_recorded: totalChats,
             total_step_count_accumulated: totalStepsToday,
+          },
+          web_metrics: {
+            page_views: pageViews,
+            apk_downloads: apkDownloads,
           },
         };
       } catch (err) {
@@ -137,5 +155,48 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
         summary: "Retrieve system health status, AI metrics, and aggregate user analytics",
       },
     }
+  )
+  .post(
+    "/hit",
+    async ({ body }) => {
+      const { key } = body;
+
+      // Update in-memory fallback
+      if (key === "page_views") {
+        inMemoryPageViews++;
+      } else if (key === "apk_downloads") {
+        inMemoryApkDownloads++;
+      }
+
+      // Try update database
+      try {
+        await prisma.webMetric.upsert({
+          where: { key },
+          update: { count: { increment: 1 } },
+          create: { key, count: 1 },
+        });
+      } catch (dbErr) {
+        console.warn(
+          `[ADMIN] Failed database webMetric upsert for '${key}', recorded in-memory only.`,
+          dbErr
+        );
+      }
+
+      return {
+        success: true,
+        key,
+        current_in_memory_count: key === "page_views" ? inMemoryPageViews : inMemoryApkDownloads,
+      };
+    },
+    {
+      body: t.Object({
+        key: t.Union([t.Literal("page_views"), t.Literal("apk_downloads")]),
+      }),
+      detail: {
+        tags: ["admin"],
+        summary: "Record landing page views or APK download clicks",
+      },
+    }
   );
+
 export default adminRoutes;

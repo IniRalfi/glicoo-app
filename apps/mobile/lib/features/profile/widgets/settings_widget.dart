@@ -24,7 +24,7 @@ import '../../../core/sensor_service.dart';
 import '../../../core/notification_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../auth/presentation/auth_provider.dart';
-import '../../home/providers/activity_provider.dart';
+import '../../home/providers/tutorial_provider.dart';
 
 class SettingsWidget extends ConsumerStatefulWidget {
   final bool initialBgSyncEnabled;

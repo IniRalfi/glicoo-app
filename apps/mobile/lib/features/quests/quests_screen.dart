@@ -75,10 +75,9 @@ final questListProvider = Provider<List<QuestItem>>((ref) {
   final currentHour = DateTime.now().hour;
   // Dianggap tuntas sepenuhnya jika pemakaian <= 360 menit DAN sudah masuk malam hari (>= 21:00)
   final isNightTime = currentHour >= 21 || currentHour < 4;
-  final screenCompleted = screenTime <= 360 && screenTime > 0 && isNightTime;
-  final screenProgress = screenTime > 0
-      ? (screenTime / 360.0).clamp(0.0, 1.0)
-      : 0.0;
+  // [FIX] Hapus guard screenTime > 0 — screenTime=0 juga <= 360 (memenuhi target)
+  final screenCompleted = screenTime <= 360 && isNightTime;
+  final screenProgress = (screenTime / 360.0).clamp(0.0, 1.0);
 
   // Makan Lebih Bijak: target mencatat makanan hari ini (target 2000 kkal limit)
   final dailyCalories = activityData.dailyCalories;
@@ -116,9 +115,7 @@ final questListProvider = Provider<List<QuestItem>>((ref) {
           ? 'Batas Terlampaui (${screenTime ~/ 60}j ${screenTime % 60}m)'
           : (screenCompleted
                 ? 'Selesai (${screenTime ~/ 60}j ${screenTime % 60}m / 6j)'
-                : (screenTime > 0
-                      ? 'Dalam Batas Aman (${screenTime ~/ 60}j ${screenTime % 60}m / 6j)'
-                      : 'Progress 0m / 6j')),
+                : 'Progress ${screenTime ~/ 60}j ${screenTime % 60}m / 6j'),
       isCompleted: screenCompleted,
       progress: screenProgress,
       iconPath: 'assets/images/home/smartphone-device.svg',

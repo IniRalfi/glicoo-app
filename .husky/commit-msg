@@ -1,0 +1,3 @@
+#!/bin/sh
+# Commit-msg hook to validate commit messages with commitlint.
+bun x --no-install commitlint --edit "$1"

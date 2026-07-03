@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import CloudinaryImage from "@/components/CloudinaryImage";
 import { IMAGES } from "@/lib/cloudinary-images";
+import { trackMetric } from "@/lib/utils";
 
 /**
  * [ID]
@@ -21,7 +23,9 @@ const LAST_UPDATED = "30 Juni 2026";
 
 // URL Download APK — bisa diset via Environment Variable (NEXT_PUBLIC_APK_DOWNLOAD_URL)
 // atau langsung ganti string di bawah ini.
-const APK_DOWNLOAD_URL = process.env.NEXT_PUBLIC_APK_DOWNLOAD_URL || "https://github.com/IniRalfi/glicoo-app/releases/download/v1.0.1/Glicoo.apk";
+const APK_DOWNLOAD_URL =
+  process.env.NEXT_PUBLIC_APK_DOWNLOAD_URL ||
+  "https://github.com/IniRalfi/glicoo-app/releases/download/v1.0.1/Glicoo.apk";
 
 const steps = [
   {
@@ -52,15 +56,20 @@ const changelog = [
 export default function DownloadPage() {
   const isMobile = useIsMobile();
 
+  useEffect(() => {
+    trackMetric("page_views");
+  }, []);
+
   return (
     <main className="min-h-screen bg-background overflow-x-hidden">
-
       {/* ─── HERO ─── */}
       <section className="relative w-full pt-20 pb-16">
         {/* Background glow */}
         <div
           className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full blur-3xl opacity-15"
-          style={{ background: "radial-gradient(ellipse, #ffb700 0%, #ff7b00 60%, transparent 100%)" }}
+          style={{
+            background: "radial-gradient(ellipse, #ffb700 0%, #ff7b00 60%, transparent 100%)",
+          }}
         />
 
         <div className="w-[90%] md:w-[80%] mx-auto px-4">
@@ -101,8 +110,8 @@ export default function DownloadPage() {
                 })}
                 className="text-muted-foreground text-base md:text-lg leading-relaxed"
               >
-                Mulai perjalanan hidup sehat bersama Iloo, AI companion yang
-                memahami kebiasaanmu setiap hari.
+                Mulai perjalanan hidup sehat bersama Iloo, AI companion yang memahami kebiasaanmu
+                setiap hari.
               </motion.p>
 
               {/* Meta chips */}
@@ -140,6 +149,9 @@ export default function DownloadPage() {
                 <motion.a
                   href={APK_DOWNLOAD_URL}
                   download
+                  onClick={() => {
+                    trackMetric("apk_downloads");
+                  }}
                   className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-2xl text-white font-bold text-sm md:text-base"
                   style={{ backgroundColor: "#1a1a1a", fontFamily: "'Rammetto One', serif" }}
                   {...getMotionProps(isMobile, {
@@ -147,7 +159,16 @@ export default function DownloadPage() {
                     whileTap: { scale: 0.97 },
                   })}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                     <polyline points="7 10 12 15 17 10" />
                     <line x1="12" y1="15" x2="12" y2="3" />
@@ -217,9 +238,7 @@ export default function DownloadPage() {
             })}
             className="mb-10"
           >
-            <h2 className="font-display text-2xl md:text-3xl text-foreground">
-              Cara Instalasi
-            </h2>
+            <h2 className="font-display text-2xl md:text-3xl text-foreground">Cara Instalasi</h2>
             <p className="text-muted-foreground mt-2 text-sm md:text-base">
               3 langkah mudah untuk mulai menggunakan Glicoo
             </p>
@@ -237,15 +256,16 @@ export default function DownloadPage() {
                 })}
                 className="p-6 rounded-2xl border border-border bg-white hover:border-primary transition-colors group cursor-default"
               >
-                <span className="font-display text-6xl font-bold block mb-4" style={{ color: "#eeeeee" }}>
+                <span
+                  className="font-display text-6xl font-bold block mb-4"
+                  style={{ color: "#eeeeee" }}
+                >
                   {step.number}
                 </span>
                 <h3 className="font-semibold text-foreground text-base mb-2 group-hover:text-primary transition-colors">
                   {step.title}
                 </h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  {step.desc}
-                </p>
+                <p className="text-muted-foreground text-sm leading-relaxed">{step.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -264,9 +284,7 @@ export default function DownloadPage() {
             })}
             className="mb-10"
           >
-            <h2 className="font-display text-2xl md:text-3xl text-foreground">
-              Apa yang Baru
-            </h2>
+            <h2 className="font-display text-2xl md:text-3xl text-foreground">Apa yang Baru</h2>
             <p className="text-muted-foreground mt-2 text-sm md:text-base">
               Riwayat pembaruan aplikasi
             </p>
@@ -283,18 +301,14 @@ export default function DownloadPage() {
           >
             {/* Header */}
             <div className="flex flex-wrap items-center gap-3 mb-6">
-              <span className="font-display text-lg text-foreground">
-                v{APP_VERSION}
-              </span>
+              <span className="font-display text-lg text-foreground">v{APP_VERSION}</span>
               <span
                 className="text-xs font-bold px-2.5 py-1 rounded-full"
                 style={{ backgroundColor: "#dcfce7", color: "#16a34a" }}
               >
                 Terbaru
               </span>
-              <span className="text-sm text-muted-foreground md:ml-auto">
-                {LAST_UPDATED}
-              </span>
+              <span className="text-sm text-muted-foreground md:ml-auto">{LAST_UPDATED}</span>
             </div>
 
             {/* Items */}
@@ -339,14 +353,30 @@ export default function DownloadPage() {
             <motion.a
               href={APK_DOWNLOAD_URL}
               download
+              onClick={() => {
+                trackMetric("apk_downloads");
+              }}
               className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-bold text-sm md:text-base"
-              style={{ backgroundColor: "#fff", color: "#1a1a1a", fontFamily: "'Rammetto One', serif" }}
+              style={{
+                backgroundColor: "#fff",
+                color: "#1a1a1a",
+                fontFamily: "'Rammetto One', serif",
+              }}
               {...getMotionProps(isMobile, {
                 whileHover: { scale: 1.05 },
                 whileTap: { scale: 0.97 },
               })}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
@@ -356,7 +386,6 @@ export default function DownloadPage() {
           </motion.div>
         </div>
       </section>
-
     </main>
   );
 }

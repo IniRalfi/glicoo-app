@@ -44,8 +44,7 @@ interface MotionProps {
  * it returns an empty object so the element remains static (no animation, offsets, or sticky hovers).
  */
 export function getMotionProps(isMobile: boolean, props: MotionProps) {
-  if (isMobile) {
-    return {};
-  }
+  // Ponytail: dynamic prop removal in Framer Motion causes hydration/re-render crashes.
+  // We let MotionConfig's reducedMotion="always" handle animation disabling safely.
   return props;
 }
