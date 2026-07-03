@@ -9,6 +9,30 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan [S
 
 ---
 
+## [1.0.2] — 2026-07-03
+
+### ♻️ Refactored
+
+#### Mobile (v1.0.2+4)
+
+- **`main.dart` dipecah** — Entry point dikurangi dari 575 → 67 baris
+  - Navigation flow state machine dipindah ke `core/app_flow.dart` (`AppEntryPoint`, `AppFlowState` enum, `_AuthFlow` enum)
+  - `main.dart` sekarang hanya berisi `main()` + `GlicoApp`
+
+- **`activity_provider.dart` dipecah** — 4 provider dipindah ke file terpisah sesuai domain
+  - `findriscDataProvider` → `features/home/providers/findrisc_provider.dart`
+  - `userNameProvider`, `tutorialSeenProvider`, `tutorialDoneProvider`, `tutorialDialogShowingProvider` → `features/home/providers/tutorial_provider.dart`
+
+- **`profile_screen.dart` dipecah** — Inline form edit profil (~260 baris) dipisah
+  - `_showEditProfileDialog` → `features/profile/widgets/edit_profile_bottom_sheet.dart` (`EditProfileBottomSheet`)
+  - `profile_screen.dart` dikurangi dari 569 → ~270 baris
+
+### 📚 Documentation
+
+- **`docs/TODO.md`** — Semua task sprint selesai, file dihapus (tidak relevan lagi)
+
+---
+
 ## [1.0.1] — 2026-06-29
 
 ### 🐛 Fixed
