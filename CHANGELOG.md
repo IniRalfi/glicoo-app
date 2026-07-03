@@ -9,6 +9,54 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan [S
 
 ---
 
+## [1.3.0] — 2026-07-03
+
+> **🚀 Glicoo v1.3.0 — Cegah Diabetes Sejak Dini**
+>
+> Peluncuran perdana aplikasi **Glicoo**, asisten kesehatan pintar berbasis **Agentic AI** untuk membantumu melacak, mengelola, dan mencegah risiko Diabetes Melitus Tipe 2 secara interaktif.
+
+### ✨ Fitur Utama
+
+- 🤖 **Iloo AI Companion** — Pendamping AI pintar berbasis Gemini SDK yang siap diajak berkonsultasi mengenai pola hidup sehat.
+- 📝 **Pencatatan Makanan AI** — Cukup ketik atau sebutkan menu makananmu, AI akan mengestimasi kandungan gizinya secara otomatis.
+- 📊 **Monitoring Sensor Aktif** — Sinkronisasi langkah kaki, screen time, dan kualitas tidur harian langsung dari sensor perangkatmu.
+- 🎯 **Misi Harian (Daily Quests)** — Kerjakan tantangan sehat dan dapatkan skor kesehatan dinamis setiap hari.
+- 🔗 **Integrasi Telegram Bot** — Hubungkan aktivitas harianmu ke `@glicoo_bot` untuk menerima pengingat dan insight pintar proaktif secara langsung.
+
+### 🐛 Fixed
+
+- **FINDRISC Age Field Fix** — Input kuesioner merekam umur asli dengan benar, tidak lagi default ke 30 tahun.
+- **Background Sync Optimization** — Sinkronisasi data sensor pedometer berjalan secara non-blocking di latar belakang.
+- **Risk Score Alignment** — Ketidaksesuaian skor risiko kesehatan di halaman Beranda vs Profil diperbaiki.
+- **UI / UX Polish** — Pembenahan layout web responsif, optimalisasi footer, pembersihan type error pada animasi web.
+
+### ♻️ Refactored
+
+#### Mobile (v1.3.0+4)
+
+- **`main.dart` dipecah** — Entry point dikurangi dari 575 → 67 baris
+  - Navigation flow state machine dipindah ke `core/app_flow.dart` (`AppEntryPoint`, `AppFlowState` enum, `_AuthFlow` enum)
+  - `main.dart` sekarang hanya berisi `main()` + `GlicoApp`
+
+- **`activity_provider.dart` dipecah** — 4 provider dipindah ke file terpisah sesuai domain
+  - `findriscDataProvider` → `features/home/providers/findrisc_provider.dart`
+  - `userNameProvider`, `tutorialSeenProvider`, `tutorialDoneProvider`, `tutorialDialogShowingProvider` → `features/home/providers/tutorial_provider.dart`
+
+- **`profile_screen.dart` dipecah** — Inline form edit profil (~260 baris) dipisah
+  - `_showEditProfileDialog` → `features/profile/widgets/edit_profile_bottom_sheet.dart` (`EditProfileBottomSheet`)
+  - `profile_screen.dart` dikurangi dari 569 → ~270 baris
+
+### 📚 Documentation
+
+- **`docs/TODO.md`** — Semua task sprint selesai, file dihapus (tidak relevan lagi)
+
+### 📦 Release Info
+
+- **Versi**: `1.3.0` (build +4)
+- **Minimum OS**: Android 10.0 (API 29)+
+
+---
+
 ## [1.0.1] — 2026-06-29
 
 ### 🐛 Fixed
