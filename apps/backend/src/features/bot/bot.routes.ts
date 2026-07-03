@@ -151,9 +151,33 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
 
         const data: any = body;
 
-        // Format payload: { "chatId": "62812...@c.us", "text": "pesan" }
-        if (data.chatId && data.text) {
-          await BotService.handleWhatsAppMessage(data.chatId, data.text);
+        // [WHY] Log raw payload so we can diagnose OpenWA format mismatches
+        console.log("[WA Webhook] raw payload:", JSON.stringify(data));
+
+        // OpenWA can send either flat { chatId, text } or nested { messages: [...] }
+        // Try flat first, then array envelope
+        const chatId: string | undefined =
+          data.chatId ??
+          data.chat_id ??
+          data.from ??
+          data.messages?.[0]?.chatId ??
+          data.messages?.[0]?.from;
+
+        const text: string | undefined =
+          data.text ??
+          data.body ??
+          data.content ??
+          data.messages?.[0]?.text ??
+          data.messages?.[0]?.body ??
+          data.messages?.[0]?.content;
+
+        if (chatId && text) {
+          await BotService.handleWhatsAppMessage(chatId, text);
+        } else {
+          console.warn(
+            "[WA Webhook] Could not extract chatId/text from payload:",
+            JSON.stringify(data)
+          );
         }
 
         return { ok: true };
