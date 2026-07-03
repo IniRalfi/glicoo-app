@@ -188,6 +188,7 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
       }
     },
     {
+      body: t.Any(),
       detail: {
         tags: ["bot"],
         summary: "WhatsApp Webhook Endpoint",
