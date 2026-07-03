@@ -148,34 +148,36 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
           return { error: "Unauthorized webhook access" };
         }
 
-        const data: any = body;
+        const payload: any = body;
 
         // [WHY] Log raw payload so we can diagnose OpenWA format mismatches
-        console.log("[WA Webhook] raw payload:", JSON.stringify(data));
+        console.log("[WA Webhook] raw payload:", JSON.stringify(payload));
 
-        // OpenWA can send either flat { chatId, text } or nested { messages: [...] }
-        // Try flat first, then array envelope
+        // [WHY] OpenWA wraps message in { event, data: { chatId, body, ... } }
+        // Fall back to flat payload for other webhook formats
+        const msg = payload.data ?? payload;
+
         const chatId: string | undefined =
-          data.chatId ??
-          data.chat_id ??
-          data.from ??
-          data.messages?.[0]?.chatId ??
-          data.messages?.[0]?.from;
+          msg.chatId ??
+          msg.chat_id ??
+          msg.from ??
+          msg.messages?.[0]?.chatId ??
+          msg.messages?.[0]?.from;
 
         const text: string | undefined =
-          data.text ??
-          data.body ??
-          data.content ??
-          data.messages?.[0]?.text ??
-          data.messages?.[0]?.body ??
-          data.messages?.[0]?.content;
+          msg.text ??
+          msg.body ??
+          msg.content ??
+          msg.messages?.[0]?.text ??
+          msg.messages?.[0]?.body ??
+          msg.messages?.[0]?.content;
 
         if (chatId && text) {
           await BotService.handleWhatsAppMessage(chatId, text);
         } else {
           console.warn(
             "[WA Webhook] Could not extract chatId/text from payload:",
-            JSON.stringify(data)
+            JSON.stringify(payload)
           );
         }
 
