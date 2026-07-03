@@ -1,31 +1,32 @@
 import { prisma } from "../../core/db";
 import { aiService } from "../ai/ai.service";
-import { BotService } from "../bot/bot.service";
+import { TelegramService } from "../bot/telegram.service";
+import { sendWhatsAppMessage } from "../bot/whatsapp.service";
 
 /**
  * Purpose:
- * Layanan khusus untuk mengolah pencatatan log makanan.
- * Mengatur pemrosesan AI di latar belakang (asinkronus), kalkulasi kalori/gula,
- * pencatatan ke database riwayat chat, dan pengiriman notifikasi/pesan ke Telegram.
+ * → Layanan khusus untuk mengolah pencatatan log makanan.
+ *    Mengatur pemrosesan AI di latar belakang (asinkronus), kalkulasi kalori/gula,
+ *    pencatatan ke database riwayat chat, dan pengiriman notifikasi ke Telegram/WhatsApp.
  *
  * Used By:
- * food.routes.ts
+ * → food.routes.ts
  *
  * Depends On:
- * db.ts, ai.service.ts, bot.service.ts
+ * → db.ts, ai.service.ts, telegram.service.ts, whatsapp.service.ts
  *
  * Impact:
- * Menjalankan tugas latar belakang utama saat makanan dicatat dari aplikasi Mobile.
+ * → Menjalankan tugas latar belakang utama saat makanan dicatat dari aplikasi Mobile.
  */
 export class FoodService {
   /**
    * [ID]
    * Memproses analisis gizi makanan via AI secara asinkronus (non-blocking),
-   * mengupdate database, dan mengirimkan notifikasi balik ke Telegram jika terhubung.
+   * mengupdate database, dan mengirimkan notifikasi balik ke Telegram atau WhatsApp jika terhubung.
    *
    * [EN]
    * Processes food nutrition analysis via AI asynchronously (non-blocking),
-   * updates the database, and sends a notification message back to Telegram if linked.
+   * updates the database, and sends a notification back via Telegram or WhatsApp if linked.
    */
   static async processFoodLogSync(userId: string, foodLogId: string, description: string) {
     // 1. Cari data user untuk memastikan identitas dan status bot Telegram
@@ -38,44 +39,45 @@ export class FoodService {
 
     // 2. Hubungi AI Service untuk melakukan Natural Language Parsing dengan format terstruktur
     const schema = {
-      type: 'object',
+      type: "object",
       properties: {
         estimated_calories: {
-          type: 'integer',
-          description: 'Estimasi kalori makanan (integer, dalam satuan kcal)'
+          type: "integer",
+          description: "Estimasi kalori makanan (integer, dalam satuan kcal)",
         },
         estimated_sugar_grams: {
-          type: 'number',
-          description: 'Estimasi kandungan gula makanan dalam gram (float)'
+          type: "number",
+          description: "Estimasi kandungan gula makanan dalam gram (float)",
         },
         carbohydrate_level: {
-          type: 'string',
-          enum: ['Rendah', 'Sedang', 'Tinggi'],
-          description: 'Kategori kandungan karbohidrat makanan (Rendah/Sedang/Tinggi)'
+          type: "string",
+          enum: ["Rendah", "Sedang", "Tinggi"],
+          description: "Kategori kandungan karbohidrat makanan (Rendah/Sedang/Tinggi)",
         },
         sugar_level: {
-          type: 'string',
-          enum: ['Rendah', 'Sedang', 'Tinggi'],
-          description: 'Kategori kandungan gula makanan (Rendah/Sedang/Tinggi)'
+          type: "string",
+          enum: ["Rendah", "Sedang", "Tinggi"],
+          description: "Kategori kandungan gula makanan (Rendah/Sedang/Tinggi)",
         },
         protein_level: {
-          type: 'string',
-          enum: ['Kurang', 'Cukup', 'Baik'],
-          description: 'Kategori kandungan protein makanan (Kurang/Cukup/Baik)'
+          type: "string",
+          enum: ["Kurang", "Cukup", "Baik"],
+          description: "Kategori kandungan protein makanan (Kurang/Cukup/Baik)",
         },
         ai_feedback: {
-          type: 'string',
-          description: 'Feedback singkat gaya bahasa Iloo, Socratic, bersahabat, maksimal 2-3 kalimat'
-        }
+          type: "string",
+          description:
+            "Feedback singkat gaya bahasa Iloo, Socratic, bersahabat, maksimal 2-3 kalimat",
+        },
       },
       required: [
-        'estimated_calories',
-        'estimated_sugar_grams',
-        'carbohydrate_level',
-        'sugar_level',
-        'protein_level',
-        'ai_feedback'
-      ]
+        "estimated_calories",
+        "estimated_sugar_grams",
+        "carbohydrate_level",
+        "sugar_level",
+        "protein_level",
+        "ai_feedback",
+      ],
     };
 
     const systemInstruction = `
@@ -112,8 +114,8 @@ export class FoodService {
       data: {
         user_id: userId,
         message: `Mencatat makanan: "${description}"`,
-        sender_type: 'USER',
-        intervention_moment: 'MEAL_TIME',
+        sender_type: "USER",
+        intervention_moment: "MEAL_TIME",
       },
     });
 
@@ -121,15 +123,22 @@ export class FoodService {
       data: {
         user_id: userId,
         message: aiResponse.ai_feedback,
-        sender_type: 'AI_AGENT',
-        intervention_moment: 'MEAL_TIME',
+        sender_type: "AI_AGENT",
+        intervention_moment: "MEAL_TIME",
       },
     });
 
-    // 5. Kirim notifikasi Telegram jika user sudah menyambungkan akun (asinkronus)
-    if (user.phone_number) {
-      BotService.sendTelegramMessage(user.phone_number, aiResponse.ai_feedback).catch((err) => {
-        console.error('[FOOD] Gagal mengirim pesan Telegram:', err);
+    // 5. Kirim notifikasi ke platform bot yang terhubung (asinkronus, non-blocking)
+    // [WHY] Cek bot_platform dulu — bot_chat_id memiliki format berbeda per platform
+    if (user.bot_platform === "TELEGRAM" && user.bot_chat_id) {
+      TelegramService.sendMessage(user.bot_chat_id, aiResponse.ai_feedback).catch(
+        (err: unknown) => {
+          console.error("[FOOD] Gagal mengirim pesan Telegram:", err);
+        }
+      );
+    } else if (user.bot_platform === "WHATSAPP" && user.bot_chat_id) {
+      sendWhatsAppMessage(user.bot_chat_id, aiResponse.ai_feedback).catch((err: unknown) => {
+        console.error("[FOOD] Gagal mengirim pesan WhatsApp:", err);
       });
     }
 
@@ -139,7 +148,7 @@ export class FoodService {
       carbohydrate_level: aiResponse.carbohydrate_level,
       sugar_level: aiResponse.sugar_level,
       protein_level: aiResponse.protein_level,
-      ai_feedback: aiResponse.ai_feedback
+      ai_feedback: aiResponse.ai_feedback,
     };
   }
 }
