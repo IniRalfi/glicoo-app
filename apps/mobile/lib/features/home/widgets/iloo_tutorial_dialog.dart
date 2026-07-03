@@ -22,7 +22,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../navigation/bottom_nav_shell.dart';
-import '../providers/activity_provider.dart';
+import '../providers/tutorial_provider.dart';
 
 class IlooTutorialDialog extends ConsumerStatefulWidget {
   const IlooTutorialDialog({super.key});

@@ -22,6 +22,8 @@ import '../../core/theme/app_colors.dart';
 import '../navigation/bottom_nav_shell.dart';
 import '../profile/profile_provider.dart';
 import 'providers/activity_provider.dart';
+import 'providers/findrisc_provider.dart';
+import 'providers/tutorial_provider.dart';
 import 'widgets/activity_cards.dart';
 import 'widgets/challenge_card.dart';
 import 'widgets/food_log_card.dart';
