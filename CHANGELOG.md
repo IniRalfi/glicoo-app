@@ -353,3 +353,226 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan [S
 > - Mobile: `flutter build apk --release` → distribusikan via Supabase Storage / Firebase App Distribution.
 > - Backend: Deploy ke **Vercel** dengan Bun runtime.
 > - Database: Supabase PostgreSQL (managed).
+
+---
+
+## 📚 Archived Reference Docs
+
+> File-file berikut diarsipkan dari `docs/` karena bersifat one-time setup atau panduan developer, bukan spesifikasi arsitektur aktif.
+
+---
+
+### Commit Guide (`docs/commit-guide.md`)
+
+Format commit message untuk seluruh kontributor Glico.
+
+#### Format
+
+```
+[type]([scope]): [subject]
+
+[body (opsional)]
+
+[footer (opsional)]
+```
+
+#### Type (Wajib)
+
+| Type       | Deskripsi                             | Contoh                                      |
+| ---------- | ------------------------------------- | ------------------------------------------- |
+| `feat`     | Penambahan fitur baru                 | `feat: tambahkan endpoint health-data`      |
+| `fix`      | Perbaikan bug                         | `fix: perbaiki crash saat akses kamera`     |
+| `docs`     | Perubahan dokumentasi                 | `docs: update API_SPEC.md`                  |
+| `style`    | Perubahan format kode (spasi, dll)    | `style: rapikan indentasi SensorService`    |
+| `refactor` | Perubahan kode tanpa ubah perilaku    | `refactor: optimasi query database`         |
+| `perf`     | Perbaikan performa                    | `perf: cache response dashboard`            |
+| `test`     | Penambahan atau perbaikan test        | `test: tambahkan unit test untuk aiService` |
+| `chore`    | Perubahan konfigurasi atau dependency | `chore: update express ke 4.19.0`           |
+| `ci`       | Perubahan CI/CD pipeline              | `ci: tambahkan workflow deploy ke Vercel`   |
+| `revert`   | Membatalkan commit sebelumnya         | `revert: revert commit abc123`              |
+
+#### Scope (Opsional)
+
+| Scope     | Komponen                           |
+| --------- | ---------------------------------- |
+| `mobile`  | Flutter App                        |
+| `backend` | Node.js API (Elysia)               |
+| `web`     | Next.js Dashboard                  |
+| `db`      | Database migration / schema        |
+| `api`     | Endpoint API                       |
+| `ai`      | AI Engine (n8n / LLM)              |
+| `sensor`  | Sensor Service (step, screen time) |
+| `auth`    | Authentication / JWT               |
+| `docs`    | Dokumentasi                        |
+| `config`  | Konfigurasi proyek                 |
+
+#### Aturan Subject
+
+- Maksimal **50 karakter**
+- Gunakan **imperative mood**
+- Jangan diakhiri titik
+
+#### Contoh Lengkap
+
+```bash
+feat(backend): tambahkan endpoint /api/health-data
+
+Endpoint ini menerima data langkah, screen time, dan tidur dari mobile app.
+Data akan disimpan ke database dan digunakan untuk menghitung risk score.
+
+Closes #12
+```
+
+#### Contoh Per Komponen
+
+```bash
+# Mobile
+feat(mobile): tambahkan akses sensor step counter
+fix(mobile): perbaiki permission screen time di iOS 16
+
+# Backend
+feat(backend): tambahkan endpoint POST /api/health-data
+fix(backend): perbaiki CORS error di production
+
+# Web
+feat(web): tambahkan landing page
+style(web): implementasi TailwindCSS di seluruh komponen
+
+# Docs
+docs: tambahkan API_SPEC.md lengkap
+```
+
+#### Tools
+
+```bash
+# Commitizen (interactive commit prompt)
+npm install -g commitizen
+commitizen init cz-conventional-changelog --save-dev --save-exact
+git cz
+
+# Commitlint (validasi format commit)
+npm install --save-dev @commitlint/cli @commitlint/config-conventional
+echo "module.exports = { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
+```
+
+#### Git Cheat Sheet
+
+```bash
+git status
+git add .
+git commit -m "feat(mobile): tambahkan akses sensor step counter"
+git log --oneline
+git log --graph --oneline --all
+git push origin main
+git pull origin main
+git checkout -b feature/health-data-endpoint
+git merge feature/health-data-endpoint
+```
+
+---
+
+### Global Commit Setup (`docs/global-setup.md`)
+
+Setup format commit message agar bisa dipakai global di luar repository ini.
+
+#### 1. Git Commit Template
+
+```bash
+# Buat file template
+nano ~/.gitmessage
+```
+
+Isi template:
+
+```text
+[type]([scope]): [subject]
+
+# type: feat, fix, docs, style, refactor, perf, test, chore, ci, revert
+# scope: mobile, backend, web, db, api, ai, sensor, auth, docs, config
+# subject: maks 50 karakter, imperative mood, tanpa titik di akhir.
+#
+# --- Batas baris kosong ---
+#
+# Body (opsional): jelaskan MENGAPA, maks 72 karakter per baris.
+# Footer (opsional): Closes #issue atau BREAKING CHANGE.
+```
+
+```bash
+# Daftarkan ke git global
+git config --global commit.template ~/.gitmessage
+```
+
+#### 2. Global Commitizen
+
+```bash
+npm install -g commitizen cz-conventional-changelog
+echo '{ "path": "cz-conventional-changelog" }' > ~/.czrc
+git cz
+```
+
+#### 3. Alias Git Log
+
+```bash
+git config --global alias.lg "log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+# Gunakan: git lg
+```
+
+---
+
+### FINDRISC Scoring Rules (`docs/FINDRISC.md`)
+
+Spesifikasi aturan logika, variabel, skoring, dan kesimpulan sistem skrining risiko Diabetes Melitus Tipe 2 menggunakan metode FINDRISC.
+
+#### Variabel Input & Bobot Skor
+
+| #   | Variabel                            | Nilai                         | Poin |
+| --- | ----------------------------------- | ----------------------------- | ---- |
+| 1   | **Usia**                            | < 45 tahun                    | 0    |
+|     |                                     | 45–54 tahun                   | 2    |
+|     |                                     | 55–64 tahun                   | 3    |
+|     |                                     | > 64 tahun                    | 4    |
+| 2   | **IMT** (kg/m²)                     | < 25                          | 0    |
+|     |                                     | 25–30                         | 1    |
+|     |                                     | > 30                          | 3    |
+| 3   | **Lingkar Pinggang**                | Pria < 94 / Wanita < 80 cm    | 0    |
+|     |                                     | Pria 94–102 / Wanita 80–88 cm | 1    |
+|     |                                     | Pria > 102 / Wanita > 88 cm   | 4    |
+| 4   | **Aktivitas Fisik** ≥ 30 mnt/hari   | Ya                            | 0    |
+|     |                                     | Tidak                         | 2    |
+| 5   | **Konsumsi Buah/Sayur** setiap hari | Ya                            | 0    |
+|     |                                     | Tidak                         | 1    |
+| 6   | **Obat Hipertensi**                 | Tidak                         | 0    |
+|     |                                     | Ya                            | 2    |
+| 7   | **Riwayat Gula Darah Tinggi**       | Tidak                         | 0    |
+|     |                                     | Ya                            | 5    |
+| 8   | **Riwayat Keluarga DM**             | Tidak                         | 0    |
+|     |                                     | Keluarga jauh                 | 3    |
+|     |                                     | Keluarga inti                 | 5    |
+
+`Total_Skor = Skor_1 + Skor_2 + ... + Skor_8`
+
+#### Decision Rules
+
+| Skor  | Kategori              | Risiko 10 Tahun | Rekomendasi                              |
+| ----- | --------------------- | --------------- | ---------------------------------------- |
+| < 7   | **Rendah**            | ~1%             | Pertahankan gaya hidup sehat             |
+| 7–11  | **Sedikit Meningkat** | ~4%             | Perhatikan pola makan, batasi gula       |
+| 12–14 | **Sedang**            | ~17%            | Cek gula darah berkala, konsultasi nakes |
+| 15–20 | **Tinggi**            | ~33%            | Tes laboratorium (HbA1c/TTGO) ke dokter  |
+| > 20  | **Sangat Tinggi**     | ~50%            | Segera evaluasi klinis menyeluruh        |
+
+#### Pseudocode
+
+```python
+def hitung_kesimpulan_findrisc(total_skor):
+    if total_skor < 7:
+        return {"kategori": "Rendah", "probabilitas": "1%"}
+    elif total_skor <= 11:
+        return {"kategori": "Sedikit Meningkat", "probabilitas": "4%"}
+    elif total_skor <= 14:
+        return {"kategori": "Sedang", "probabilitas": "17%"}
+    elif total_skor <= 20:
+        return {"kategori": "Tinggi", "probabilitas": "33%"}
+    else:
+        return {"kategori": "Sangat Tinggi", "probabilitas": "50%"}
+```
