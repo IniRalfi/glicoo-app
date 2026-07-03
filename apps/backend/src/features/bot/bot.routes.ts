@@ -11,7 +11,6 @@
  * Impact:
  * → Semua endpoint /bot — koneksi, verifikasi, disconnect, webhook Telegram & WA.
  */
-
 import { Elysia, t } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
 
