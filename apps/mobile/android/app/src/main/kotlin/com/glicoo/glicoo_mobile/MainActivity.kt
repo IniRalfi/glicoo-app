@@ -29,25 +29,24 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
         val filter = IntentFilter().apply {
             addAction(android.content.Intent.ACTION_SCREEN_ON)
             addAction(android.content.Intent.ACTION_SCREEN_OFF)
         }
-        registerReceiver(screenTimeReceiver, filter)
-
-        // WHY: app resuming = screen is on; seed the timestamp so live-elapsed works
-        // even if the very first SCREEN_ON broadcast was missed before receiver registered.
+        // Use applicationContext so the receiver outlives the activity if possible
+        applicationContext.registerReceiver(screenTimeReceiver, filter)
+        
         ScreenTimeReceiver.handleScreenOn(this)
     }
 
-    override fun onPause() {
-        super.onPause()
+    override fun onDestroy() {
+        super.onDestroy()
         try {
-            unregisterReceiver(screenTimeReceiver)
+            applicationContext.unregisterReceiver(screenTimeReceiver)
         } catch (_: IllegalArgumentException) {
-            // receiver was never registered — safe to ignore
+            // safe to ignore
         }
     }
 }
