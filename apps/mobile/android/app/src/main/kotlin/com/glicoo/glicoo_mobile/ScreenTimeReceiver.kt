@@ -53,7 +53,11 @@ class ScreenTimeReceiver : BroadcastReceiver() {
         fun handleScreenOn(context: Context) {
             val prefs = prefs(context)
             rolloverIfNewDay(prefs)
-            prefs.edit().putLong(KEY_SCREEN_ON_TS, System.currentTimeMillis()).apply()
+            // Hanya set ts kalau belum diset agar tidak mereset perhitungan jika terpanggil ulang
+            val onTs = prefs.getLong(KEY_SCREEN_ON_TS, 0L)
+            if (onTs == 0L) {
+                prefs.edit().putLong(KEY_SCREEN_ON_TS, System.currentTimeMillis()).apply()
+            }
         }
 
         /** Accumulate elapsed seconds since last SCREEN_ON, then clear the timestamp. */
