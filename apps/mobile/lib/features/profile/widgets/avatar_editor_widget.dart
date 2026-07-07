@@ -60,14 +60,14 @@ class _AvatarEditorWidgetState extends State<AvatarEditorWidget> {
   ];
 
   final List<String> _assets = [
-    'assets/images/bothub/pp_iloo.svg',
-    'assets/images/tutorial/iloo-greeting.svg',
-    'assets/images/tutorial/iloo-kawai.svg',
-    'assets/images/tutorial/iloo-oke.svg',
-    'assets/images/misi/iloo_walk.svg',
-    'assets/images/misi/iloo_sleep.svg',
-    'assets/images/misi/iloo_screen.svg',
     'assets/images/glico_logo.svg',
+    'assets/images/misi/iloo_screen.svg',
+    'assets/images/misi/iloo_sleep.svg',
+    'assets/images/misi/iloo_walk.svg',
+    'assets/images/tutorial/iloo-oke.svg',
+    'assets/images/tutorial/iloo-kawai.svg',
+    'assets/images/tutorial/iloo-greeting.svg',
+    'assets/images/bothub/pp_iloo.svg',
   ];
 
   @override
