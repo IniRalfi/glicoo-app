@@ -83,6 +83,78 @@ class FindriscIntroScreen extends StatelessWidget {
             // Spacer tengah
             const Spacer(flex: 3),
 
+            // Thought bubble Iloo — "Isi dengan sebenar-benarnya ya!"
+            // [WHY] Mengingatkan user untuk jujur mengisi kuesioner sebelum mulai
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xl,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // Mascot Iloo
+                  SvgPicture.asset(
+                    'assets/images/bothub/pp_iloo.svg',
+                    width: 56,
+                    height: 56,
+                  ),
+                  const SizedBox(width: 4),
+                  // Dot connectors (thought bubble style)
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        margin: const EdgeInsets.only(bottom: 3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primary.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      Container(
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 6),
+                  // Speech bubble
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF8E1),
+                        border: Border.all(
+                          color: AppColors.primary,
+                          width: 1.5,
+                        ),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'Isi dengan sebenar-benarnya ya!',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
             // Button: "Yuk, mulai sekarang!" — kuning background, teks putih
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),

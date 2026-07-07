@@ -19,17 +19,15 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/bento_card.dart';
-import 'food_log_bottom_sheet.dart';
+import 'food_log_screen.dart';
 
 class FoodLogCard extends ConsumerWidget {
   const FoodLogCard({super.key});
 
-  void _showFoodLogBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const FoodLogBottomSheet(),
+  void _openFoodLogScreen(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const FoodLogScreen()),
     );
   }
 
@@ -77,7 +75,7 @@ class FoodLogCard extends ConsumerWidget {
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: () => _showFoodLogBottomSheet(context),
+                    onPressed: () => _openFoodLogScreen(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFF9500),
                       foregroundColor: Colors.white,

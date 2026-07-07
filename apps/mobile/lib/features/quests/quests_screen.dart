@@ -230,7 +230,7 @@ class QuestsScreen extends ConsumerWidget {
       children: [
         Text(
           'Misi Hari Ini',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.rammettoOne(
             fontSize: 24,
             fontWeight: FontWeight.w800,
             color: Colors.black,

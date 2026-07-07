@@ -47,11 +47,11 @@ class ProfileStatsWidget extends ConsumerWidget {
 
   Color _getRiskColor(String category) {
     final catLower = category.toLowerCase();
-    if (catLower.contains('sangat tinggi')) return const Color(0xFFFF3B30);
-    if (catLower.contains('tinggi')) return const Color(0xFFFF8800);
-    if (catLower.contains('sedikit')) return const Color(0xFF007AFF);
+    if (catLower.contains('sangat tinggi')) return const Color(0xFFCC0000);
+    if (catLower.contains('tinggi')) return const Color(0xFFFF3B30);
+    if (catLower.contains('sedang')) return const Color(0xFFFF8800);
+    if (catLower.contains('sedikit')) return const Color(0xFFFFB700);
     if (catLower.contains('rendah')) return const Color(0xFF24B35F);
-    // Default Yellow for 'sedang' or fallback
     return const Color(0xFFFFB700);
   }
 

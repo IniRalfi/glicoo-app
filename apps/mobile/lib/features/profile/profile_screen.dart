@@ -141,14 +141,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   void _showEditProfileDialog(BuildContext context, ProfileState state) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => EditProfileBottomSheet(
-        profileState: state,
-        waistCircumference: _waistCircumference,
-        onSaved: _loadSettings,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfileBottomSheet(
+          profileState: state,
+          waistCircumference: _waistCircumference,
+          onSaved: _loadSettings,
+        ),
       ),
     );
   }

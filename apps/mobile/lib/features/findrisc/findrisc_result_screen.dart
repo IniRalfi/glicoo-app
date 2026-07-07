@@ -91,6 +91,21 @@ class FindriscResultScreen extends StatelessWidget {
   }
 
   Widget _buildScoreSection() {
+    // Warna dinamis sesuai 5 level risiko
+    final catLower = data.kategori.toLowerCase();
+    final Color categoryColor;
+    if (catLower.contains('sangat tinggi')) {
+      categoryColor = const Color(0xFFCC0000);
+    } else if (catLower.contains('tinggi')) {
+      categoryColor = const Color(0xFFFF3B30);
+    } else if (catLower.contains('sedang')) {
+      categoryColor = const Color(0xFFFF8800);
+    } else if (catLower.contains('sedikit')) {
+      categoryColor = const Color(0xFFFFB700);
+    } else {
+      categoryColor = const Color(0xFF24B35F); // Rendah
+    }
+
     return Column(
       children: [
         // "Risiko Anda:" label
@@ -104,13 +119,13 @@ class FindriscResultScreen extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSpacing.sm),
-        // Kategori risiko — Rammetto One, warna kuning
+        // Kategori risiko — Rammetto One, warna dinamis
         Text(
           data.kategori,
           style: GoogleFonts.rammettoOne(
             fontSize: 24,
             fontWeight: FontWeight.w400,
-            color: AppColors.primary,
+            color: categoryColor,
           ),
           textAlign: TextAlign.center,
         ),
