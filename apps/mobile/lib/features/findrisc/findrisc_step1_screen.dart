@@ -389,7 +389,7 @@ class _Card extends StatelessWidget {
 }
 
 /// Text input — pill style dengan unit suffix (cm, kg).
-class _SuffixField extends StatelessWidget {
+class _SuffixField extends StatefulWidget {
   final TextEditingController controller;
   final String hint;
   final String suffix;
@@ -401,18 +401,47 @@ class _SuffixField extends StatelessWidget {
   });
 
   @override
+  State<_SuffixField> createState() => _SuffixFieldState();
+}
+
+class _SuffixFieldState extends State<_SuffixField> {
+  final FocusNode _focusNode = FocusNode();
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      setState(() {
+        _isFocused = _focusNode.hasFocus;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
+        border: Border.all(
+          color: _isFocused ? AppColors.primary : const Color(0xFFE5E5EA),
+          width: 1,
+        ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
           Expanded(
             child: TextField(
-              controller: controller,
+              controller: widget.controller,
+              focusNode: _focusNode,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -420,7 +449,7 @@ class _SuffixField extends StatelessWidget {
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
               ],
               decoration: InputDecoration(
-                hintText: hint,
+                hintText: widget.hint,
                 hintStyle: GoogleFonts.inter(
                   fontSize: 14,
                   color: AppColors.placeholderGray,
@@ -446,7 +475,7 @@ class _SuffixField extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 12),
           ),
           Text(
-            suffix,
+            widget.suffix,
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w500,

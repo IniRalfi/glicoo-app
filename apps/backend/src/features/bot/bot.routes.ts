@@ -19,6 +19,34 @@ import { BotAuthService } from "./bot-auth.service";
 import { BotService } from "./bot.service";
 
 /**
+ * [WHY] Dedup in-memory untuk mencegah WhatsApp kirim pesan 2x.
+ * OpenWA kadang mengirim webhook yang sama 2 kali (retry saat koneksi tidak stabil).
+ * Key = chatId + text + time-bucket (5 detik), TTL 30 detik.
+ */
+const processedWaEvents = new Map<string, number>();
+const WA_DEDUP_WINDOW_MS = 5_000;   // bucket 5 detik
+const WA_DEDUP_TTL_MS   = 30_000;   // hapus entry setelah 30 detik
+
+function isDuplicateWaEvent(chatId: string, text: string): boolean {
+  const bucket = Math.floor(Date.now() / WA_DEDUP_WINDOW_MS);
+  const key = `${chatId}::${text.slice(0, 50)}::${bucket}`;
+  const now = Date.now();
+
+  // Bersihkan entry yang sudah kedaluwarsa
+  for (const [k, ts] of processedWaEvents.entries()) {
+    if (now - ts > WA_DEDUP_TTL_MS) processedWaEvents.delete(k);
+  }
+
+  if (processedWaEvents.has(key)) {
+    console.warn(`[WA Webhook] Duplicate event detected, ignoring. key=${key}`);
+    return true;
+  }
+
+  processedWaEvents.set(key, now);
+  return false;
+}
+
+/**
  * [ID] Router untuk sinkronisasi akun dengan bot Telegram/WhatsApp (Deep Linking).
  *
  * [EN] Router for account synchronization with Telegram/WhatsApp bot (Deep Linking).
@@ -173,6 +201,9 @@ export const botRoutes = new Elysia({ prefix: "/bot" })
           msg.messages?.[0]?.content;
 
         if (chatId && text) {
+          if (isDuplicateWaEvent(chatId, text)) {
+            return { ok: true };
+          }
           await BotService.handleWhatsAppMessage(chatId, text);
         } else {
           console.warn(

@@ -46,7 +46,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   int _findriscScore = 0;
   String _findriscCategory = 'Belum Tes';
   double _waistCircumference = 0.0;
-  String _avatarBgColor = '0xFFFFB700';
+  String _avatarBgColor = '0xFF0088FF';
   String _avatarAssetPath = 'assets/images/bothub/pp_iloo.svg';
   String? _avatarFilePath;
   String _avatarType = 'asset';
@@ -68,7 +68,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _findriscScore = prefs.getInt('findrisc_score') ?? 0;
         _findriscCategory = prefs.getString('findrisc_category') ?? 'Belum Tes';
         _waistCircumference = prefs.getDouble('lingkar_pinggang_cm') ?? 0.0;
-        _avatarBgColor = prefs.getString('avatar_bg_color') ?? '0xFFFFB700';
+        _avatarBgColor = prefs.getString('avatar_bg_color') ?? '0xFF0088FF';
         _avatarAssetPath =
             prefs.getString('avatar_asset_path') ??
             'assets/images/bothub/pp_iloo.svg';
@@ -141,14 +141,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   void _showEditProfileDialog(BuildContext context, ProfileState state) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => EditProfileBottomSheet(
-        profileState: state,
-        waistCircumference: _waistCircumference,
-        onSaved: _loadSettings,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfileBottomSheet(
+          profileState: state,
+          waistCircumference: _waistCircumference,
+          onSaved: _loadSettings,
+        ),
       ),
     );
   }
