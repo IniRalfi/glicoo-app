@@ -9,6 +9,24 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) dan [S
 
 ---
 
+## [1.3.1] — 2026-07-07
+
+### ✨ UI Updates & Enhancements
+
+- **[UI-01]** Tambahkan **thought bubble Iloo** di `findrisc_intro_screen.dart`.
+- **[UI-02]** Warna teks dinamis Findrisc: Rendah=hijau, Sedikit=kuning, Sedang=oranye, Tinggi=merah, SangatTinggi=merah tua.
+- **[UI-03]** Konversi form *"Catat Menu Makan"* dari bottom sheet menjadi full-page Scaffold.
+- **[UI-04]** Screen *"Estimasi Menu"* — penyesuaian semua teks menjadi warna putih.
+- **[UI-05]** Screen *"Perbarui Data Kesehatan"* diubah menjadi full-page (Scaffold + AppBar).
+- **Avatar Editor** — Dibalik urutan asset karakter Iloo agar yang terbaru di depan, dan default warna background diubah menjadi biru.
+- **Findrisc Form** — Perbaikan border input form agar berwarna kuning saat aktif dan abu-abu saat tidak aktif.
+
+### 🐛 Fixed
+
+- **[BE-01]** Chatbot WhatsApp mengirim pesan 2x. Fix menambahkan deduplikasi event (`isDuplicateWaEvent()`) untuk menangani webhook retry OpenWA.
+
+---
+
 ## [1.3.0] — 2026-07-03
 
 > **🚀 Glicoo v1.3.0 — Cegah Diabetes Sejak Dini**
