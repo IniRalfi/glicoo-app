@@ -324,7 +324,7 @@ class _BotConnectionWidgetState extends ConsumerState<BotConnectionWidget> {
                   onPressed: () async {
                     // WhatsApp bot number: +62 896-7258-5765
                     final whatsappUrl =
-                        'https://wa.me/6289672585765?text=OTP%20$_otpToken';
+                        'https://wa.me/6289672585765?text=$_otpToken';
                     final uri = Uri.parse(whatsappUrl);
                     try {
                       final success = await launchUrl(
